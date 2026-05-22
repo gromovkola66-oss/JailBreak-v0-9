@@ -26,5 +26,5 @@
     "npx vite build"
   ],
   "blocked_reason": null,
-  "findings": "All changes compiled and built successfully. Step 5 (decorative mesh skipping in QualitySettings) was intentionally skipped per the feature spec since geometry caching + mesh merging handles the critical performance issue. The project directory was initially untracked in git (only the zip was tracked), so all source files were committed together with the optimizations."
+  "findings": "All changes compiled and built successfully. Step 5 (decorative mesh skipping in QualitySettings) was intentionally skipped per the feature spec since geometry caching + mesh merging handles the critical performance issue. The project directory was initially untracked in git (only the zip was tracked), so all source files were committed together with the optimizations. Review fixes applied: (1) geometry disposal on playtest teardown, (2) __interactive flag on dropped items, (3) cloned geometry disposal on merge failure path, (4) replaced updateMatrixWorld(true) with updateWorldMatrix(true, true) in MapEditor."
 }
