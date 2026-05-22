@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Add geometry caching to EditorObjects.ts to eliminate duplicate geometry creation, and merge static object meshes in PlaytestMode to drastically reduce draw calls",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Create a geometry cache system in src/editor/EditorObjects.ts. Replace the box() and cyl() helper functions to cache and reuse geometries by their parameters (w,h,d for box; rt,rb,h,seg for cylinder). Use a Map<string, BufferGeometry> keyed by dimension string. This eliminates thousands of duplicate geometry allocations.",
     "Step 2: Add a static mesh merging system for PlaytestMode in src/editor/PlaytestMode.ts. After all objects are placed in loadMap(), group meshes by material, then use THREE.BufferGeometryUtils.mergeGeometries() to merge all static meshes sharing the same material into single merged meshes. This reduces draw calls from thousands to roughly the number of unique materials (~80). Exclude objects that need individual interaction (doors, weapons, terminals, cameras, dropped items) from merging. Import mergeGeometries from 'three/examples/jsm/utils/BufferGeometryUtils.js'.",
@@ -26,5 +26,5 @@
     "npx vite build"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All changes compiled and built successfully. Step 5 (decorative mesh skipping in QualitySettings) was intentionally skipped per the feature spec since geometry caching + mesh merging handles the critical performance issue. The project directory was initially untracked in git (only the zip was tracked), so all source files were committed together with the optimizations."
 }
