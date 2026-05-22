@@ -333,6 +333,7 @@ export class PlaytestMode {
         const obj = objType.create();
         obj.position.copy(itemPos);
         obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.userData.__interactive = true;
         this.scene.add(obj);
         this.droppedItems.push({ mesh: obj, itemType: objData.type, position: itemPos });
         continue;
@@ -477,7 +478,10 @@ export class PlaytestMode {
         geometries.push(geo);
       }
       const merged = mergeGeometries(geometries, false);
-      if (!merged) continue;
+      if (!merged) {
+        for (const geo of geometries) geo.dispose();
+        continue;
+      }
       const mergedMesh = new THREE.Mesh(merged, material);
       mergedMesh.castShadow = true;
       mergedMesh.receiveShadow = true;
@@ -661,6 +665,11 @@ export class PlaytestMode {
 
   dispose() {
     this.stop();
+    this.scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry.dispose();
+      }
+    });
     this.renderer.domElement.parentElement?.removeChild(this.renderer.domElement);
     this.renderer.dispose();
     this.controller.dispose();

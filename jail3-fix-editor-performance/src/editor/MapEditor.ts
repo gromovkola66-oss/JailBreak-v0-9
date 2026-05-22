@@ -270,7 +270,7 @@ export class MapEditor {
     obj.userData.editorId = id;
     obj.userData.objectType = this.selectedObjectType.id;
     this.scene.add(obj);
-    obj.updateMatrixWorld(true);
+    obj.updateWorldMatrix(true, true);
     this.placedObjects.set(id, obj);
     const data: PlacedObject = {
       id, type: this.selectedObjectType.id,
@@ -813,7 +813,7 @@ export class MapEditor {
       obj.userData.editorId = d.id;
       obj.userData.objectType = d.type;
       this.scene.add(obj);
-      obj.updateMatrixWorld(true);
+      obj.updateWorldMatrix(true, true);
       this.placedObjects.set(d.id, obj);
       this.placedObjectsData.push({ ...d });
     }
