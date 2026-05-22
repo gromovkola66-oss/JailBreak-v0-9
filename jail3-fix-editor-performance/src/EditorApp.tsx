@@ -147,6 +147,15 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setPtGuardMenuOpen(false);
     setPtIsWarden(false);
     setPtCellsOpen(false);
+    setPtCombat({
+      hp: 100,
+      maxHp: 100,
+      hasWeapon: team === 'guard',
+      ammo: team === 'guard' ? 30 : 0,
+      maxAmmo: team === 'guard' ? 30 : 0,
+      isDead: false,
+      isReloading: false
+    });
     setMode('playtesting');
 
     setTimeout(() => {
@@ -547,12 +556,12 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
               hasDoors={ptHasDoors}
               onBecomeWarden={() => { setPtIsWarden(true); }}
               onToggleCells={() => {
-                if (ptCellsOpen) {
-                  playtestRef.current?.closeAllDoors();
-                  setPtCellsOpen(false);
+                if (!playtestRef.current) return;
+                const currentlyOpen = playtestRef.current.areCellsOpen();
+                if (currentlyOpen) {
+                  playtestRef.current.closeAllDoors();
                 } else {
-                  playtestRef.current?.openAllDoors();
-                  setPtCellsOpen(true);
+                  playtestRef.current.openAllDoors();
                 }
               }}
             />
