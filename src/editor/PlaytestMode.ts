@@ -50,6 +50,9 @@ export class PlaytestMode {
   private boundOnResize = this.onResize.bind(this);
   private boundAnimate = this.animate.bind(this);
   private lastNearbyRentalDoorId: string | null = null;
+  private lastNearbyRentalOwnerId: string | null = null;
+  private lastNearbyRentalExpiresAt: number | null = null;
+  private cachedRentalInteractResult: { canInteract: boolean; door: RentalDoor | null } = { canInteract: false, door: null };
 
   // Dropped items (non-weapon pickables)
   private droppedItems: { mesh: THREE.Group; itemType: string; position: THREE.Vector3 }[] = [];
@@ -456,9 +459,10 @@ export class PlaytestMode {
           }
         }
       }
-      // Rental door interaction
+      // Rental door interaction (use cached result from animate loop)
       {
-        const { canInteract: canRental, door: rentalDoor } = this.rentalDoorSystem.canInteract(this.controller.camera.position);
+        const canRental = this.cachedRentalInteractResult.canInteract;
+        const rentalDoor = this.cachedRentalInteractResult.door;
         if (canRental && rentalDoor) {
           if (this.team === 'guard') {
             this.rentalDoorSystem.toggleDoor(rentalDoor.id, 'guard');
@@ -941,16 +945,23 @@ export class PlaytestMode {
       // Rental door animation
       this.rentalDoorSystem.update(delta);
 
-      // Check nearby rental door for info panel
-      const nearbyResult = this.rentalDoorSystem.canInteract(this.controller.camera.position);
-      const nearbyDoorId = nearbyResult.door?.id ?? null;
-      if (nearbyDoorId !== this.lastNearbyRentalDoorId) {
+      // Check nearby rental door for info panel (cache result for E-key reuse)
+      this.cachedRentalInteractResult = this.rentalDoorSystem.canInteract(this.controller.camera.position);
+      const nearbyDoor = this.cachedRentalInteractResult.door;
+      const nearbyDoorId = nearbyDoor?.id ?? null;
+      const nearbyOwnerId = nearbyDoor?.ownerId ?? null;
+      const nearbyExpiresAt = nearbyDoor?.expiresAt ?? null;
+      if (nearbyDoorId !== this.lastNearbyRentalDoorId ||
+          nearbyOwnerId !== this.lastNearbyRentalOwnerId ||
+          nearbyExpiresAt !== this.lastNearbyRentalExpiresAt) {
         this.lastNearbyRentalDoorId = nearbyDoorId;
-        if (nearbyResult.door) {
+        this.lastNearbyRentalOwnerId = nearbyOwnerId;
+        this.lastNearbyRentalExpiresAt = nearbyExpiresAt;
+        if (nearbyDoor) {
           this.onRentalDoorNearby?.({
-            cellLabel: nearbyResult.door.cellLabel,
-            ownerId: nearbyResult.door.ownerId,
-            expiresAt: nearbyResult.door.expiresAt,
+            cellLabel: nearbyDoor.cellLabel,
+            ownerId: nearbyDoor.ownerId,
+            expiresAt: nearbyDoor.expiresAt,
           });
         } else {
           this.onRentalDoorNearby?.(null);
