@@ -10,6 +10,60 @@ import { CombatState } from './game/Combat';
 import { CameraSystemState } from './game/CameraSystem';
 import { InventoryState } from './game/InventorySystem';
 
+// 10 prison-themed CSS wallpapers
+const TERMINAL_WALLPAPERS: { background: string; overlay?: string }[] = [
+  // 1. Prison bars silhouette
+  {
+    background: 'linear-gradient(180deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%)',
+    overlay: `repeating-linear-gradient(90deg, transparent 0px, transparent 48px, #111 48px, #111 56px)`
+  },
+  // 2. Guard tower at sunset
+  {
+    background: 'linear-gradient(180deg, #ff6b35 0%, #ff8c42 25%, #ffd166 50%, #4a2c2a 50%, #2d1b18 100%)',
+  },
+  // 3. Escape tunnel (dark with light at end)
+  {
+    background: 'radial-gradient(ellipse at 50% 50%, #8b7355 0%, #4a3728 20%, #1a1a1a 50%, #0a0a0a 100%)',
+  },
+  // 4. Searchlight beams
+  {
+    background: 'linear-gradient(180deg, #0a0a2a 0%, #1a1a3a 100%)',
+    overlay: `conic-gradient(from 200deg at 20% 0%, transparent 0deg, rgba(255,255,200,0.15) 10deg, transparent 20deg),
+              conic-gradient(from 340deg at 80% 0%, transparent 0deg, rgba(255,255,200,0.1) 15deg, transparent 25deg)`
+  },
+  // 5. Barbed wire fence
+  {
+    background: 'linear-gradient(180deg, #87ceeb 0%, #b0e0e6 40%, #556b2f 40%, #2d4a0f 100%)',
+    overlay: `repeating-linear-gradient(0deg, transparent 0px, transparent 58px, rgba(50,50,50,0.8) 58px, rgba(50,50,50,0.8) 62px)`
+  },
+  // 6. Prison yard aerial view
+  {
+    background: 'linear-gradient(135deg, #4a4a4a 0%, #6b6b6b 25%, #556b2f 25%, #3d5a1e 75%, #4a4a4a 75%, #333 100%)',
+  },
+  // 7. Watchtower with spotlight (night)
+  {
+    background: 'linear-gradient(180deg, #0d1b2a 0%, #1b2838 60%, #2d4a0f 60%, #1a2e0a 100%)',
+    overlay: `conic-gradient(from 250deg at 50% 20%, transparent 0deg, rgba(255,255,150,0.12) 15deg, transparent 30deg)`
+  },
+  // 8. Cell block corridor
+  {
+    background: 'linear-gradient(180deg, #3d3d3d 0%, #4a4a4a 5%, #4a4a4a 95%, #333 100%)',
+    overlay: `repeating-linear-gradient(90deg, transparent 0px, transparent 80px, rgba(0,0,0,0.3) 80px, rgba(0,0,0,0.3) 84px, transparent 84px, transparent 164px),
+              linear-gradient(180deg, rgba(200,180,100,0.1) 0%, transparent 30%)`
+  },
+  // 9. Handcuffs / chains pattern
+  {
+    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%)',
+    overlay: `radial-gradient(circle at 30% 40%, rgba(150,150,150,0.15) 0%, transparent 20%),
+              radial-gradient(circle at 70% 60%, rgba(150,150,150,0.15) 0%, transparent 20%),
+              linear-gradient(45deg, transparent 45%, rgba(150,150,150,0.1) 45%, rgba(150,150,150,0.1) 55%, transparent 55%)`
+  },
+  // 10. Freedom birds flying over wall
+  {
+    background: 'linear-gradient(180deg, #ff9a56 0%, #ff6b6b 30%, #c44569 50%, #4a4a4a 50%, #333 100%)',
+  },
+];
+
 interface EditorAppProps {
   onBackToGame: () => void;
 }
@@ -54,6 +108,11 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [ptGarageLockState, setPtGarageLockState] = useState<{ state: 'unlocked' | 'locked' | 'temp_locked'; remainingSeconds: number | null }>({ state: 'unlocked', remainingSeconds: null });
   const [ptShowTempLockOptions, setPtShowTempLockOptions] = useState(false);
   const [ptDoorLockedToast, setPtDoorLockedToast] = useState(false);
+
+  // Terminal wallpaper & start menu state
+  const [terminalWallpaperIdx, setTerminalWallpaperIdx] = useState(() => Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
+  const [startMenuOpen, setStartMenuOpen] = useState(false);
+  const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | null>(null);
 
   // === EDITOR ===
   useEffect(() => {
@@ -131,6 +190,15 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       setPtShowTempLockOptions(false);
     }
   }, [ptGarageLockState.state]);
+
+  // Randomize wallpaper each time terminal mode is entered; close start menu
+  useEffect(() => {
+    if (ptCameraState?.inTerminalMode) {
+      setTerminalWallpaperIdx(Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
+      setStartMenuOpen(false);
+      setTerminalApp(null);
+    }
+  }, [ptCameraState?.inTerminalMode]);
 
   const handleLockGarageDoors = useCallback(() => {
     playtestRef.current?.lockGarageDoors();
@@ -253,11 +321,29 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
   const handleOpenTerminalApp = useCallback((app: 'cameras' | 'doors') => {
     playtestRef.current?.openTerminalApp(app);
+    setStartMenuOpen(false);
   }, []);
 
   const handleBackToTerminalDesktop = useCallback(() => {
     playtestRef.current?.backToTerminalDesktop();
+    setTerminalApp(null);
+    setStartMenuOpen(false);
   }, []);
+
+  const handleStartMenuToggle = useCallback(() => {
+    setStartMenuOpen(prev => !prev);
+  }, []);
+
+  const handleStartMenuApp = useCallback((app: 'cameras' | 'doors' | 'info' | 'map' | 'settings' | 'exit') => {
+    setStartMenuOpen(false);
+    if (app === 'cameras' || app === 'doors') {
+      handleOpenTerminalApp(app);
+    } else if (app === 'exit') {
+      playtestRef.current?.exitTerminal();
+    } else {
+      setTerminalApp(app);
+    }
+  }, [handleOpenTerminalApp]);
 
   // === Editor handlers ===
   const handleSelectType = useCallback((typeId: string | null) => { editorRef.current?.selectObjectType(typeId); }, []);
@@ -532,7 +618,12 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
             <div className="absolute inset-0 pointer-events-auto cursor-default">
               {/* Desktop view */}
               {ptCameraState.terminalView === 'desktop' && (
-                <div className="absolute inset-0 bg-[#008080] flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none" onClick={() => startMenuOpen && setStartMenuOpen(false)}>
+                  {/* Wallpaper background */}
+                  <div className="absolute inset-0" style={{ background: TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
+                  {TERMINAL_WALLPAPERS[terminalWallpaperIdx].overlay && (
+                    <div className="absolute inset-0" style={{ background: TERMINAL_WALLPAPERS[terminalWallpaperIdx].overlay }} />
+                  )}
                   {/* JailBreak watermark */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15 pointer-events-none" style={{ animation: 'gentleSpin 4s ease-in-out infinite' }}>
                     <span className="text-7xl font-black text-blue-400">Jail</span>
@@ -542,22 +633,188 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   <div className="flex-1 p-4 flex flex-col gap-4 z-10">
                     <div
                       className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
-                      onClick={() => handleOpenTerminalApp('cameras')}
+                      onClick={(e) => { e.stopPropagation(); handleOpenTerminalApp('cameras'); }}
                     >
                       <span className="text-6xl">📹</span>
                       <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Камеры</span>
                     </div>
                     <div
                       className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
-                      onClick={() => handleOpenTerminalApp('doors')}
+                      onClick={(e) => { e.stopPropagation(); handleOpenTerminalApp('doors'); }}
                     >
                       <span className="text-6xl">🚪</span>
                       <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Двери</span>
                     </div>
                   </div>
+
+                  {/* Info app window */}
+                  {terminalApp === 'info' && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                      <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                          <span className="text-xs">Информация о тюрьме</span>
+                          <button
+                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                            onClick={() => setTerminalApp(null)}
+                          >X</button>
+                        </div>
+                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white text-xs leading-relaxed max-h-[300px] overflow-y-auto">
+                          <p className="font-bold text-sm mb-2">Правила учреждения:</p>
+                          <p>1. Заключенным запрещено покидать камеры без разрешения.</p>
+                          <p>2. Все перемещения по территории под наблюдением камер.</p>
+                          <p>3. Попытка побега карается одиночной камерой.</p>
+                          <p>4. Охрана имеет право применять силу.</p>
+                          <p>5. Подъем в 06:00, отбой в 22:00.</p>
+                          <p className="mt-3 font-bold text-sm mb-2">Расписание:</p>
+                          <p>06:00 - Подъем и перекличка</p>
+                          <p>07:00 - Завтрак</p>
+                          <p>08:00 - Работы</p>
+                          <p>12:00 - Обед</p>
+                          <p>13:00 - Прогулка во дворе</p>
+                          <p>15:00 - Свободное время</p>
+                          <p>18:00 - Ужин</p>
+                          <p>22:00 - Отбой</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Map app window */}
+                  {terminalApp === 'map' && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                      <div className="w-[550px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                          <span className="text-xs">Карта территории</span>
+                          <button
+                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                            onClick={() => setTerminalApp(null)}
+                          >X</button>
+                        </div>
+                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white">
+                          <div className="w-full h-[280px] bg-[#f0f0e0] border border-gray-300 relative flex items-center justify-center">
+                            {/* Simple map representation */}
+                            <svg viewBox="0 0 400 200" className="w-full h-full">
+                              {/* Outer walls */}
+                              <rect x="20" y="20" width="360" height="160" fill="none" stroke="#555" strokeWidth="4"/>
+                              {/* Cell blocks */}
+                              <rect x="40" y="40" width="80" height="60" fill="#ddd" stroke="#666" strokeWidth="2"/>
+                              <text x="80" y="75" textAnchor="middle" fontSize="10" fill="#333">Блок A</text>
+                              <rect x="140" y="40" width="80" height="60" fill="#ddd" stroke="#666" strokeWidth="2"/>
+                              <text x="180" y="75" textAnchor="middle" fontSize="10" fill="#333">Блок B</text>
+                              {/* Yard */}
+                              <rect x="240" y="40" width="120" height="120" fill="#c8e6c9" stroke="#666" strokeWidth="2"/>
+                              <text x="300" y="105" textAnchor="middle" fontSize="10" fill="#333">Двор</text>
+                              {/* Guard tower */}
+                              <circle cx="370" cy="30" r="8" fill="#ff9800" stroke="#333" strokeWidth="1"/>
+                              <text x="370" y="50" textAnchor="middle" fontSize="7" fill="#333">Вышка</text>
+                              {/* Gate */}
+                              <rect x="170" y="170" width="60" height="10" fill="#8d6e63" stroke="#333" strokeWidth="1"/>
+                              <text x="200" y="168" textAnchor="middle" fontSize="8" fill="#333">Ворота</text>
+                              {/* Admin */}
+                              <rect x="40" y="120" width="80" height="40" fill="#e3f2fd" stroke="#666" strokeWidth="2"/>
+                              <text x="80" y="145" textAnchor="middle" fontSize="9" fill="#333">Админ</text>
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Settings app window */}
+                  {terminalApp === 'settings' && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                      <div className="w-[400px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                          <span className="text-xs">Настройки</span>
+                          <button
+                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                            onClick={() => setTerminalApp(null)}
+                          >X</button>
+                        </div>
+                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold">Громкость оповещений</span>
+                              <div className="w-24 h-3 bg-white border border-gray-600 relative">
+                                <div className="h-full bg-[#000080] w-3/4"></div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold">Яркость экрана</span>
+                              <div className="w-24 h-3 bg-white border border-gray-600 relative">
+                                <div className="h-full bg-[#000080] w-full"></div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold">Язык</span>
+                              <span className="text-xs border border-gray-600 px-2 py-0.5 bg-white">Русский</span>
+                            </div>
+                            <div className="pt-2 border-t border-gray-400 text-xs text-gray-600">
+                              JailBreak Security Terminal v2.4.1
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Start Menu */}
+                  {startMenuOpen && (
+                    <div className="absolute bottom-[30px] left-0 z-30 w-[200px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg" onClick={(e) => e.stopPropagation()}>
+                      {/* Side banner */}
+                      <div className="flex">
+                        <div className="w-6 bg-gradient-to-t from-[#000080] to-[#1084d0] flex items-end justify-center pb-1">
+                          <span className="text-white text-[9px] font-bold [writing-mode:vertical-lr] rotate-180">JailBreak</span>
+                        </div>
+                        <div className="flex-1 flex flex-col py-1">
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            onClick={() => handleStartMenuApp('cameras')}
+                          >
+                            <span>📹</span><span className="text-xs">Камеры</span>
+                          </button>
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            onClick={() => handleStartMenuApp('doors')}
+                          >
+                            <span>🚪</span><span className="text-xs">Двери</span>
+                          </button>
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            onClick={() => handleStartMenuApp('info')}
+                          >
+                            <span>📋</span><span className="text-xs">Информация</span>
+                          </button>
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            onClick={() => handleStartMenuApp('map')}
+                          >
+                            <span>🗺️</span><span className="text-xs">Карта</span>
+                          </button>
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            onClick={() => handleStartMenuApp('settings')}
+                          >
+                            <span>⚙️</span><span className="text-xs">Настройки</span>
+                          </button>
+                          <div className="border-t border-gray-400 my-1"></div>
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            onClick={() => handleStartMenuApp('exit')}
+                          >
+                            <span>🔌</span><span className="text-xs">Выйти</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Taskbar */}
-                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2">
-                    <button className="h-[22px] px-2 flex items-center gap-1 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white">
+                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2 z-20">
+                    <button
+                      className={`h-[22px] px-2 flex items-center gap-1 border-2 ${startMenuOpen ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#b0b0b0]' : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0]'} active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white`}
+                      onClick={(e) => { e.stopPropagation(); handleStartMenuToggle(); }}
+                    >
                       <span className="w-3 h-3 bg-green-600 inline-block"></span>
                       <span className="font-bold text-xs">Пуск</span>
                     </button>

@@ -728,6 +728,12 @@ export class PlaytestMode {
     this.cameraSystem.backToDesktop();
   }
 
+  exitTerminal() {
+    if (this.inTerminalMode) {
+      this.cameraSystem.exitTerminalMode();
+    }
+  }
+
   inventoryEquipSlot(index: number) {
     this.inventory.equipSlot(index);
   }
