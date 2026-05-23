@@ -12,6 +12,7 @@ import { getObjectById } from './EditorObjects';
 import { soundSystem } from '../game/SoundSystem';
 import { ITEM_DEFS } from '../game/ItemDefs';
 import { WalletSystem, WalletState } from '../game/economy/WalletSystem';
+import { RentalDoorSystem, RentalDoor } from '../game/RentalDoorSystem';
 import {
   applyToRenderer,
   configureSunShadow,
@@ -32,10 +33,12 @@ export class PlaytestMode {
   private wallet: WalletSystem;
   private doorSystem: DoorSystem;
   private garageDoorSystem: GarageDoorSystem;
+  private rentalDoorSystem: RentalDoorSystem;
   private team: 'guard' | 'prisoner';
   private colliders: THREE.Box3[] = [];
   private doorColliders: Map<string, THREE.Box3[]> = new Map();
   private garageDoorColliders: Map<string, THREE.Box3[]> = new Map();
+  private rentalDoorColliders: Map<string, THREE.Box3[]> = new Map();
   private inTerminalMode = false;
 
   private isRunning = false;
@@ -63,6 +66,8 @@ export class PlaytestMode {
   public onGarageDoorLockUpdate?: (state: { state: 'unlocked' | 'locked' | 'temp_locked'; remainingSeconds: number | null }) => void;
   public onDoorLocked?: () => void;
   public onWalletUpdate?: (state: WalletState) => void;
+  public onShowRentalMenu?: (door: RentalDoor) => void;
+  public onRentalExpired?: (door: RentalDoor) => void;
 
   private frameCount = 0;
   private fpsTime = 0;
@@ -345,6 +350,29 @@ export class PlaytestMode {
       this.onGarageDoorLockUpdate?.(state);
     };
 
+    // Система арендных дверей
+    this.rentalDoorSystem = new RentalDoorSystem();
+    this.rentalDoorSystem.onDoorStateChange = (doorId, isOpen) => {
+      const boxes = this.rentalDoorColliders.get(doorId);
+      if (!boxes) return;
+      if (isOpen) {
+        for (const box of boxes) {
+          const idx = this.colliders.indexOf(box);
+          if (idx >= 0) this.colliders.splice(idx, 1);
+        }
+      } else {
+        for (const box of boxes) {
+          if (!this.colliders.includes(box)) {
+            this.colliders.push(box);
+          }
+        }
+      }
+      this.controller.setColliders(this.colliders);
+    };
+    this.rentalDoorSystem.onRentalExpired = (door) => {
+      this.onRentalExpired?.(door);
+    };
+
     // Освещение
     this.ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
     this.scene.add(this.ambientLight);
@@ -423,6 +451,24 @@ export class PlaytestMode {
           } else {
             soundSystem.playGarageDoor(gDoor.isOpen);
           }
+        }
+      }
+      // Rental door interaction
+      {
+        const { canInteract: canRental, door: rentalDoor } = this.rentalDoorSystem.canInteract(this.controller.camera.position);
+        if (canRental && rentalDoor) {
+          if (this.team === 'guard') {
+            this.rentalDoorSystem.toggleDoor(rentalDoor.id, 'guard');
+          } else {
+            const result = this.rentalDoorSystem.interact(this.controller.camera.position, this.team);
+            if (result.type === 'toggle') {
+              this.rentalDoorSystem.toggleDoor(rentalDoor.id, 'prisoner');
+            } else if (result.type === 'menu') {
+              this.onShowRentalMenu?.(rentalDoor);
+              document.exitPointerLock();
+            }
+          }
+          return;
         }
       }
     }
@@ -580,7 +626,7 @@ export class PlaytestMode {
       }
 
       // Решётка-дверь — регистрируем в системе дверей
-      if (objData.type === 'bars_door') {
+      if (objData.type === 'bars_door' || objData.type === 'bars_door_guard') {
         const obj = objType.create();
         obj.userData.__interactive = true;
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
@@ -597,6 +643,27 @@ export class PlaytestMode {
         const door = this.doorSystem.registerDoor(doorCellIndex, obj, pos, rotRad);
         this.doorColliders.set(door.id, doorBoxes);
         doorCellIndex++;
+        continue;
+      }
+
+      // Решётка-аренда — регистрируем в системе арендных дверей
+      if (objData.type === 'bars_door_rental') {
+        const obj = objType.create();
+        obj.userData.__interactive = true;
+        obj.position.set(objData.position.x, objData.position.y, objData.position.z);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        this.scene.add(obj);
+        obj.updateMatrixWorld(true);
+
+        const prevLen = this.colliders.length;
+        this.addColliders(obj);
+        const doorBoxes = this.colliders.slice(prevLen);
+
+        const rotRad = THREE.MathUtils.degToRad(objData.rotation);
+        const doorPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
+        const rentalDoorId = `rental_door_${objData.id}`;
+        const rDoor = this.rentalDoorSystem.registerDoor(rentalDoorId, objData.label || '\u041a\u0430\u043c\u0435\u0440\u0430', obj, doorPos, rotRad);
+        this.rentalDoorColliders.set(rDoor.id, doorBoxes);
         continue;
       }
 
@@ -866,6 +933,9 @@ export class PlaytestMode {
       // Garage door animation
       this.garageDoorSystem.update(delta);
 
+      // Rental door animation
+      this.rentalDoorSystem.update(delta);
+
       // Terminal raycast
       this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.controller.camera);
       this.cameraSystem.checkRaycast(this.raycaster);
@@ -951,6 +1021,14 @@ export class PlaytestMode {
 
   getGarageDoorLockState(): { state: 'unlocked' | 'locked' | 'temp_locked'; remainingSeconds: number | null } {
     return this.garageDoorSystem.getLockState();
+  }
+
+  rentDoor(doorId: string, optionId: string): boolean {
+    return this.rentalDoorSystem.rent(doorId, optionId, this.wallet);
+  }
+
+  closeRentalMenu() {
+    document.body.requestPointerLock();
   }
 
   dispose() {

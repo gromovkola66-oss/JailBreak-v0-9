@@ -2599,6 +2599,57 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
   },
 
   {
+    id: 'bars_door_guard', name: '\u0420\u0435\u0448\u0451\u0442\u043a\u0430 (\u043e\u0445\u0440\u0430\u043d\u0430)', icon: '\uD83D\uDD12', category: 'scripts',
+    create: () => {
+      const g = new THREE.Group();
+      for (let i = 0; i < 7; i++) {
+        g.add(pos(cyl(0.02, 0.02, 3, M.bars), -0.55 + i * 0.18, 1.5, 0));
+      }
+      for (const y of [0.3, 1.5, 2.7]) {
+        g.add(pos(box(1.2, 0.06, 0.06, M.metalDark), 0, y, 0));
+      }
+      // Замок
+      g.add(pos(box(0.1, 0.15, 0.06, M.metalMid), 0.5, 1.2, 0.03));
+      g.add(pos(cyl(0.025, 0.025, 0.04, M.chrome), 0.5, 1.2, 0.06));
+      // Badge (guard accent)
+      g.add(pos(box(0.12, 0.08, 0.02, M.metalPaint), 0.5, 1.5, 0.04));
+      // Invisible collision box
+      const collisionBox = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 3.8, 0.12),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      collisionBox.position.set(0, 1.9, 0);
+      g.add(collisionBox);
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'bars_door_rental', name: '\u0420\u0435\u0448\u0451\u0442\u043a\u0430 - \u0430\u0440\u0435\u043d\u0434\u0430', icon: '\uD83D\uDD11', category: 'scripts',
+    create: () => {
+      const g = new THREE.Group();
+      for (let i = 0; i < 7; i++) {
+        g.add(pos(cyl(0.02, 0.02, 3, M.bars), -0.55 + i * 0.18, 1.5, 0));
+      }
+      for (const y of [0.3, 1.5, 2.7]) {
+        g.add(pos(box(1.2, 0.06, 0.06, M.metalDark), 0, y, 0));
+      }
+      // Замок
+      g.add(pos(box(0.1, 0.15, 0.06, M.metalMid), 0.5, 1.2, 0.03));
+      g.add(pos(cyl(0.025, 0.025, 0.04, M.chrome), 0.5, 1.2, 0.06));
+      // Rental sign (gold/yellow accent)
+      g.add(pos(box(0.2, 0.1, 0.02, M.warning), 0.35, 1.7, 0.04));
+      // Invisible collision box
+      const collisionBox = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 3.8, 0.12),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      collisionBox.position.set(0, 1.9, 0);
+      g.add(collisionBox);
+      return mergeGroup(g);
+    }
+  },
+
+  {
     id: 'money_bag', name: '\u041c\u0435\u0448\u043e\u043a \u0434\u0435\u043d\u0435\u0433 (1000\u20bd)', icon: '\uD83D\uDCB0', category: 'scripts',
     create: () => {
       const g = new THREE.Group();

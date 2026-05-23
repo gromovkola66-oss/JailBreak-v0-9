@@ -2,4 +2,7 @@ export const ECONOMY = {
   MAX_CARRY_DEFAULT: 1000,
   DEATH_DROP_PERCENT: 50,
   DEATH_DROP_ITEMS: true,
+  RENT_1H_COST: 50,
+  RENT_24H_COST: 200,
+  BUY_COST: 1000,
 } as const;

@@ -10,6 +10,7 @@ import { CombatState } from './game/Combat';
 import { CameraSystemState } from './game/CameraSystem';
 import { InventoryState } from './game/InventorySystem';
 import { WalletState } from './game/economy/WalletSystem';
+import { RentalDoor, RENTAL_OPTIONS } from './game/RentalDoorSystem';
 
 // 10 prison-themed CSS wallpapers (simple reliable gradients)
 const TERMINAL_WALLPAPERS: { background: string }[] = [
@@ -84,6 +85,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [ptShowTempLockOptions, setPtShowTempLockOptions] = useState(false);
   const [ptDoorLockedToast, setPtDoorLockedToast] = useState(false);
 
+  // Rental menu state
+  const [ptRentalMenu, setPtRentalMenu] = useState<{ doorId: string; cellLabel: string } | null>(null);
+  const [ptRentalError, setPtRentalError] = useState<string | null>(null);
+
   // Terminal wallpaper & start menu state
   const [terminalWallpaperIdx, setTerminalWallpaperIdx] = useState(() => Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
   const [startMenuOpen, setStartMenuOpen] = useState(false);
@@ -136,6 +141,28 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     document.addEventListener('pointerlockchange', handlePointerLock);
 
     const handleKey = (e: KeyboardEvent) => {
+      if (ptRentalMenu) {
+        if (e.code === 'Escape') {
+          setPtRentalMenu(null);
+          setPtRentalError(null);
+          playtestRef.current?.closeRentalMenu();
+          return;
+        }
+        const optMap: Record<string, string> = { 'Digit1': 'rent_1h', 'Digit2': 'rent_24h', 'Digit3': 'buy' };
+        const optId = optMap[e.code];
+        if (optId) {
+          const success = playtestRef.current?.rentDoor(ptRentalMenu.doorId, optId);
+          if (success) {
+            setPtRentalMenu(null);
+            setPtRentalError(null);
+            playtestRef.current?.closeRentalMenu();
+          } else {
+            setPtRentalError('\u041d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u0441\u0440\u0435\u0434\u0441\u0442\u0432');
+            setTimeout(() => setPtRentalError(null), 2000);
+          }
+          return;
+        }
+      }
       if (e.code === 'F9') {
         e.preventDefault();
         stopPlaytest();
@@ -154,7 +181,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         playtestRef.current = null;
       }
     };
-  }, [mode, ptTeam]);
+  }, [mode, ptTeam, ptRentalMenu]);
 
   // Countdown timer updates come from GarageDoorSystem via onGarageDoorLockUpdate callback
   // (no polling needed - the system emits every second during temp_locked state)
@@ -262,6 +289,13 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         setTimeout(() => setPtDoorLockedToast(false), 2000);
       };
 
+      pt.onShowRentalMenu = (door: RentalDoor) => {
+        setPtRentalMenu({ doorId: door.id, cellLabel: door.cellLabel });
+      };
+      pt.onRentalExpired = (_door: RentalDoor) => {
+        // Could show a toast, but keeping it simple
+      };
+
       pt.onWalletUpdate = (state) => {
         setPtWallet(prev => {
           if (prev && state.balance > prev.balance) {
@@ -301,6 +335,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setPtGarageLockState({ state: 'unlocked', remainingSeconds: null });
     setPtShowTempLockOptions(false);
     setPtDoorLockedToast(false);
+    setPtRentalMenu(null);
+    setPtRentalError(null);
     setMode('editing');
   }, []);
 
@@ -1057,6 +1093,29 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
           {ptDoorLockedToast && (
             <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-red-800/90 text-white px-6 py-3 rounded-lg pointer-events-none">
               <span className="font-bold">🔒 Двери заблокированы</span>
+            </div>
+          )}
+
+          {/* Rental menu */}
+          {ptRentalMenu && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto">
+              <div className="bg-gray-900/95 border border-gray-600 rounded-xl p-6 w-80 text-center" style={{ animation: 'scaleIn 0.2s ease' }}>
+                <h3 className="text-white font-bold text-lg mb-4">{ptRentalMenu.cellLabel}</h3>
+                <div className="space-y-3">
+                  {RENTAL_OPTIONS.map((opt, idx) => (
+                    <div key={opt.id} className="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
+                      <div className="text-left">
+                        <div className="text-white text-sm font-medium">[{idx + 1}] {opt.label}</div>
+                        <div className="text-yellow-400 text-xs">{'\u0421\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c'}: {opt.cost}{'\u20bd'}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {ptRentalError && (
+                  <div className="mt-3 text-red-400 text-sm font-bold animate-pulse">{ptRentalError}</div>
+                )}
+                <div className="mt-4 text-gray-500 text-xs">[Esc] {'\u0417\u0430\u043a\u0440\u044b\u0442\u044c'}</div>
+              </div>
             </div>
           )}
 

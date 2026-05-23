@@ -152,7 +152,7 @@ export const EditorUI = ({
               <button onClick={onDuplicate} className="py-2 bg-violet-600/80 hover:bg-violet-500 text-white rounded-lg text-xs transition-all hover:scale-105 active:scale-95" title="Дублировать (Ctrl+D)">📋</button>
               <button onClick={onDelete} className="py-2 bg-red-600/80 hover:bg-red-500 text-white rounded-lg text-xs transition-all hover:scale-105 active:scale-95" title="Удалить (Del)">🗑️</button>
             </div>
-            {(selectedObject.type === 'terminal' || selectedObject.type === 'camera') && (
+            {(selectedObject.type === 'terminal' || selectedObject.type === 'camera' || selectedObject.type === 'bars_door_rental') && (
               <div className="mt-3 space-y-2 bg-black/20 rounded-lg p-3">
                 <div>
                   <div className="flex items-center justify-between">
@@ -167,21 +167,26 @@ export const EditorUI = ({
                   <p className="text-gray-500 text-xs mt-1">
                     {selectedObject.type === 'terminal'
                       ? 'Камеры с таким же ID будут подключены'
+                      : selectedObject.type === 'bars_door_rental'
+                      ? 'Группа аренды (можно игнорировать)'
                       : 'К какому терминалу подключить (можно несколько камер с одним ID)'}
                   </p>
                 </div>
-                {selectedObject.type === 'camera' && (
+                {(selectedObject.type === 'camera' || selectedObject.type === 'bars_door_rental') && (
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-400 text-sm">Название камеры</span>
+                      <span className="text-gray-400 text-sm">{selectedObject.type === 'bars_door_rental' ? 'Название камеры' : 'Название камеры'}</span>
                       <input
                         type="text"
                         value={selectedObject.label ?? ''}
                         onChange={(e) => onUpdateLabel?.(e.target.value)}
                         className="w-32 bg-gray-700 text-white text-sm rounded px-2 py-1 border border-gray-600 focus:outline-none focus:border-blue-500"
-                        placeholder="Камера 1"
+                        placeholder={selectedObject.type === 'bars_door_rental' ? '\u041a\u0430\u043c\u0435\u0440\u0430 \u21167' : '\u041a\u0430\u043c\u0435\u0440\u0430 1'}
                       />
                     </div>
+                    {selectedObject.type === 'bars_door_rental' && (
+                      <p className="text-gray-500 text-xs mt-1">{'\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435 \u0434\u043b\u044f \u043c\u0435\u043d\u044e \u0430\u0440\u0435\u043d\u0434\u044b'}</p>
+                    )}
                   </div>
                 )}
               </div>

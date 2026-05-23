@@ -280,7 +280,7 @@ export class MapEditor {
     if (this.selectedObjectType.id === 'terminal' || this.selectedObjectType.id === 'camera') {
       data.groupId = 1;
     }
-    if (this.selectedObjectType.id === 'camera') {
+    if (this.selectedObjectType.id === 'camera' || this.selectedObjectType.id === 'bars_door_rental') {
       data.label = '';
     }
     this.placedObjectsData.push(data);
