@@ -2515,6 +2515,88 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
     }
   },
 
+  {
+    id: 'garage_door_large', name: '\u0413\u0430\u0440\u0430\u0436\u043d\u0430\u044f \u0434\u0432\u0435\u0440\u044c (\u0431\u043e\u043b.)', icon: '\uD83D\uDEAA', category: 'scripts',
+    create: () => {
+      const g = new THREE.Group();
+      const doorW = 5;
+      const doorH = 4;
+      const panelRows = 10;
+      const panelH = doorH / panelRows;
+      // Horizontal ribbed panels
+      for (let i = 0; i < panelRows; i++) {
+        const mat = i % 2 === 0 ? M.metalMid : M.metalDark;
+        const y = panelH * 0.5 + i * panelH;
+        g.add(pos(box(doorW - 0.2, panelH * 0.9, 0.06, mat), 0, y, 0));
+      }
+      // Vertical guide rails
+      for (const dx of [-(doorW / 2), doorW / 2]) {
+        g.add(pos(box(0.1, doorH, 0.12, M.metalDark), dx, doorH / 2, 0));
+        // Rivets along rails
+        for (let i = 0; i < 8; i++) {
+          const ry = 0.3 + i * (doorH - 0.6) / 7;
+          g.add(pos(cyl(0.025, 0.025, 0.03, M.metalShiny, 8), dx, ry, 0.07));
+        }
+      }
+      // Top mechanism housing
+      g.add(pos(box(doorW + 0.1, 0.3, 0.25, M.metalDark), 0, doorH + 0.15, 0));
+      // Bottom handle bar
+      g.add(pos(box(doorW * 0.5, 0.06, 0.08, M.chrome), 0, 0.15, 0.06));
+      // LED indicator
+      const ledGreen = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 0.6 });
+      g.add(pos(box(0.04, 0.04, 0.02, ledGreen), doorW / 2 - 0.2, doorH - 0.2, 0.08));
+      // Invisible collision box
+      const collider = box(doorW, doorH, 0.2, new THREE.MeshBasicMaterial({ visible: false }));
+      collider.position.set(0, doorH / 2, 0);
+      collider.visible = false;
+      g.add(collider);
+      g.userData.scriptType = 'garage_door';
+      g.userData.doorHeight = doorH;
+      return g;
+    }
+  },
+
+  {
+    id: 'garage_door_medium', name: '\u0413\u0430\u0440\u0430\u0436\u043d\u0430\u044f \u0434\u0432\u0435\u0440\u044c (\u0441\u0440\u0435\u0434.)', icon: '\uD83D\uDEAA', category: 'scripts',
+    create: () => {
+      const g = new THREE.Group();
+      const doorW = 3.5;
+      const doorH = 3;
+      const panelRows = 8;
+      const panelH = doorH / panelRows;
+      // Horizontal ribbed panels
+      for (let i = 0; i < panelRows; i++) {
+        const mat = i % 2 === 0 ? M.metalMid : M.metalDark;
+        const y = panelH * 0.5 + i * panelH;
+        g.add(pos(box(doorW - 0.2, panelH * 0.9, 0.06, mat), 0, y, 0));
+      }
+      // Vertical guide rails
+      for (const dx of [-(doorW / 2), doorW / 2]) {
+        g.add(pos(box(0.1, doorH, 0.12, M.metalDark), dx, doorH / 2, 0));
+        // Rivets along rails
+        for (let i = 0; i < 6; i++) {
+          const ry = 0.3 + i * (doorH - 0.6) / 5;
+          g.add(pos(cyl(0.025, 0.025, 0.03, M.metalShiny, 8), dx, ry, 0.07));
+        }
+      }
+      // Top mechanism housing
+      g.add(pos(box(doorW + 0.1, 0.25, 0.22, M.metalDark), 0, doorH + 0.125, 0));
+      // Bottom handle bar
+      g.add(pos(box(doorW * 0.5, 0.06, 0.08, M.chrome), 0, 0.15, 0.06));
+      // LED indicator
+      const ledGreen = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 0.6 });
+      g.add(pos(box(0.04, 0.04, 0.02, ledGreen), doorW / 2 - 0.2, doorH - 0.2, 0.08));
+      // Invisible collision box
+      const collider = box(doorW, doorH, 0.2, new THREE.MeshBasicMaterial({ visible: false }));
+      collider.position.set(0, doorH / 2, 0);
+      collider.visible = false;
+      g.add(collider);
+      g.userData.scriptType = 'garage_door';
+      g.userData.doorHeight = doorH;
+      return g;
+    }
+  },
+
   // ============ СТРОЙКА ============
   {
     id: 'stairs_straight', name: 'Лестница (ступени)', icon: '🪜', category: 'building',

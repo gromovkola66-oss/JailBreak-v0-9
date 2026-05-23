@@ -6,6 +6,7 @@ import { Combat, CombatState } from '../game/Combat';
 import { CameraSystem, CameraSystemState } from '../game/CameraSystem';
 import { InventorySystem, InventoryState } from '../game/InventorySystem';
 import { DoorSystem } from '../game/DoorSystem';
+import { GarageDoorSystem } from '../game/GarageDoorSystem';
 import { MapData } from './MapEditor';
 import { getObjectById } from './EditorObjects';
 import { soundSystem } from '../game/SoundSystem';
@@ -27,9 +28,11 @@ export class PlaytestMode {
   private cameraSystem: CameraSystem;
   private inventory: InventorySystem;
   private doorSystem: DoorSystem;
+  private garageDoorSystem: GarageDoorSystem;
   private team: 'guard' | 'prisoner';
   private colliders: THREE.Box3[] = [];
   private doorColliders: Map<string, THREE.Box3[]> = new Map();
+  private garageDoorColliders: Map<string, THREE.Box3[]> = new Map();
   private inTerminalMode = false;
 
   private isRunning = false;
@@ -197,6 +200,26 @@ export class PlaytestMode {
       this.onDoorStateUpdate?.(this.doorSystem.getDoors().every(d => d.isOpen));
     };
 
+    // Система гаражных дверей
+    this.garageDoorSystem = new GarageDoorSystem();
+    this.garageDoorSystem.onDoorStateChange = (doorId, isOpen) => {
+      const boxes = this.garageDoorColliders.get(doorId);
+      if (!boxes) return;
+      if (isOpen) {
+        for (const box of boxes) {
+          const idx = this.colliders.indexOf(box);
+          if (idx >= 0) this.colliders.splice(idx, 1);
+        }
+      } else {
+        for (const box of boxes) {
+          if (!this.colliders.includes(box)) {
+            this.colliders.push(box);
+          }
+        }
+      }
+      this.controller.setColliders(this.colliders);
+    };
+
     // Освещение
     this.scene.add(new THREE.AmbientLight(0x808080, 1.5));
     const sun = new THREE.DirectionalLight(0xffffff, 0.55);
@@ -257,6 +280,14 @@ export class PlaytestMode {
         const { canInteract, door } = this.doorSystem.canInteract(this.controller.camera.position);
         if (canInteract && door) {
           this.doorSystem.toggleDoor(door.id);
+        }
+      }
+      // Garage door interaction (any team)
+      {
+        const { canInteract, door: gDoor } = this.garageDoorSystem.canInteract(this.controller.camera.position);
+        if (canInteract && gDoor) {
+          const opening = this.garageDoorSystem.toggleDoor(gDoor.id);
+          soundSystem.playGarageDoor(opening);
         }
       }
     }
@@ -396,6 +427,27 @@ export class PlaytestMode {
         const door = this.doorSystem.registerDoor(doorCellIndex, obj, pos, rotRad);
         this.doorColliders.set(door.id, doorBoxes);
         doorCellIndex++;
+        continue;
+      }
+
+      // Гаражные двери — регистрируем в системе гаражных дверей
+      if (objData.type === 'garage_door_large' || objData.type === 'garage_door_medium') {
+        const obj = objType.create();
+        obj.userData.__interactive = true;
+        obj.position.set(objData.position.x, objData.position.y, objData.position.z);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        this.scene.add(obj);
+        obj.updateMatrixWorld(true);
+
+        const prevLen = this.colliders.length;
+        this.addColliders(obj);
+        const garageDoorBoxes = this.colliders.slice(prevLen);
+
+        const doorHeight = obj.userData.doorHeight as number;
+        const doorPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
+        const garageDoorId = `garage_door_${objData.id}`;
+        const gDoor = this.garageDoorSystem.registerDoor(garageDoorId, obj, doorPos, doorHeight);
+        this.garageDoorColliders.set(gDoor.id, garageDoorBoxes);
         continue;
       }
 
@@ -615,6 +667,9 @@ export class PlaytestMode {
 
       // Door animation
       this.doorSystem.update(delta);
+
+      // Garage door animation
+      this.garageDoorSystem.update(delta);
 
       // Terminal raycast
       this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.controller.camera);

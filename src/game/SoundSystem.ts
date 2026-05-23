@@ -500,6 +500,76 @@ export class SoundSystem {
     });
   }
 
+  // === ГАРАЖНАЯ ДВЕРЬ ===
+  playGarageDoor(opening: boolean) {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Heavy rumble noise (rolling shutter)
+    const bufferSize = Math.floor(ctx.sampleRate * 0.8);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      const envelope = Math.sin(t * Math.PI) * 0.6;
+      data[i] = (Math.random() * 2 - 1) * envelope;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const lpFilter = ctx.createBiquadFilter();
+    lpFilter.type = 'lowpass';
+    lpFilter.frequency.setValueAtTime(600, now);
+    lpFilter.frequency.linearRampToValueAtTime(400, now + 0.8);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(this.masterVolume * 0.5, now);
+    noiseGain.gain.linearRampToValueAtTime(this.masterVolume * 0.35, now + 0.6);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+
+    noise.connect(lpFilter).connect(noiseGain).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.8);
+
+    // Low-frequency motor sweep
+    const motor = ctx.createOscillator();
+    motor.type = 'sawtooth';
+    if (opening) {
+      motor.frequency.setValueAtTime(60, now);
+      motor.frequency.linearRampToValueAtTime(90, now + 0.7);
+    } else {
+      motor.frequency.setValueAtTime(90, now);
+      motor.frequency.linearRampToValueAtTime(55, now + 0.7);
+    }
+
+    const motorFilter = ctx.createBiquadFilter();
+    motorFilter.type = 'lowpass';
+    motorFilter.frequency.value = 200;
+
+    const motorGain = ctx.createGain();
+    motorGain.gain.setValueAtTime(this.masterVolume * 0.4, now);
+    motorGain.gain.linearRampToValueAtTime(this.masterVolume * 0.3, now + 0.6);
+    motorGain.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+
+    motor.connect(motorFilter).connect(motorGain).connect(ctx.destination);
+    motor.start(now);
+    motor.stop(now + 0.75);
+
+    // Metallic clang at the end (door hitting stop)
+    const clang = ctx.createOscillator();
+    clang.frequency.setValueAtTime(opening ? 180 : 220, now + 0.7);
+    clang.type = 'sine';
+
+    const clangGain = ctx.createGain();
+    clangGain.gain.setValueAtTime(0, now);
+    clangGain.gain.setValueAtTime(this.masterVolume * 0.6, now + 0.7);
+    clangGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+
+    clang.connect(clangGain).connect(ctx.destination);
+    clang.start(now + 0.7);
+    clang.stop(now + 0.85);
+  }
+
   // === ЗВУК БИНТОВАНИЯ ===
   playBandageWrap() {
     const ctx = this.getContext();
