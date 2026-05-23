@@ -91,6 +91,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [ptRentalError, setPtRentalError] = useState<string | null>(null);
   const ptRentalMenuRef = useRef(ptRentalMenu);
 
+  // Rental door nearby info
+  const [ptNearbyRentalDoor, setPtNearbyRentalDoor] = useState<{ cellLabel: string; ownerId: string | null; expiresAt: number | null } | null>(null);
+  const [rentalTimeLeft, setRentalTimeLeft] = useState<string | null>(null);
+
   // Terminal wallpaper & start menu state
   const [terminalWallpaperIdx, setTerminalWallpaperIdx] = useState(() => Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
   const [startMenuOpen, setStartMenuOpen] = useState(false);
@@ -172,7 +176,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     if (!ptRentalMenu) return;
 
     const handleRentalKey = (e: KeyboardEvent) => {
-      if (e.code === 'Escape') {
+      if (e.code === 'Escape' || e.code === 'KeyE') {
         setPtRentalMenu(null);
         setPtRentalError(null);
         playtestRef.current?.closeRentalMenu();
@@ -199,6 +203,30 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       document.removeEventListener('keydown', handleRentalKey);
     };
   }, [ptRentalMenu]);
+
+  // === RENTAL DOOR NEARBY TIMER ===
+  useEffect(() => {
+    if (!ptNearbyRentalDoor?.expiresAt) {
+      setRentalTimeLeft(null);
+      return;
+    }
+    const computeTime = () => {
+      const remaining = Math.max(0, ptNearbyRentalDoor.expiresAt! - Date.now());
+      if (remaining <= 0) {
+        setRentalTimeLeft('00:00:00');
+        return;
+      }
+      const hours = Math.floor(remaining / 3600000);
+      const minutes = Math.floor((remaining % 3600000) / 60000);
+      const seconds = Math.floor((remaining % 60000) / 1000);
+      setRentalTimeLeft(
+        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+      );
+    };
+    computeTime();
+    const interval = setInterval(computeTime, 1000);
+    return () => clearInterval(interval);
+  }, [ptNearbyRentalDoor]);
 
   // Countdown timer updates come from GarageDoorSystem via onGarageDoorLockUpdate callback
   // (no polling needed - the system emits every second during temp_locked state)
@@ -311,6 +339,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       };
       pt.onRentalExpired = (_door: RentalDoor) => {
         // Could show a toast, but keeping it simple
+      };
+
+      pt.onRentalDoorNearby = (info) => {
+        setPtNearbyRentalDoor(info);
       };
 
       pt.onWalletUpdate = (state) => {
@@ -1113,14 +1145,54 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
             </div>
           )}
 
+          {/* Rental door ownership info panel */}
+          {ptNearbyRentalDoor && ptNearbyRentalDoor.ownerId && !ptRentalMenu && (
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-black/70 border border-gray-600 text-white px-5 py-3 rounded-lg pointer-events-none">
+              <div className="text-center text-sm font-medium mb-1">{ptNearbyRentalDoor.cellLabel}</div>
+              <div className="text-center text-xs text-gray-300">
+                {ptNearbyRentalDoor.ownerId === 'player' ? '\u041a\u043e\u043c\u0443 \u043f\u0440\u0438\u043d\u0430\u0434\u043b\u0435\u0436\u0438\u0442: \u0418\u0433\u0440\u043e\u043a' : `\u041a\u043e\u043c\u0443 \u043f\u0440\u0438\u043d\u0430\u0434\u043b\u0435\u0436\u0438\u0442: ${ptNearbyRentalDoor.ownerId}`}
+              </div>
+              {ptNearbyRentalDoor.expiresAt ? (
+                <div className="text-center text-xs text-yellow-400 mt-1">
+                  {rentalTimeLeft ? `\u041e\u0441\u0442\u0430\u043b\u043e\u0441\u044c: ${rentalTimeLeft}` : '\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430...'}
+                </div>
+              ) : (
+                <div className="text-center text-xs text-green-400 mt-1">{'\u041a\u0443\u043f\u043b\u0435\u043d'}</div>
+              )}
+            </div>
+          )}
+
           {/* Rental menu */}
           {ptRentalMenu && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto">
-              <div className="bg-gray-900/95 border border-gray-600 rounded-xl p-6 w-80 text-center" style={{ animation: 'scaleIn 0.2s ease' }}>
-                <h3 className="text-white font-bold text-lg mb-4">{ptRentalMenu.cellLabel}</h3>
+              <div className="bg-gray-900/95 border border-gray-600 rounded-xl p-8 w-[420px] text-center" style={{ animation: 'scaleIn 0.2s ease' }}>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-8" />
+                  <h3 className="text-white font-bold text-xl">{ptRentalMenu.cellLabel}</h3>
+                  <button
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-700 hover:bg-red-600 text-gray-300 hover:text-white transition-colors cursor-pointer"
+                    onClick={() => { setPtRentalMenu(null); setPtRentalError(null); playtestRef.current?.closeRentalMenu(); }}
+                  >
+                    &#x2715;
+                  </button>
+                </div>
                 <div className="space-y-3">
                   {RENTAL_OPTIONS.map((opt, idx) => (
-                    <div key={opt.id} className="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
+                    <div
+                      key={opt.id}
+                      className="bg-gray-800 hover:bg-gray-700 rounded-lg p-4 flex items-center justify-between cursor-pointer transition-colors"
+                      onClick={() => {
+                        const success = playtestRef.current?.rentDoor(ptRentalMenu.doorId, opt.id);
+                        if (success) {
+                          setPtRentalMenu(null);
+                          setPtRentalError(null);
+                          playtestRef.current?.closeRentalMenu();
+                        } else {
+                          setPtRentalError('\u041d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u0441\u0440\u0435\u0434\u0441\u0442\u0432');
+                          setTimeout(() => setPtRentalError(null), 2000);
+                        }
+                      }}
+                    >
                       <div className="text-left">
                         <div className="text-white text-sm font-medium">[{idx + 1}] {opt.label}</div>
                         <div className="text-yellow-400 text-xs">{'\u0421\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c'}: {opt.cost}{'\u20bd'}</div>
@@ -1129,9 +1201,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   ))}
                 </div>
                 {ptRentalError && (
-                  <div className="mt-3 text-red-400 text-sm font-bold animate-pulse">{ptRentalError}</div>
+                  <div className="mt-4 text-red-400 text-sm font-bold animate-pulse">{ptRentalError}</div>
                 )}
-                <div className="mt-4 text-gray-500 text-xs">[Esc] {'\u0417\u0430\u043a\u0440\u044b\u0442\u044c'}</div>
+                <div className="mt-5 text-gray-500 text-xs">[E / Esc] {'\u0417\u0430\u043a\u0440\u044b\u0442\u044c'}</div>
               </div>
             </div>
           )}

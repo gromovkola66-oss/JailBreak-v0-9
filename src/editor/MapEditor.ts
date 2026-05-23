@@ -770,6 +770,10 @@ export class MapEditor {
 
   // === KEYS ===
   private onKeyDown(e: KeyboardEvent) {
+    // Don't handle shortcuts when user is typing in an input field
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+
     // Ctrl combos
     if (e.ctrlKey || e.metaKey) {
       switch (e.code) {

@@ -49,6 +49,7 @@ export class PlaytestMode {
   private raycaster = new THREE.Raycaster();
   private boundOnResize = this.onResize.bind(this);
   private boundAnimate = this.animate.bind(this);
+  private lastNearbyRentalDoorId: string | null = null;
 
   // Dropped items (non-weapon pickables)
   private droppedItems: { mesh: THREE.Group; itemType: string; position: THREE.Vector3 }[] = [];
@@ -68,6 +69,7 @@ export class PlaytestMode {
   public onWalletUpdate?: (state: WalletState) => void;
   public onShowRentalMenu?: (door: RentalDoor) => void;
   public onRentalExpired?: (door: RentalDoor) => void;
+  public onRentalDoorNearby?: (info: { cellLabel: string; ownerId: string | null; expiresAt: number | null } | null) => void;
 
   private frameCount = 0;
   private fpsTime = 0;
@@ -368,6 +370,7 @@ export class PlaytestMode {
         }
       }
       this.controller.setColliders(this.colliders);
+      soundSystem.playDoor(isOpen);
     };
     this.rentalDoorSystem.onRentalExpired = (door) => {
       this.onRentalExpired?.(door);
@@ -937,6 +940,22 @@ export class PlaytestMode {
 
       // Rental door animation
       this.rentalDoorSystem.update(delta);
+
+      // Check nearby rental door for info panel
+      const nearbyResult = this.rentalDoorSystem.canInteract(this.controller.camera.position);
+      const nearbyDoorId = nearbyResult.door?.id ?? null;
+      if (nearbyDoorId !== this.lastNearbyRentalDoorId) {
+        this.lastNearbyRentalDoorId = nearbyDoorId;
+        if (nearbyResult.door) {
+          this.onRentalDoorNearby?.({
+            cellLabel: nearbyResult.door.cellLabel,
+            ownerId: nearbyResult.door.ownerId,
+            expiresAt: nearbyResult.door.expiresAt,
+          });
+        } else {
+          this.onRentalDoorNearby?.(null);
+        }
+      }
 
       // Terminal raycast
       this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.controller.camera);
