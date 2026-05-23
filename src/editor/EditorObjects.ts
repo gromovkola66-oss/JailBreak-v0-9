@@ -2598,6 +2598,19 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
     }
   },
 
+  {
+    id: 'money_bag', name: '\u041c\u0435\u0448\u043e\u043a \u0434\u0435\u043d\u0435\u0433 (1000\u20bd)', icon: '\uD83D\uDCB0', category: 'scripts',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(cyl(0.2, 0.25, 0.35, M.woodMid, 8), 0, 0.18, 0));
+      g.add(pos(cyl(0.12, 0.2, 0.1, M.woodDark, 8), 0, 0.38, 0));
+      g.add(pos(cyl(0.02, 0.02, 0.15, M.metalLight), 0, 0.43, 0));
+      g.add(pos(cyl(0.06, 0.06, 0.02, M.warning, 12), 0.05, 0.35, 0.05));
+      g.add(pos(cyl(0.06, 0.06, 0.02, M.warning, 12), -0.04, 0.36, -0.03));
+      return mergeGroup(g);
+    }
+  },
+
   // ============ СТРОЙКА ============
   {
     id: 'stairs_straight', name: 'Лестница (ступени)', icon: '🪜', category: 'building',

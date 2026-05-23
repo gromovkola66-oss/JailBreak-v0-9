@@ -9,6 +9,7 @@ import { EditorObjectType } from './editor/EditorObjects';
 import { CombatState } from './game/Combat';
 import { CameraSystemState } from './game/CameraSystem';
 import { InventoryState } from './game/InventorySystem';
+import { WalletState } from './game/economy/WalletSystem';
 
 // 10 prison-themed CSS wallpapers (simple reliable gradients)
 const TERMINAL_WALLPAPERS: { background: string }[] = [
@@ -67,6 +68,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [ptCameraState, setPtCameraState] = useState<CameraSystemState | null>(null);
   const [ptInventory, setPtInventory] = useState<InventoryState | null>(null);
   const [ptHasDoors, setPtHasDoors] = useState(false);
+
+  // Wallet state
+  const [ptWallet, setPtWallet] = useState<WalletState | null>(null);
+  const [moneyFlash, setMoneyFlash] = useState<'gain' | 'loss' | null>(null);
 
   // Guard menu state
   const [ptTeam, setPtTeam] = useState<'guard' | 'prisoner'>('prisoner');
@@ -257,6 +262,19 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         setTimeout(() => setPtDoorLockedToast(false), 2000);
       };
 
+      pt.onWalletUpdate = (state) => {
+        setPtWallet(prev => {
+          if (prev && state.balance > prev.balance) {
+            setMoneyFlash('gain');
+            setTimeout(() => setMoneyFlash(null), 600);
+          } else if (prev && state.balance < prev.balance) {
+            setMoneyFlash('loss');
+            setTimeout(() => setMoneyFlash(null), 600);
+          }
+          return { ...state };
+        });
+      };
+
       pt.start();
       // Whether any cell-doors were placed on this map (controls availability
       // of the warden "open cells" command).
@@ -275,6 +293,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setPtCameraState(null);
     setPtInventory(null);
     setPtCombat(null);
+    setPtWallet(null);
     setPtHasDoors(false);
     setPtGuardMenuOpen(false);
     setPtIsWarden(false);
@@ -457,6 +476,15 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
             <span className="font-bold">ТЕСТИРОВАНИЕ</span>
             <span className="text-purple-200 text-sm">F9 — выход</span>
           </div>
+
+          {/* Wallet */}
+          {ptLocked && ptWallet && (
+            <div className={`absolute top-14 right-4 bg-black/60 px-4 py-2 rounded-lg font-mono text-sm transition-all duration-300 ${
+              moneyFlash === 'gain' ? 'text-green-400 scale-105' : moneyFlash === 'loss' ? 'text-red-400 scale-105' : 'text-white'
+            }`}>
+              <span className="text-yellow-400">{'\u20bd'}</span> {ptWallet.balance} / {ptWallet.maxCarry}
+            </div>
+          )}
 
           {/* HP */}
           {ptLocked && ptCombat && (

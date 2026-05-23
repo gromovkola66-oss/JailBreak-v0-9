@@ -11,6 +11,7 @@ import { MapData } from './MapEditor';
 import { getObjectById } from './EditorObjects';
 import { soundSystem } from '../game/SoundSystem';
 import { ITEM_DEFS } from '../game/ItemDefs';
+import { WalletSystem, WalletState } from '../game/economy/WalletSystem';
 import {
   applyToRenderer,
   configureSunShadow,
@@ -28,6 +29,7 @@ export class PlaytestMode {
   private combat: Combat;
   private cameraSystem: CameraSystem;
   private inventory: InventorySystem;
+  private wallet: WalletSystem;
   private doorSystem: DoorSystem;
   private garageDoorSystem: GarageDoorSystem;
   private team: 'guard' | 'prisoner';
@@ -60,6 +62,7 @@ export class PlaytestMode {
   public onDoorStateUpdate?: (cellsOpen: boolean) => void;
   public onGarageDoorLockUpdate?: (state: { state: 'unlocked' | 'locked' | 'temp_locked'; remainingSeconds: number | null }) => void;
   public onDoorLocked?: () => void;
+  public onWalletUpdate?: (state: WalletState) => void;
 
   private frameCount = 0;
   private fpsTime = 0;
@@ -276,6 +279,12 @@ export class PlaytestMode {
       }
     };
 
+    // Wallet system
+    this.wallet = new WalletSystem();
+    this.wallet.onStateChange = (state) => {
+      this.onWalletUpdate?.(state);
+    };
+
     // Система камер наблюдения
     this.cameraSystem = new CameraSystem(this.scene, this.renderer);
     this.cameraSystem.onStateChange = (state) => {
@@ -442,6 +451,15 @@ export class PlaytestMode {
       const distance = Math.sqrt(dx * dx + dz * dz);
 
       if (distance < pickupRange) {
+        // Money bag - special handling
+        if (item.itemType === 'money_bag') {
+          this.wallet.addMoney(1000);
+          this.scene.remove(item.mesh);
+          this.droppedItems.splice(i, 1);
+          soundSystem.playPickup();
+          return;
+        }
+
         const def = ITEM_DEFS[item.itemType];
         if (!def) continue;
 
@@ -479,6 +497,18 @@ export class PlaytestMode {
         this.combat.createDroppedWeaponAt(
           new THREE.Vector3(objData.position.x, objData.position.y + 0.5, objData.position.z)
         );
+        continue;
+      }
+
+      // Money bag pickup
+      if (objData.type === 'money_bag') {
+        const itemPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
+        const obj = objType.create();
+        obj.position.copy(itemPos);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.userData.__interactive = true;
+        this.scene.add(obj);
+        this.droppedItems.push({ mesh: obj, itemType: 'money_bag', position: itemPos });
         continue;
       }
 
@@ -780,6 +810,7 @@ export class PlaytestMode {
     this.onInventoryUpdate?.(this.inventory.getState());
     this.onCameraSystemUpdate?.(this.cameraSystem.getState());
     this.onDoorStateUpdate?.(this.areCellsOpen());
+    this.onWalletUpdate?.(this.wallet.getState());
     this.animate();
   }
 
