@@ -214,6 +214,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     playtestRef.current?.selectCamera(idx);
   }, []);
 
+  const handleOpenTerminalApp = useCallback((app: 'cameras' | 'doors') => {
+    playtestRef.current?.openTerminalApp(app);
+  }, []);
+
+  const handleBackToTerminalDesktop = useCallback(() => {
+    playtestRef.current?.backToTerminalDesktop();
+  }, []);
+
   // === Editor handlers ===
   const handleSelectType = useCallback((typeId: string | null) => { editorRef.current?.selectObjectType(typeId); }, []);
   const handleToggleGrid = useCallback(() => { editorRef.current?.toggleGrid(); }, []);
@@ -485,60 +493,160 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
           {/* Terminal mode overlay */}
           {ptCameraState?.inTerminalMode && (
             <div className="absolute inset-0 pointer-events-auto">
-              {/* Grid view */}
-              {ptCameraState.selectedCameraIndex === null && (
-                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center">
-                  <div className="text-green-400 text-2xl font-bold mb-6 font-mono">СИСТЕМА НАБЛЮДЕНИЯ</div>
-                  {ptCameraState.cameras.length === 0 ? (
-                    <div className="text-gray-400 text-lg font-mono">Нет подключённых камер</div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-4 w-[600px] max-w-[80vw]">
-                      {ptCameraState.cameras.map((cam, idx) => (
-                        <div
-                          key={cam.id}
-                          className="bg-gray-900 border border-green-600/50 rounded-lg p-4 cursor-pointer hover:border-green-400 hover:bg-gray-800 transition-colors"
-                          onClick={() => handleSelectCamera(idx)}
-                        >
-                          <div className="text-green-400 font-mono text-sm mb-1">CAM {idx + 1}</div>
-                          <div className="text-gray-300 text-lg">{cam.label}</div>
-                          <div className="mt-2 h-24 bg-gray-950 rounded flex items-center justify-center border border-gray-700 overflow-hidden">
-                            {ptCameraState.screenshots && ptCameraState.screenshots[idx] ? (
-                              <img src={ptCameraState.screenshots[idx]} alt={`Camera ${idx + 1}`} className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-gray-500 text-sm font-mono">LIVE</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+              {/* Desktop view */}
+              {ptCameraState.terminalView === 'desktop' && (
+                <div className="absolute inset-0 bg-[#008080] flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                  {/* Desktop icons */}
+                  <div className="flex-1 p-4 flex flex-col gap-4">
+                    <div
+                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      onClick={() => handleOpenTerminalApp('cameras')}
+                    >
+                      <span className="text-3xl">📹</span>
+                      <span className="text-white text-xs text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Камеры</span>
                     </div>
-                  )}
-                  <div className="mt-6 text-gray-400 text-sm">
-                    Нажмите <span className="text-yellow-400 font-bold">E</span> - Выйти
+                    <div
+                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      onClick={() => handleOpenTerminalApp('doors')}
+                    >
+                      <span className="text-3xl">🚪</span>
+                      <span className="text-white text-xs text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Двери</span>
+                    </div>
+                  </div>
+                  {/* Taskbar */}
+                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2">
+                    <button className="h-[22px] px-2 flex items-center gap-1 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white">
+                      <span className="w-3 h-3 bg-green-600 inline-block"></span>
+                      <span className="font-bold text-xs">Пуск</span>
+                    </button>
+                    <div className="flex-1"></div>
+                    <div className="text-xs text-gray-700 mr-2">
+                      E - Выйти
+                    </div>
+                    <div className="h-[22px] px-2 flex items-center border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white text-xs">
+                      {new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Zoomed camera view */}
-              {ptCameraState.selectedCameraIndex !== null && (
-                <div className="absolute inset-0 flex flex-col">
-                  <div className="bg-black/70 px-4 py-2 flex items-center justify-between">
-                    <div className="text-green-400 font-mono text-sm">
-                      CAM {ptCameraState.selectedCameraIndex + 1} - {ptCameraState.cameras[ptCameraState.selectedCameraIndex]?.label}
+              {/* Cameras view */}
+              {ptCameraState.terminalView === 'cameras' && (
+                <>
+                  {/* Grid view */}
+                  {ptCameraState.selectedCameraIndex === null && (
+                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center">
+                      <div className="text-green-400 text-2xl font-bold mb-6 font-mono">СИСТЕМА НАБЛЮДЕНИЯ</div>
+                      {ptCameraState.cameras.length === 0 ? (
+                        <div className="text-gray-400 text-lg font-mono">Нет подключённых камер</div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-4 w-[600px] max-w-[80vw]">
+                          {ptCameraState.cameras.map((cam, idx) => (
+                            <div
+                              key={cam.id}
+                              className="bg-gray-900 border border-green-600/50 rounded-lg p-4 cursor-pointer hover:border-green-400 hover:bg-gray-800 transition-colors"
+                              onClick={() => handleSelectCamera(idx)}
+                            >
+                              <div className="text-green-400 font-mono text-sm mb-1">CAM {idx + 1}</div>
+                              <div className="text-gray-300 text-lg">{cam.label}</div>
+                              <div className="mt-2 h-24 bg-gray-950 rounded flex items-center justify-center border border-gray-700 overflow-hidden">
+                                {ptCameraState.screenshots && ptCameraState.screenshots[idx] ? (
+                                  <img src={ptCameraState.screenshots[idx]} alt={`Camera ${idx + 1}`} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="text-gray-500 text-sm font-mono">LIVE</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="mt-6 flex items-center gap-6 text-sm">
+                        <div
+                          className="text-gray-300 cursor-pointer hover:text-white"
+                          onClick={handleBackToTerminalDesktop}
+                        >
+                          ← Рабочий стол
+                        </div>
+                        <div className="text-gray-400">
+                          <span className="text-yellow-400 font-bold">E</span> - Выйти
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-green-400 font-mono text-sm animate-pulse">REC</div>
-                  </div>
-                  <div className="flex-1 relative pointer-events-none">
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-400/[0.02] to-transparent bg-[length:100%_4px] animate-pulse"></div>
-                  </div>
-                  <div className="bg-black/70 px-4 py-2 flex items-center justify-between">
-                    <div
-                      className="text-gray-300 text-sm cursor-pointer hover:text-white pointer-events-auto"
-                      onClick={() => handleSelectCamera(null)}
-                    >
-                      ← Назад к сетке
+                  )}
+
+                  {/* Zoomed camera view */}
+                  {ptCameraState.selectedCameraIndex !== null && (
+                    <div className="absolute inset-0 flex flex-col">
+                      <div className="bg-black/70 px-4 py-2 flex items-center justify-between">
+                        <div className="text-green-400 font-mono text-sm">
+                          CAM {ptCameraState.selectedCameraIndex + 1} - {ptCameraState.cameras[ptCameraState.selectedCameraIndex]?.label}
+                        </div>
+                        <div className="text-green-400 font-mono text-sm animate-pulse">REC</div>
+                      </div>
+                      <div className="flex-1 relative pointer-events-none">
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-400/[0.02] to-transparent bg-[length:100%_4px] animate-pulse"></div>
+                      </div>
+                      <div className="bg-black/70 px-4 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div
+                            className="text-gray-300 text-sm cursor-pointer hover:text-white"
+                            onClick={() => handleSelectCamera(null)}
+                          >
+                            ← Назад к сетке
+                          </div>
+                          <div
+                            className="text-gray-300 text-sm cursor-pointer hover:text-white"
+                            onClick={handleBackToTerminalDesktop}
+                          >
+                            ← Рабочий стол
+                          </div>
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          <span className="text-yellow-400 font-bold">E</span> - Выйти
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-gray-400 text-sm">
-                      <span className="text-yellow-400 font-bold">E</span> - Выйти
+                  )}
+                </>
+              )}
+
+              {/* Doors view */}
+              {ptCameraState.terminalView === 'doors' && (
+                <div className="absolute inset-0 bg-[#008080] flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                  {/* Centered Win95 window */}
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="w-[400px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                      {/* Title bar */}
+                      <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                        <span className="text-xs">Двери</span>
+                        <button
+                          className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                          onClick={handleBackToTerminalDesktop}
+                        >
+                          X
+                        </button>
+                      </div>
+                      {/* Window body */}
+                      <div className="p-6 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
+                        <div className="text-center">
+                          <div className="text-4xl mb-3">🚧</div>
+                          <div className="text-sm">Система находится в разработке</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Taskbar */}
+                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2">
+                    <button className="h-[22px] px-2 flex items-center gap-1 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white">
+                      <span className="w-3 h-3 bg-green-600 inline-block"></span>
+                      <span className="font-bold text-xs">Пуск</span>
+                    </button>
+                    <div className="flex-1"></div>
+                    <div className="text-xs text-gray-700 mr-2">
+                      E - Выйти
+                    </div>
+                    <div className="h-[22px] px-2 flex items-center border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white text-xs">
+                      {new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 </div>

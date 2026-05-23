@@ -21,6 +21,7 @@ export interface CameraSystemState {
   cameras: SecurityCamera[];
   selectedCameraIndex: number | null;
   screenshots: string[];
+  terminalView: 'desktop' | 'cameras' | 'doors';
 }
 
 export class CameraSystem {
@@ -34,6 +35,7 @@ export class CameraSystem {
   private _selectedCameraIndex: number | null = null;
   private _activeCameras: SecurityCamera[] = [];
   private _screenshots: string[] = [];
+  private _terminalView: 'desktop' | 'cameras' | 'doors' = 'desktop';
 
   private highlightedMeshes: { mesh: THREE.Mesh; originalMaterial: THREE.Material }[] = [];
 
@@ -204,14 +206,7 @@ export class CameraSystem {
 
     this._inTerminalMode = true;
     this._selectedCameraIndex = null;
-
-    // Capture initial screenshots
-    this.captureScreenshots();
-
-    // Set up interval to refresh screenshots every 1 second
-    this.screenshotInterval = setInterval(() => {
-      this.captureScreenshots();
-    }, 1000);
+    this._terminalView = 'desktop';
 
     document.exitPointerLock();
     this.emitState();
@@ -223,6 +218,7 @@ export class CameraSystem {
     this._selectedCameraIndex = null;
     this._activeCameras = [];
     this._screenshots = [];
+    this._terminalView = 'desktop';
     this.clearHighlight();
     this._terminalHighlighted = false;
     if (this.screenshotInterval !== null) {
@@ -230,6 +226,30 @@ export class CameraSystem {
       this.screenshotInterval = null;
     }
     document.body.requestPointerLock();
+    this.emitState();
+  }
+
+  openCamerasApp() {
+    this._terminalView = 'cameras';
+    this.captureScreenshots();
+    if (!this.screenshotInterval) {
+      this.screenshotInterval = setInterval(() => this.captureScreenshots(), 1000);
+    }
+    this.emitState();
+  }
+
+  openDoorsApp() {
+    this._terminalView = 'doors';
+    this.emitState();
+  }
+
+  backToDesktop() {
+    this._terminalView = 'desktop';
+    this._selectedCameraIndex = null;
+    if (this.screenshotInterval !== null) {
+      clearInterval(this.screenshotInterval);
+      this.screenshotInterval = null;
+    }
     this.emitState();
   }
 
@@ -390,6 +410,7 @@ export class CameraSystem {
         cameras: this._activeCameras,
         selectedCameraIndex: this._selectedCameraIndex,
         screenshots: this._screenshots,
+        terminalView: this._terminalView,
       });
     }
   }
@@ -417,6 +438,7 @@ export class CameraSystem {
       cameras: this._activeCameras,
       selectedCameraIndex: this._selectedCameraIndex,
       screenshots: this._screenshots,
+      terminalView: this._terminalView,
     };
   }
 }

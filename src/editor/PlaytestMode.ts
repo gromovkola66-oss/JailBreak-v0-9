@@ -706,6 +706,18 @@ export class PlaytestMode {
     this.cameraSystem.selectCamera(index);
   }
 
+  openTerminalApp(app: 'cameras' | 'doors') {
+    if (app === 'cameras') {
+      this.cameraSystem.openCamerasApp();
+    } else if (app === 'doors') {
+      this.cameraSystem.openDoorsApp();
+    }
+  }
+
+  backToTerminalDesktop() {
+    this.cameraSystem.backToDesktop();
+  }
+
   inventoryEquipSlot(index: number) {
     this.inventory.equipSlot(index);
   }
