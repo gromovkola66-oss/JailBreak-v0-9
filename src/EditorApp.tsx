@@ -572,15 +572,13 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                 </div>
               )}
 
-              {/* Cameras view */}
-              {ptCameraState.terminalView === 'cameras' && (
+              {/* Cameras view - grid (no camera selected) */}
+              {ptCameraState.terminalView === 'cameras' && ptCameraState.selectedCameraIndex === null && (
                 <div className="absolute inset-0 bg-[#008080] flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
-                  <div className="flex-1 flex items-center justify-center">
-                  {/* Grid view */}
-                  {ptCameraState.selectedCameraIndex === null && (
-                    <div className="w-[700px] max-w-[80vw] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                  <div className="flex-1 flex items-center justify-center p-4">
+                    <div className="w-[95vw] max-w-[1100px] h-[85vh] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg flex flex-col">
                       {/* Title bar */}
-                      <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                      <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between shrink-0">
                         <span className="text-xs">Система наблюдения</span>
                         <button
                           className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
@@ -589,21 +587,21 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                           X
                         </button>
                       </div>
-                      {/* Window body */}
-                      <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
+                      {/* Window body - scrollable */}
+                      <div className="flex-1 overflow-y-auto p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
                         {ptCameraState.cameras.length === 0 ? (
                           <div className="text-center py-8 text-gray-600">Нет подключённых камер</div>
                         ) : (
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-4 gap-3">
                             {ptCameraState.cameras.map((cam, idx) => (
                               <div
                                 key={cam.id}
-                                className="border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#c0c0c0] p-3 cursor-pointer hover:bg-[#d4d4d4] transition-colors"
+                                className="border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#c0c0c0] p-2 cursor-pointer hover:bg-[#d4d4d4] transition-colors"
                                 onClick={() => handleSelectCamera(idx)}
                               >
                                 <div className="text-xs font-bold mb-1">CAM {idx + 1}</div>
-                                <div className="text-xs mb-2">{cam.label}</div>
-                                <div className="h-20 bg-black border border-gray-600 flex items-center justify-center overflow-hidden">
+                                <div className="text-xs mb-1 truncate">{cam.label}</div>
+                                <div className="h-16 bg-black border border-gray-600 flex items-center justify-center overflow-hidden">
                                   {ptCameraState.screenshots && ptCameraState.screenshots[idx] ? (
                                     <img src={ptCameraState.screenshots[idx]} alt={`Camera ${idx + 1}`} className="w-full h-full object-cover" />
                                   ) : (
@@ -616,54 +614,60 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                         )}
                       </div>
                     </div>
-                  )}
-
-                  {/* Zoomed camera view */}
-                  {ptCameraState.selectedCameraIndex !== null && (
-                    <div className="absolute inset-0 flex flex-col">
-                      <div className="bg-[#c0c0c0] border-b-2 border-gray-700 px-4 py-1 flex items-center justify-between">
-                        <div className="text-xs font-bold">
-                          CAM {ptCameraState.selectedCameraIndex + 1} - {ptCameraState.cameras[ptCameraState.selectedCameraIndex]?.label}
-                        </div>
-                        <div className="text-red-600 text-xs font-bold animate-pulse">REC</div>
-                      </div>
-                      <div className="flex-1 relative pointer-events-none">
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-400/[0.02] to-transparent bg-[length:100%_4px] animate-pulse"></div>
-                      </div>
-                      <div className="bg-[#c0c0c0] border-t-2 border-white px-4 py-1 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div
-                            className="text-xs cursor-pointer hover:underline"
-                            onClick={() => handleSelectCamera(null)}
-                          >
-                            ← Назад к сетке
-                          </div>
-                          <div
-                            className="text-xs cursor-pointer hover:underline"
-                            onClick={handleBackToTerminalDesktop}
-                          >
-                            ← Рабочий стол
-                          </div>
-                        </div>
-                        <div className="text-xs">
-                          <span className="text-yellow-700 font-bold">E</span> - Выйти
-                        </div>
-                      </div>
-                    </div>
-                  )}
                   </div>
                   {/* Taskbar */}
-                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2">
+                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2 shrink-0">
                     <button className="h-[22px] px-2 flex items-center gap-1 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white">
                       <span className="w-3 h-3 bg-green-600 inline-block"></span>
                       <span className="font-bold text-xs">Пуск</span>
                     </button>
+                    <div className="h-[22px] px-2 flex items-center border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#a0a0a0] text-xs font-bold">
+                      📹 Камеры
+                    </div>
                     <div className="flex-1"></div>
                     <div className="text-xs text-gray-700 mr-2">
                       E - Выйти
                     </div>
                     <div className="h-[22px] px-2 flex items-center border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white text-xs">
                       {new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Cameras view - selected camera (transparent so 3D canvas shows through) */}
+              {ptCameraState.terminalView === 'cameras' && ptCameraState.selectedCameraIndex !== null && (
+                <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                  {/* Top bar */}
+                  <div className="bg-black/80 px-4 py-2 flex items-center justify-between shrink-0">
+                    <div className="text-green-400 font-mono text-sm">
+                      CAM {ptCameraState.selectedCameraIndex + 1} - {ptCameraState.cameras[ptCameraState.selectedCameraIndex]?.label}
+                    </div>
+                    <div className="text-red-500 font-mono text-sm animate-pulse">● REC</div>
+                  </div>
+                  {/* Middle - transparent area where 3D camera view shows through */}
+                  <div className="flex-1 relative pointer-events-none">
+                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.015) 2px, rgba(0,255,0,0.015) 4px)' }}></div>
+                    <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 80px rgba(0,0,0,0.4)' }}></div>
+                  </div>
+                  {/* Bottom bar */}
+                  <div className="bg-black/80 px-4 py-2 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="text-gray-300 text-sm cursor-pointer hover:text-white pointer-events-auto"
+                        onClick={() => handleSelectCamera(null)}
+                      >
+                        ← Назад к сетке
+                      </div>
+                      <div
+                        className="text-gray-300 text-sm cursor-pointer hover:text-white pointer-events-auto"
+                        onClick={handleBackToTerminalDesktop}
+                      >
+                        ← Рабочий стол
+                      </div>
+                    </div>
+                    <div className="text-gray-400 text-sm">
+                      <span className="text-yellow-400 font-bold">E</span> - Выйти
                     </div>
                   </div>
                 </div>
