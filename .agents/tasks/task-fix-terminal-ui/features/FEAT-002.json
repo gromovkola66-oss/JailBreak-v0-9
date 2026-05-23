@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Rewrite the terminal overlay in GameUI.tsx to match the EditorApp.tsx terminal system - fixing all 5 user-reported bugs: (1) camera view not showing, (2) gate lock indicators, (3) English JailBreak watermark, (4) taskbar showing current app, (5) camera overflow scrolling. Also add necessary methods to Game.ts and callbacks in App.tsx.",
+  "status": "pending",
+  "steps": [
+    "Step 1 - Add terminal navigation methods to Game.ts: Add openTerminalApp(app: 'cameras' | 'doors'), backToTerminalDesktop() methods that delegate to this.cameraSystem.openCamerasApp(), this.cameraSystem.openDoorsApp(), this.cameraSystem.backToDesktop(). Also add a GarageDoorSystem instance to Game.ts (it does not currently have one - only PlaytestMode does). Register garage doors from the prison map if any exist. Add a garageDoorLockState field and expose onGarageDoorLockUpdate callback. Add methods: lockGarageDoors(), unlockGarageDoors(), tempLockGarageDoors(minutes). Export a getGarageDoorLockState() method.",
+    "Step 2 - Update App.tsx to pass new callbacks to GameUI: Add state for garageDoorLockState. Wire up onGarageDoorLockUpdate from Game. Add handleOpenTerminalApp, handleBackToTerminalDesktop callbacks. Pass them as new props to GameUI: onOpenTerminalApp, onBackToTerminalDesktop, garageDoorLockState, onLockGarageDoors, onUnlockGarageDoors, onTempLockGarageDoors.",
+    "Step 3 - Rewrite GameUI.tsx terminal overlay to have full desktop/cameras/doors views: Replace the current terminal overlay (which only has a flat camera grid and HUD) with a proper multi-view system matching EditorApp.tsx. Specifically: (a) When terminalView==='desktop': Show teal background (#008080), 'JailBreak' watermark in English (large text, 'Jail' in blue-400, 'Break' in orange-400, with opacity-15 and gentleSpin animation), desktop icons for Cameras and Doors, and a taskbar at bottom with Start button and clock. (b) When terminalView==='cameras': Show the cameras window with grid of cameras. Use grid-cols-3 (not 2) and make the window wider (w-[900px] max-w-[90vw]) to fit more cameras. Add max-h-[60vh] overflow-y-auto on the grid container so cameras beyond 12 scroll. Include the camera HUD view when selectedCameraIndex!==null (transparent middle, top/bottom bars, scanline). (c) When terminalView==='doors': Show door lock management window with status indicator showing colored dot: green for unlocked, red for locked, amber for temp_locked, with countdown timer. Action buttons for lock/unlock/temp-lock. (d) ALL views get a taskbar at the bottom showing: Start button, currently active app name (highlighted button style for the active view), E-exit hint, and clock.",
+    "Step 4 - Update GameUI props interface: Add new props: onOpenTerminalApp, onBackToTerminalDesktop, garageDoorLockState, onLockGarageDoors, onUnlockGarageDoors, onTempLockGarageDoors. Wire them into the terminal overlay JSX.",
+    "Step 5 - Ensure camera selection flow works: When user clicks a camera in the grid, it calls onSelectCamera(idx). This already calls Game.selectSecurityCamera which calls cameraSystem.selectCamera. The render flow in Game.animate() already renders from the security camera when selectedCameraIndex !== null. The key fix: Make sure openCamerasApp() is called when entering cameras view so that screenshots are captured for thumbnails. The desktop icon click calls onOpenTerminalApp('cameras') which calls game.openTerminalApp('cameras') which calls cameraSystem.openCamerasApp() - this starts the screenshot interval.",
+    "Step 6 - Verify the gentleSpin animation exists in index.css (it already does - confirm it is there)."
+  ],
+  "acceptance_criteria": [
+    "When entering terminal mode in the main game, user sees a desktop with JailBreak watermark in English, camera and door icons, and a taskbar at the bottom",
+    "Clicking the Cameras icon opens the camera grid view with thumbnails updating every second",
+    "Clicking a camera shows the live 3D camera view through the transparent middle of the HUD overlay",
+    "The cameras grid uses 3 columns and has a scrollbar when there are more than 12 cameras",
+    "The Doors section shows colored indicators: green=unlocked, red=locked, amber=temp_locked with countdown",
+    "The taskbar at the bottom shows which app is currently open (highlighted button)",
+    "npx tsc --noEmit passes with no errors",
+    "npm run build succeeds"
+  ],
+  "verification": [
+    "Run npx tsc --noEmit in the project directory and confirm exit code 0",
+    "Run npm run build and confirm it succeeds"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
