@@ -10,58 +10,28 @@ import { CombatState } from './game/Combat';
 import { CameraSystemState } from './game/CameraSystem';
 import { InventoryState } from './game/InventorySystem';
 
-// 10 prison-themed CSS wallpapers
-const TERMINAL_WALLPAPERS: { background: string; overlay?: string }[] = [
-  // 1. Prison bars silhouette
-  {
-    background: 'linear-gradient(180deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%)',
-    overlay: `repeating-linear-gradient(90deg, transparent 0px, transparent 48px, #111 48px, #111 56px)`
-  },
-  // 2. Guard tower at sunset
-  {
-    background: 'linear-gradient(180deg, #ff6b35 0%, #ff8c42 25%, #ffd166 50%, #4a2c2a 50%, #2d1b18 100%)',
-  },
-  // 3. Escape tunnel (dark with light at end)
-  {
-    background: 'radial-gradient(ellipse at 50% 50%, #8b7355 0%, #4a3728 20%, #1a1a1a 50%, #0a0a0a 100%)',
-  },
-  // 4. Searchlight beams
-  {
-    background: 'linear-gradient(180deg, #0a0a2a 0%, #1a1a3a 100%)',
-    overlay: `conic-gradient(from 200deg at 20% 0%, transparent 0deg, rgba(255,255,200,0.15) 10deg, transparent 20deg),
-              conic-gradient(from 340deg at 80% 0%, transparent 0deg, rgba(255,255,200,0.1) 15deg, transparent 25deg)`
-  },
-  // 5. Barbed wire fence
-  {
-    background: 'linear-gradient(180deg, #87ceeb 0%, #b0e0e6 40%, #556b2f 40%, #2d4a0f 100%)',
-    overlay: `repeating-linear-gradient(0deg, transparent 0px, transparent 58px, rgba(50,50,50,0.8) 58px, rgba(50,50,50,0.8) 62px)`
-  },
-  // 6. Prison yard aerial view
-  {
-    background: 'linear-gradient(135deg, #4a4a4a 0%, #6b6b6b 25%, #556b2f 25%, #3d5a1e 75%, #4a4a4a 75%, #333 100%)',
-  },
-  // 7. Watchtower with spotlight (night)
-  {
-    background: 'linear-gradient(180deg, #0d1b2a 0%, #1b2838 60%, #2d4a0f 60%, #1a2e0a 100%)',
-    overlay: `conic-gradient(from 250deg at 50% 20%, transparent 0deg, rgba(255,255,150,0.12) 15deg, transparent 30deg)`
-  },
-  // 8. Cell block corridor
-  {
-    background: 'linear-gradient(180deg, #3d3d3d 0%, #4a4a4a 5%, #4a4a4a 95%, #333 100%)',
-    overlay: `repeating-linear-gradient(90deg, transparent 0px, transparent 80px, rgba(0,0,0,0.3) 80px, rgba(0,0,0,0.3) 84px, transparent 84px, transparent 164px),
-              linear-gradient(180deg, rgba(200,180,100,0.1) 0%, transparent 30%)`
-  },
-  // 9. Handcuffs / chains pattern
-  {
-    background: 'linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%)',
-    overlay: `radial-gradient(circle at 30% 40%, rgba(150,150,150,0.15) 0%, transparent 20%),
-              radial-gradient(circle at 70% 60%, rgba(150,150,150,0.15) 0%, transparent 20%),
-              linear-gradient(45deg, transparent 45%, rgba(150,150,150,0.1) 45%, rgba(150,150,150,0.1) 55%, transparent 55%)`
-  },
-  // 10. Freedom birds flying over wall
-  {
-    background: 'linear-gradient(180deg, #ff9a56 0%, #ff6b6b 30%, #c44569 50%, #4a4a4a 50%, #333 100%)',
-  },
+// 10 prison-themed CSS wallpapers (simple reliable gradients)
+const TERMINAL_WALLPAPERS: { background: string }[] = [
+  // 1. Dark blue prison night
+  { background: 'linear-gradient(180deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%)' },
+  // 2. Sunset over prison wall
+  { background: 'linear-gradient(180deg, #ff6b35 0%, #ff8c42 30%, #4a2c2a 60%, #2d1b18 100%)' },
+  // 3. Dark tunnel
+  { background: 'radial-gradient(ellipse at 50% 50%, #5a4a3a 0%, #2a1a10 40%, #0a0a0a 100%)' },
+  // 4. Night sky
+  { background: 'linear-gradient(180deg, #0a0a2a 0%, #1a1a4a 50%, #2a2a5a 100%)' },
+  // 5. Prison yard (sky and grass)
+  { background: 'linear-gradient(180deg, #5b9bd5 0%, #87ceeb 35%, #556b2f 40%, #2d4a0f 100%)' },
+  // 6. Concrete gray
+  { background: 'linear-gradient(135deg, #4a4a4a 0%, #6b6b6b 50%, #3a3a3a 100%)' },
+  // 7. Dark green night watch
+  { background: 'linear-gradient(180deg, #0d1b2a 0%, #1b2838 50%, #2d4a0f 80%, #1a2e0a 100%)' },
+  // 8. Steel corridor
+  { background: 'linear-gradient(180deg, #3d3d3d 0%, #5a5a5a 50%, #333333 100%)' },
+  // 9. Deep ocean blue
+  { background: 'linear-gradient(135deg, #1a2a3a 0%, #2c3e50 50%, #1a2a3a 100%)' },
+  // 10. Warm sunset escape
+  { background: 'linear-gradient(180deg, #ff9a56 0%, #ff6b6b 40%, #c44569 70%, #4a2040 100%)' },
 ];
 
 interface EditorAppProps {
@@ -621,9 +591,6 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                 <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none" onClick={() => startMenuOpen && setStartMenuOpen(false)}>
                   {/* Wallpaper background */}
                   <div className="absolute inset-0" style={{ background: TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
-                  {TERMINAL_WALLPAPERS[terminalWallpaperIdx].overlay && (
-                    <div className="absolute inset-0" style={{ background: TERMINAL_WALLPAPERS[terminalWallpaperIdx].overlay }} />
-                  )}
                   {/* JailBreak watermark */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15 pointer-events-none" style={{ animation: 'gentleSpin 4s ease-in-out infinite' }}>
                     <span className="text-7xl font-black text-blue-400">Jail</span>
@@ -831,7 +798,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
               {/* Cameras view - grid (no camera selected) */}
               {ptCameraState.terminalView === 'cameras' && ptCameraState.selectedCameraIndex === null && (
-                <div className="absolute inset-0 bg-[#008080] flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                  {/* Wallpaper background */}
+                  <div className="absolute inset-0" style={{ background: TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   <div className="flex-1 flex items-center justify-center p-4">
                     <div className="w-[95vw] max-w-[1100px] h-[85vh] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg flex flex-col">
                       {/* Title bar */}
@@ -932,7 +901,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
               {/* Doors view */}
               {ptCameraState.terminalView === 'doors' && (
-                <div className="absolute inset-0 bg-[#008080] flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                  {/* Wallpaper background */}
+                  <div className="absolute inset-0" style={{ background: TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   {/* Centered Win95 window */}
                   <div className="flex-1 flex items-center justify-center">
                     <div className="w-[450px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
