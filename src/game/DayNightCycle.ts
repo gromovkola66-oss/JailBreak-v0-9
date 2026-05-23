@@ -2,11 +2,11 @@ import * as THREE from 'three';
 
 export type DayPhase = 'dawn' | 'day' | 'dusk' | 'night';
 
-const TOTAL_CYCLE_SECONDS = 15 * 60; // 15 minutes
+const TOTAL_CYCLE_SECONDS = 13 * 60; // 13 minutes
 const DAWN_END = 1 * 60;             // 0:00 - 1:00
 const DAY_END = 9 * 60;              // 1:00 - 9:00
 const DUSK_END = 10 * 60;            // 9:00 - 10:00
-// NIGHT: 10:00 - 15:00
+// NIGHT: 10:00 - 13:00 (3 minutes)
 
 // Pre-allocated color constants to avoid per-frame GC pressure
 const COLOR_NIGHT_AMBIENT = new THREE.Color(0x2233aa);

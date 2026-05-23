@@ -692,6 +692,15 @@ export class PlaytestMode {
           const worldPos = new THREE.Vector3();
           node.getWorldPosition(worldPos);
           light.position.copy(worldPos);
+          // Disable shadows for performance (many placed lights kill FPS)
+          light.castShadow = false;
+          // Increase intensity so lights actually illuminate rooms
+          if (light instanceof THREE.PointLight) {
+            light.intensity *= 3;
+            light.distance = Math.max(light.distance, 14);
+          } else if (light instanceof THREE.SpotLight) {
+            light.intensity *= 2.5;
+          }
           extractedLights.push(light);
         }
       });

@@ -1595,7 +1595,7 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       g.add(pos(box(0.03, 0.06, 0.18, M.metalDark), -0.33, 3.94, 0));
       g.add(pos(box(0.03, 0.06, 0.18, M.metalDark), 0.33, 3.94, 0));
       // Свет
-      const light = new THREE.PointLight(0xffffee, 1, 12);
+      const light = new THREE.PointLight(0xffffee, 2.5, 14);
       light.position.set(0, 3.8, 0);
       g.add(light);
       g.userData.hasLight = true;
@@ -1614,7 +1614,7 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       g.add(pos(cyl(0.08, 0.1, 0.12, M.lampBody, 8), 0.18, 2.48, 0));
       // Лампочка
       g.add(pos(cyl(0.04, 0.04, 0.06, M.lampGlow, 8), 0.18, 2.4, 0));
-      const light = new THREE.PointLight(0xffffee, 0.6, 8);
+      const light = new THREE.PointLight(0xffffee, 2, 10);
       light.position.set(0.2, 2.38, 0);
       g.add(light);
       g.userData.hasLight = true;
@@ -1629,7 +1629,7 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       g.add(pos(cyl(0.04, 0.04, 1.5, M.metalDark), 0, 0.77, 0));
       g.add(pos(cyl(0.12, 0.08, 0.2, M.metalMid, 8), 0, 1.6, 0));
       g.add(pos(cyl(0.06, 0.06, 0.08, M.lampGlow, 8), 0, 1.55, 0));
-      const light = new THREE.PointLight(0xffffcc, 0.8, 10);
+      const light = new THREE.PointLight(0xffffcc, 2, 12);
       light.position.set(0, 1.7, 0);
       g.add(light);
       g.userData.hasLight = true;
@@ -1643,7 +1643,7 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       g.add(pos(box(0.15, 0.15, 0.2, M.metalDark), 0, 3.92, 0));
       g.add(pos(cyl(0.1, 0.15, 0.15, M.metalMid, 8), 0, 3.8, 0));
       g.add(pos(cyl(0.08, 0.08, 0.04, M.lampGlow, 8), 0, 3.72, 0));
-      const light = new THREE.SpotLight(0xffffff, 2, 15, 0.5, 0.5);
+      const light = new THREE.SpotLight(0xffffff, 5, 18, 0.5, 0.5);
       light.position.set(0, 3.7, 0);
       light.target.position.set(0, 0, 0);
       g.add(light);
@@ -1660,7 +1660,7 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       const bulb = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.04, 0.12), new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0xff0000, emissiveIntensity: 0.8 }));
       bulb.position.set(0, 3.9, 0);
       g.add(bulb);
-      const light = new THREE.PointLight(0xff0000, 0.8, 10);
+      const light = new THREE.PointLight(0xff0000, 2, 12);
       light.position.set(0, 3.85, 0);
       g.add(light);
       g.userData.hasLight = true;
@@ -1673,7 +1673,7 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       const g = new THREE.Group();
       const neonMat = new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x2266ff, emissiveIntensity: 1.0 });
       g.add(pos(new THREE.Mesh(new THREE.BoxGeometry(2, 0.06, 0.06), neonMat), 0, 3.5, 0));
-      const light = new THREE.PointLight(0x4488ff, 0.6, 8);
+      const light = new THREE.PointLight(0x4488ff, 2, 10);
       light.position.set(0, 3.4, 0);
       g.add(light);
       g.userData.hasLight = true;
@@ -2007,7 +2007,7 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       // Visible bulb
       g.add(pos(cyl(0.04, 0.04, 0.1, M.lampGlow, 8), 0, 3.35, 0));
       // PointLight
-      const light = new THREE.PointLight(0xffffcc, 1.2, 14);
+      const light = new THREE.PointLight(0xffffcc, 3, 16);
       light.position.set(0, 3.3, 0);
       g.add(light);
       g.userData.hasLight = true;
@@ -2853,7 +2853,7 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), M.lampGlow);
       bulb.position.set(0, 2.82, 0);
       g.add(bulb);
-      const light = new THREE.PointLight(0xffffcc, 0.8, 10);
+      const light = new THREE.PointLight(0xffffcc, 2, 12);
       light.position.set(0, 2.8, 0);
       g.add(light);
       g.userData.hasLight = true;
@@ -2960,7 +2960,7 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       // Стол внутри
       g.add(pos(box(0.6, 0.04, 0.4, M.woodMid), 0, 0.8, -0.5));
       // Свет
-      const light = new THREE.PointLight(0xffffcc, 0.5, 6);
+      const light = new THREE.PointLight(0xffffcc, 1.5, 8);
       light.position.set(0, 2.5, 0);
       g.add(light);
       g.userData.hasLight = true;

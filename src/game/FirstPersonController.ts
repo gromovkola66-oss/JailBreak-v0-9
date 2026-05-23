@@ -175,8 +175,6 @@ export class FirstPersonController {
   isMoving(): boolean { return this.moveForward || this.moveBackward || this.moveLeft || this.moveRight; }
 
   update(delta: number) {
-    if (!this.isLocked) return;
-
     // Track previous frame feet position for fall-through detection
     this.prevFeetY = this.camera.position.y - this.currentHeight;
 
@@ -184,26 +182,31 @@ export class FirstPersonController {
     const targetHeight = this.isCrouching ? this.crouchHeight : this.standHeight;
     this.currentHeight += (targetHeight - this.currentHeight) * delta * 10;
 
-    // Gravity
+    // Gravity always applies (even when pointer lock is lost, e.g. inventory open)
     this.velocity.y -= this.gravity * delta;
 
-    // Speed
-    let speed = this.walkSpeed;
-    if (this.isSprinting && this.isMoving()) speed = this.sprintSpeed;
-    if (this.isCrouching) speed = this.crouchSpeed;
+    // Player input (movement) only when pointer is locked
+    let moveX = 0;
+    let moveZ = 0;
+    if (this.isLocked) {
+      // Speed
+      let speed = this.walkSpeed;
+      if (this.isSprinting && this.isMoving()) speed = this.sprintSpeed;
+      if (this.isCrouching) speed = this.crouchSpeed;
 
-    // Direction
-    this.direction.z = Number(this.moveForward) - Number(this.moveBackward);
-    this.direction.x = Number(this.moveRight) - Number(this.moveLeft);
-    this.direction.normalize();
+      // Direction
+      this.direction.z = Number(this.moveForward) - Number(this.moveBackward);
+      this.direction.x = Number(this.moveRight) - Number(this.moveLeft);
+      this.direction.normalize();
 
-    const forward = new THREE.Vector3();
-    this.camera.getWorldDirection(forward);
-    forward.y = 0; forward.normalize();
-    const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0));
+      const forward = new THREE.Vector3();
+      this.camera.getWorldDirection(forward);
+      forward.y = 0; forward.normalize();
+      const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0));
 
-    const moveX = (forward.x * this.direction.z + right.x * this.direction.x) * speed * delta;
-    const moveZ = (forward.z * this.direction.z + right.z * this.direction.x) * speed * delta;
+      moveX = (forward.x * this.direction.z + right.x * this.direction.x) * speed * delta;
+      moveZ = (forward.z * this.direction.z + right.z * this.direction.x) * speed * delta;
+    }
 
     // Horizontal collision with step-up
     const stepUpHeight = 0.55; // Maximum height player can step up (stairs are 0.5 per step)

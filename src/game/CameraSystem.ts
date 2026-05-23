@@ -63,7 +63,7 @@ export class CameraSystem {
   constructor(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
     this.scene = scene;
     this.renderer = renderer;
-    this.securityCamera = new THREE.PerspectiveCamera(70, 16 / 9, 0.1, 200);
+    this.securityCamera = new THREE.PerspectiveCamera(70, 16 / 9, 0.1, 1000);
     this.terminalScreenTarget = new THREE.WebGLRenderTarget(256, 144);
 
     // Pre-allocate pooled buffers
