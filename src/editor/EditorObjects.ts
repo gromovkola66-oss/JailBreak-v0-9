@@ -3193,6 +3193,89 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
     }
   },
 
+  // === ЛЕСТНИЦА ===
+  {
+    id: 'ladder', name: 'Лестница', icon: '🪜', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Two vertical rails
+      g.add(pos(cyl(0.03, 0.03, 3.5, M.metalDark), -0.25, 1.75, 0));
+      g.add(pos(cyl(0.03, 0.03, 3.5, M.metalDark), 0.25, 1.75, 0));
+      // 8 horizontal rungs
+      for (let i = 0; i < 8; i++) {
+        const y = 0.3 + i * 0.4;
+        g.add(pos(box(0.5, 0.04, 0.04, M.metalLight), 0, y, 0));
+      }
+      // Invisible collision box
+      const collisionGeo = new THREE.BoxGeometry(0.6, 3.5, 0.2);
+      const collisionMat = new THREE.MeshBasicMaterial({ visible: false });
+      const collisionBox = new THREE.Mesh(collisionGeo, collisionMat);
+      collisionBox.position.set(0, 1.75, 0);
+      g.add(collisionBox);
+      g.userData.objectType = 'ladder';
+      g.userData.climbHeight = 3.5;
+      return g;
+    }
+  },
+
+  // === ОКНО ===
+  {
+    id: 'window_glass', name: 'Окно', icon: '🪟', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Metal frame (4 bars forming rectangle 1.2m x 1.5m)
+      g.add(pos(box(1.2, 0.06, 0.06, M.metalDark), 0, 0.75, 0));   // bottom
+      g.add(pos(box(1.2, 0.06, 0.06, M.metalDark), 0, 2.25, 0));   // top
+      g.add(pos(box(0.06, 1.5, 0.06, M.metalDark), -0.57, 1.5, 0)); // left
+      g.add(pos(box(0.06, 1.5, 0.06, M.metalDark), 0.57, 1.5, 0));  // right
+      // Transparent glass pane in center
+      const glassMesh = box(1.08, 1.38, 0.02, M.glass);
+      glassMesh.position.set(0, 1.5, 0);
+      glassMesh.userData.isGlass = true;
+      g.add(glassMesh);
+      g.userData.objectType = 'window_glass';
+      return g;
+    }
+  },
+
+  // === КОЛЮЧАЯ ПРОВОЛОКА ===
+  {
+    id: 'barbed_wire', name: 'Колючая проволока', icon: '🔪', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Two short posts
+      g.add(pos(cyl(0.04, 0.04, 0.8, M.metalDark), -1.0, 0.4, 0));
+      g.add(pos(cyl(0.04, 0.04, 0.8, M.metalDark), 1.0, 0.4, 0));
+      // Coiled wire segments between posts
+      for (let i = 0; i < 16; i++) {
+        const t = i / 16;
+        const x = -0.9 + t * 1.8;
+        const a = t * Math.PI * 6;
+        const y = 0.6 + Math.sin(a) * 0.1;
+        const z = Math.cos(a) * 0.1;
+        const wire = cyl(0.008, 0.008, 0.15, M.barbedWire);
+        wire.position.set(x, y, z);
+        wire.rotation.z = Math.PI / 4 + t * 0.5;
+        g.add(wire);
+      }
+      // Second coil row
+      for (let i = 0; i < 16; i++) {
+        const t = i / 16;
+        const x = -0.9 + t * 1.8;
+        const a = t * Math.PI * 6 + Math.PI;
+        const y = 0.75 + Math.sin(a) * 0.08;
+        const z = Math.cos(a) * 0.08;
+        const wire = cyl(0.008, 0.008, 0.12, M.barbedWire);
+        wire.position.set(x, y, z);
+        wire.rotation.z = -Math.PI / 4 + t * 0.3;
+        g.add(wire);
+      }
+      g.userData.objectType = 'barbed_wire';
+      g.userData.damagePerSecond = 5;
+      return g;
+    }
+  },
+
 ];
 
 function createGeometryForShape(shape: VoxelShape): THREE.BufferGeometry {

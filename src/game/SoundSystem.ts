@@ -644,6 +644,116 @@ export class SoundSystem {
     noise.stop(now + 0.5);
   }
 
+  // === РАЗБИТИЕ СТЕКЛА ===
+  playGlassBreak() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // High-frequency noise burst (shattering)
+    const bufferSize = Math.floor(ctx.sampleRate * 0.2);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 10) * 0.8;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 3000;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(this.masterVolume * 0.7, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+    // Resonant tinkle
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(4000, now);
+    osc.frequency.exponentialRampToValueAtTime(2000, now + 0.15);
+    osc.type = 'sine';
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(this.masterVolume * 0.4, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    osc.connect(oscGain).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.2);
+    osc.start(now);
+    osc.stop(now + 0.15);
+  }
+
+  // === ЗВУК КАРАБКАНЬЯ ===
+  playClimb() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Short metallic tap (footstep on metal rung)
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(1200 + Math.random() * 400, now);
+    osc.frequency.exponentialRampToValueAtTime(600, now + 0.05);
+    osc.type = 'sine';
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(this.masterVolume * 0.3, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+    // Brief noise component
+    const bufferSize = Math.floor(ctx.sampleRate * 0.04);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 40) * 0.4;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(this.masterVolume * 0.2, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+    osc.connect(oscGain).connect(ctx.destination);
+    noise.connect(noiseGain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.06);
+    noise.start(now);
+    noise.stop(now + 0.04);
+  }
+
+  // === ЗВУК КОЛЮЧЕЙ ПРОВОЛОКИ ===
+  playBarbedWireDamage() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Scratching/tearing noise
+    const bufferSize = Math.floor(ctx.sampleRate * 0.15);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 12) * 0.5 * (1 + Math.sin(t * 80));
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 2500;
+    filter.Q.value = 2;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(this.masterVolume * 0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.15);
+  }
+
   // === ЗВУК РЕСПАВНА ===
   playRespawn() {
     const ctx = this.getContext();

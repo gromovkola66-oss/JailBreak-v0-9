@@ -66,6 +66,7 @@ export class Combat {
   public onWeaponDropped?: () => void;
   public onItemUsed?: (itemId: string) => void;
   public onItemDropped?: (itemId: string) => void;
+  public onGlassHit?: (glassMesh: THREE.Mesh) => void;
   
   private boundMouseDown = this.onMouseDown.bind(this);
   private boundMouseUp = this.onMouseUp.bind(this);
@@ -231,7 +232,18 @@ export class Combat {
     raycaster.set(this.camera.position, direction);
     raycaster.far = this.punchRange;
     
-    // Здесь будет проверка попадания по другим игрокам
+    // Check if hit glass
+    const intersects = raycaster.intersectObjects(this.scene.children, true);
+    if (intersects.length > 0) {
+      let hitObj: THREE.Object3D | null = intersects[0].object;
+      while (hitObj) {
+        if (hitObj.userData?.isGlass) {
+          this.onGlassHit?.(hitObj as THREE.Mesh);
+          break;
+        }
+        hitObj = hitObj.parent;
+      }
+    }
   }
 
   private shoot() {
@@ -253,6 +265,15 @@ export class Combat {
       
       if (intersects.length > 0) {
         const hit = intersects[0];
+        // Check if hit glass
+        let hitObj: THREE.Object3D | null = hit.object;
+        while (hitObj) {
+          if (hitObj.userData?.isGlass) {
+            this.onGlassHit?.(hitObj as THREE.Mesh);
+            break;
+          }
+          hitObj = hitObj.parent;
+        }
         this.createBulletHole(hit.point, hit.face?.normal);
       }
       

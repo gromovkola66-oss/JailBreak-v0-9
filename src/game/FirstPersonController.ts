@@ -31,6 +31,9 @@ export class FirstPersonController {
   private fallDamageThreshold = 5; // min fall distance for damage
   private fallDamageMultiplier = 8; // damage per unit fallen beyond threshold
 
+  // Climbing
+  private climbing = false;
+
   // Camera effects
   public cameraShakeAmount = 0;
   public recoilPitch = 0;
@@ -94,6 +97,15 @@ export class FirstPersonController {
 
   getCrouching() { return this.isCrouching; }
   getSprinting() { return this.isSprinting; }
+  isPressingForward(): boolean { return this.moveForward; }
+
+  setClimbing(climbing: boolean) {
+    this.climbing = climbing;
+    if (climbing) {
+      this.velocity.y = 0;
+      this.canJump = true;
+    }
+  }
 
   private onClick() {
     if (!this.isLocked && this.pointerLockEnabled) document.body.requestPointerLock();
@@ -193,7 +205,9 @@ export class FirstPersonController {
     this.currentHeight += (targetHeight - this.currentHeight) * delta * 10;
 
     // Gravity always applies (even when pointer lock is lost, e.g. inventory open)
-    this.velocity.y -= this.gravity * delta;
+    if (!this.climbing) {
+      this.velocity.y -= this.gravity * delta;
+    }
 
     // Player input (movement) only when pointer is locked
     let moveX = 0;
@@ -279,6 +293,13 @@ export class FirstPersonController {
 
     // Vertical
     this.camera.position.y += this.velocity.y * delta;
+
+    // Skip ground/landing logic while climbing (velocity controlled externally)
+    if (this.climbing) {
+      // Ceiling check only
+      if (this.camera.position.y > 100) { this.camera.position.y = 100; this.velocity.y = 0; }
+      return;
+    }
 
     // Check if player lands on top of a collider
     const feetY = this.camera.position.y - this.currentHeight;

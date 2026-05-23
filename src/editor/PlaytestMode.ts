@@ -63,6 +63,14 @@ export class PlaytestMode {
   // Dropped items (non-weapon pickables)
   private droppedItems: { mesh: THREE.Group; itemType: string; position: THREE.Vector3 }[] = [];
 
+  // Interactive object zones
+  private ladderZones: { box: THREE.Box3; topY: number }[] = [];
+  private windowObjects: { group: THREE.Group; glassMesh: THREE.Mesh | null; broken: boolean }[] = [];
+  private barbedWireZones: { box: THREE.Box3; damagePerSecond: number }[] = [];
+  private climbSoundTimer = 0;
+  private barbedWireDamageAccumulator = 0;
+  private barbedWireSoundTimer = 0;
+
   private dayNightCycle: DayNightCycle;
   private skyMesh: THREE.Mesh;
   private ambientLight: THREE.AmbientLight;
@@ -270,6 +278,19 @@ export class PlaytestMode {
     // Handle dropped items removal from inventory
     this.combat.onItemDropped = (itemId: string) => {
       this.inventory.removeItem(itemId);
+    };
+
+    // Handle glass hit (window breaking)
+    this.combat.onGlassHit = (glassMesh: THREE.Mesh) => {
+      for (const win of this.windowObjects) {
+        if (win.broken) continue;
+        if (win.glassMesh === glassMesh) {
+          win.broken = true;
+          glassMesh.visible = false;
+          soundSystem.playGlassBreak();
+          break;
+        }
+      }
     };
 
     // Death handling
@@ -731,6 +752,54 @@ export class PlaytestMode {
         continue;
       }
 
+      // Лестница — интерактивный объект с карабканьем
+      if (objData.type === 'ladder') {
+        const obj = objType.create();
+        obj.userData.__interactive = true;
+        obj.position.set(objData.position.x, objData.position.y, objData.position.z);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        this.scene.add(obj);
+        obj.updateMatrixWorld(true);
+        const ladderBox = new THREE.Box3().setFromObject(obj);
+        const topY = ladderBox.max.y;
+        this.ladderZones.push({ box: ladderBox, topY });
+        this.addColliders(obj);
+        continue;
+      }
+
+      // Окно с разбиваемым стеклом
+      if (objData.type === 'window_glass') {
+        const obj = objType.create();
+        obj.userData.__interactive = true;
+        obj.position.set(objData.position.x, objData.position.y, objData.position.z);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        this.scene.add(obj);
+        obj.updateMatrixWorld(true);
+        let glassMesh: THREE.Mesh | null = null;
+        obj.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.userData.isGlass) {
+            glassMesh = child;
+          }
+        });
+        this.addColliders(obj);
+        this.windowObjects.push({ group: obj, glassMesh, broken: false });
+        continue;
+      }
+
+      // Колючая проволока — зона урона
+      if (objData.type === 'barbed_wire') {
+        const obj = objType.create();
+        obj.userData.__interactive = true;
+        obj.position.set(objData.position.x, objData.position.y, objData.position.z);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        this.scene.add(obj);
+        obj.updateMatrixWorld(true);
+        const wireBox = new THREE.Box3().setFromObject(obj);
+        const dps = obj.userData.damagePerSecond || 5;
+        this.barbedWireZones.push({ box: wireBox, damagePerSecond: dps });
+        continue;
+      }
+
       // Гаражные двери — регистрируем в системе гаражных дверей
       if (objData.type === 'garage_door_large' || objData.type === 'garage_door_medium') {
         const obj = objType.create();
@@ -997,6 +1066,66 @@ export class PlaytestMode {
       } else {
       // Обновления
       this.controller.update(delta);
+
+      // Ladder climbing
+      let onLadder = false;
+      const playerPos = this.controller.camera.position;
+      const playerBox = new THREE.Box3(
+        new THREE.Vector3(playerPos.x - 0.3, playerPos.y - 1.7, playerPos.z - 0.3),
+        new THREE.Vector3(playerPos.x + 0.3, playerPos.y, playerPos.z + 0.3)
+      );
+      for (const ladder of this.ladderZones) {
+        if (playerBox.intersectsBox(ladder.box)) {
+          onLadder = true;
+          if (this.controller.isPressingForward()) {
+            this.controller.velocity.y = 3;
+            this.climbSoundTimer += delta;
+            if (this.climbSoundTimer >= 0.4) {
+              soundSystem.playClimb();
+              this.climbSoundTimer = 0;
+            }
+          } else {
+            this.controller.velocity.y = 0;
+          }
+          break;
+        }
+      }
+      if (!onLadder) {
+        this.climbSoundTimer = 0;
+      }
+      this.controller.setClimbing(onLadder);
+
+      // Barbed wire damage
+      {
+        const pPos = this.controller.camera.position;
+        const pFeetY = pPos.y - 1.7;
+        const pBox = new THREE.Box3(
+          new THREE.Vector3(pPos.x - 0.3, pFeetY, pPos.z - 0.3),
+          new THREE.Vector3(pPos.x + 0.3, pPos.y, pPos.z + 0.3)
+        );
+        let inBarbedWire = false;
+        for (const wire of this.barbedWireZones) {
+          if (pBox.intersectsBox(wire.box)) {
+            inBarbedWire = true;
+            this.barbedWireDamageAccumulator += wire.damagePerSecond * delta;
+            if (this.barbedWireDamageAccumulator >= 1) {
+              const dmg = Math.floor(this.barbedWireDamageAccumulator);
+              this.combat.takeDamage(dmg);
+              this.barbedWireDamageAccumulator -= dmg;
+            }
+            this.barbedWireSoundTimer += delta;
+            if (this.barbedWireSoundTimer >= 0.8) {
+              soundSystem.playBarbedWireDamage();
+              this.barbedWireSoundTimer = 0;
+            }
+            break;
+          }
+        }
+        if (!inBarbedWire) {
+          this.barbedWireDamageAccumulator = 0;
+          this.barbedWireSoundTimer = 0;
+        }
+      }
 
       const isMoving = this.controller.isMoving();
       this.hands.setWalking(isMoving);
