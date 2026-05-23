@@ -243,6 +243,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setPtCellsOpen(false);
     setPtGarageLockState({ state: 'unlocked', remainingSeconds: null });
     setPtShowTempLockOptions(false);
+    setPtDoorLockedToast(false);
     setMode('editing');
   }, []);
 
