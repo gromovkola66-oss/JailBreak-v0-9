@@ -75,6 +75,7 @@ export class PlaytestMode {
     const skyUniforms = {
       uTime: { value: 0 } as THREE.IUniform<number>,
       uSunPosition: { value: new THREE.Vector3(0, 1, 0) } as THREE.IUniform<THREE.Vector3>,
+      uElapsedSeconds: { value: 0 } as THREE.IUniform<number>,
     };
     const skyMat = new THREE.ShaderMaterial({
       uniforms: skyUniforms,
@@ -88,6 +89,7 @@ export class PlaytestMode {
       `,
       fragmentShader: `
         uniform float uTime;
+        uniform float uElapsedSeconds;
         uniform vec3 uSunPosition;
         varying vec3 vWorldPosition;
 
@@ -188,7 +190,7 @@ export class PlaytestMode {
           // Clouds (layered noise, visible in day, faint at night)
           if (h > 0.0) {
             vec3 cloudCoord = dir / max(h, 0.01) * 3.0;
-            float cloud = fbm(cloudCoord + vec3(uTime * 2.0, 0.0, 0.0));
+            float cloud = fbm(cloudCoord + vec3(uElapsedSeconds * 0.02, 0.0, uElapsedSeconds * 0.005));
             cloud = smoothstep(0.4, 0.7, cloud);
             float cloudAlpha = cloud * 0.6 * smoothstep(0.0, 0.15, h);
             vec3 cloudColor = mix(vec3(0.1, 0.1, 0.2), vec3(1.0), dayFactor);
@@ -343,7 +345,7 @@ export class PlaytestMode {
     this.scene.add(this.sunLight);
 
     // Day/Night cycle
-    this.dayNightCycle = new DayNightCycle(this.ambientLight, this.sunLight, skyUniforms);
+    this.dayNightCycle = new DayNightCycle(this.ambientLight, this.sunLight, skyUniforms, this.scene.fog as THREE.Fog | null);
 
     // Загружаем карту
     this.loadMap(mapData, team);
