@@ -154,6 +154,11 @@ export class Game {
     this.cameraSystem = new CameraSystem(this.scene, this.renderer);
     this.cameraSystem.onStateChange = (state) => {
       this.inTerminalMode = state.inTerminalMode;
+      if (state.inTerminalMode) {
+        this.controller.setPointerLockEnabled(false);
+      } else {
+        this.controller.setPointerLockEnabled(true);
+      }
       if (this.onCameraSystemUpdate) {
         this.onCameraSystemUpdate(state);
       }

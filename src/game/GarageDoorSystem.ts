@@ -16,6 +16,7 @@ export class GarageDoorSystem {
 
   private lockState: 'unlocked' | 'locked' | 'temp_locked' = 'unlocked';
   private tempLockEndTime: number = 0;
+  private lastEmittedSecond: number = -1;
 
   public onDoorStateChange?: (doorId: string, isOpen: boolean) => void;
   public onAutoClose?: (doorId: string) => void;
@@ -117,18 +118,21 @@ export class GarageDoorSystem {
 
   lockDoors() {
     this.lockState = 'locked';
+    this.lastEmittedSecond = -1;
     this.emitLockState();
   }
 
   unlockDoors() {
     this.lockState = 'unlocked';
     this.tempLockEndTime = 0;
+    this.lastEmittedSecond = -1;
     this.emitLockState();
   }
 
   tempLockDoors(durationMs: number) {
     this.lockState = 'temp_locked';
     this.tempLockEndTime = Date.now() + durationMs;
+    this.lastEmittedSecond = -1;
     this.emitLockState();
   }
 
@@ -148,10 +152,20 @@ export class GarageDoorSystem {
 
   update(delta: number) {
     // Check temp lock expiration
-    if (this.lockState === 'temp_locked' && Date.now() >= this.tempLockEndTime) {
-      this.lockState = 'unlocked';
-      this.tempLockEndTime = 0;
-      this.emitLockState();
+    if (this.lockState === 'temp_locked') {
+      if (Date.now() >= this.tempLockEndTime) {
+        this.lockState = 'unlocked';
+        this.tempLockEndTime = 0;
+        this.lastEmittedSecond = -1;
+        this.emitLockState();
+      } else {
+        // Emit countdown update every second
+        const remaining = Math.max(0, Math.ceil((this.tempLockEndTime - Date.now()) / 1000));
+        if (remaining !== this.lastEmittedSecond) {
+          this.lastEmittedSecond = remaining;
+          this.emitLockState();
+        }
+      }
     }
 
     const speed = 3;

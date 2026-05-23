@@ -53,6 +53,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   // Garage door lock state
   const [ptGarageLockState, setPtGarageLockState] = useState<{ state: 'unlocked' | 'locked' | 'temp_locked'; remainingSeconds: number | null }>({ state: 'unlocked', remainingSeconds: null });
   const [ptShowTempLockOptions, setPtShowTempLockOptions] = useState(false);
+  const [ptDoorLockedToast, setPtDoorLockedToast] = useState(false);
 
   // === EDITOR ===
   useEffect(() => {
@@ -121,17 +122,15 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     };
   }, [mode, ptTeam]);
 
-  // Countdown timer for temp lock
+  // Countdown timer updates come from GarageDoorSystem via onGarageDoorLockUpdate callback
+  // (no polling needed - the system emits every second during temp_locked state)
+
+  // Reset temp lock sub-options when lock state leaves temp_locked
   useEffect(() => {
-    if (mode !== 'playtesting' || ptGarageLockState.state !== 'temp_locked') return;
-    const interval = setInterval(() => {
-      if (playtestRef.current) {
-        const newState = playtestRef.current.getGarageDoorLockState();
-        setPtGarageLockState({ ...newState });
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [mode, ptGarageLockState.state]);
+    if (ptGarageLockState.state !== 'temp_locked') {
+      setPtShowTempLockOptions(false);
+    }
+  }, [ptGarageLockState.state]);
 
   const handleLockGarageDoors = useCallback(() => {
     playtestRef.current?.lockGarageDoors();
@@ -214,6 +213,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       };
       pt.onGarageDoorLockUpdate = (state) => {
         setPtGarageLockState({ ...state });
+      };
+      pt.onDoorLocked = () => {
+        setPtDoorLockedToast(true);
+        setTimeout(() => setPtDoorLockedToast(false), 2000);
       };
 
       pt.start();
@@ -786,6 +789,13 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Door locked toast */}
+          {ptDoorLockedToast && (
+            <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-red-800/90 text-white px-6 py-3 rounded-lg pointer-events-none">
+              <span className="font-bold">🔒 Двери заблокированы</span>
             </div>
           )}
 

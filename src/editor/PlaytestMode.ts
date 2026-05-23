@@ -53,6 +53,7 @@ export class PlaytestMode {
   public onInventoryUpdate?: (state: InventoryState) => void;
   public onDoorStateUpdate?: (cellsOpen: boolean) => void;
   public onGarageDoorLockUpdate?: (state: { state: 'unlocked' | 'locked' | 'temp_locked'; remainingSeconds: number | null }) => void;
+  public onDoorLocked?: () => void;
 
   private frameCount = 0;
   private fpsTime = 0;
@@ -299,8 +300,14 @@ export class PlaytestMode {
       {
         const { canInteract, door: gDoor } = this.garageDoorSystem.canInteract(this.controller.camera.position);
         if (canInteract && gDoor) {
-          const opening = this.garageDoorSystem.toggleDoor(gDoor.id, this.team === 'guard');
-          soundSystem.playGarageDoor(opening);
+          const wasOpen = gDoor.isOpen;
+          this.garageDoorSystem.toggleDoor(gDoor.id, this.team === 'guard');
+          if (gDoor.isOpen === wasOpen) {
+            // Door state did not change - interaction was denied (locked)
+            this.onDoorLocked?.();
+          } else {
+            soundSystem.playGarageDoor(gDoor.isOpen);
+          }
         }
       }
     }
