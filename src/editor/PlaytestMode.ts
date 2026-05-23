@@ -52,6 +52,7 @@ export class PlaytestMode {
   public onCameraSystemUpdate?: (state: CameraSystemState) => void;
   public onInventoryUpdate?: (state: InventoryState) => void;
   public onDoorStateUpdate?: (cellsOpen: boolean) => void;
+  public onGarageDoorLockUpdate?: (state: { state: 'unlocked' | 'locked' | 'temp_locked'; remainingSeconds: number | null }) => void;
 
   private frameCount = 0;
   private fpsTime = 0;
@@ -175,6 +176,11 @@ export class PlaytestMode {
     this.cameraSystem = new CameraSystem(this.scene, this.renderer);
     this.cameraSystem.onStateChange = (state) => {
       this.inTerminalMode = state.inTerminalMode;
+      if (state.inTerminalMode) {
+        this.controller.setPointerLockEnabled(false);
+      } else {
+        this.controller.setPointerLockEnabled(true);
+      }
       this.onCameraSystemUpdate?.(state);
     };
 
@@ -221,6 +227,9 @@ export class PlaytestMode {
     };
     this.garageDoorSystem.onAutoClose = (_doorId) => {
       soundSystem.playGarageDoor(false);
+    };
+    this.garageDoorSystem.onLockStateChange = (state) => {
+      this.onGarageDoorLockUpdate?.(state);
     };
 
     // Освещение
@@ -290,7 +299,7 @@ export class PlaytestMode {
       {
         const { canInteract, door: gDoor } = this.garageDoorSystem.canInteract(this.controller.camera.position);
         if (canInteract && gDoor) {
-          const opening = this.garageDoorSystem.toggleDoor(gDoor.id);
+          const opening = this.garageDoorSystem.toggleDoor(gDoor.id, this.team === 'guard');
           soundSystem.playGarageDoor(opening);
         }
       }
@@ -734,6 +743,22 @@ export class PlaytestMode {
     return doors.length > 0 && doors.every(d => d.isOpen);
   }
 
+  lockGarageDoors() {
+    this.garageDoorSystem.lockDoors();
+  }
+
+  unlockGarageDoors() {
+    this.garageDoorSystem.unlockDoors();
+  }
+
+  tempLockGarageDoors(minutes: number) {
+    this.garageDoorSystem.tempLockDoors(minutes * 60 * 1000);
+  }
+
+  getGarageDoorLockState(): { state: 'unlocked' | 'locked' | 'temp_locked'; remainingSeconds: number | null } {
+    return this.garageDoorSystem.getLockState();
+  }
+
   dispose() {
     this.stop();
     this.scene.traverse((obj) => {
@@ -748,6 +773,7 @@ export class PlaytestMode {
     this.cameraSystem.dispose();
     this.garageDoorSystem.dispose();
     this.garageDoorSystem.onDoorStateChange = undefined;
+    this.garageDoorSystem.onLockStateChange = undefined;
     document.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('resize', this.boundOnResize);
   }

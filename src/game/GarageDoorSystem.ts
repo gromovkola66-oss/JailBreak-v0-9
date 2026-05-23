@@ -14,8 +14,12 @@ export class GarageDoorSystem {
   private autoCloseTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private interactionRange = 3.5;
 
+  private lockState: 'unlocked' | 'locked' | 'temp_locked' = 'unlocked';
+  private tempLockEndTime: number = 0;
+
   public onDoorStateChange?: (doorId: string, isOpen: boolean) => void;
   public onAutoClose?: (doorId: string) => void;
+  public onLockStateChange?: (state: { state: 'unlocked' | 'locked' | 'temp_locked'; remainingSeconds: number | null }) => void;
 
   registerDoor(id: string, mesh: THREE.Object3D, position: THREE.Vector3, doorHeight: number): GarageDoor {
     const closedPos = position.clone();
@@ -36,9 +40,14 @@ export class GarageDoorSystem {
     return door;
   }
 
-  toggleDoor(doorId: string): boolean {
+  toggleDoor(doorId: string, isGuard: boolean = false): boolean {
     const door = this.doors.find(d => d.id === doorId);
     if (!door) return false;
+
+    // If locked, only guards can override
+    if (!isGuard && (this.lockState === 'locked' || this.lockState === 'temp_locked')) {
+      return false;
+    }
 
     door.isOpen = !door.isOpen;
 
@@ -106,7 +115,45 @@ export class GarageDoorSystem {
     this.autoCloseTimers.clear();
   }
 
+  lockDoors() {
+    this.lockState = 'locked';
+    this.emitLockState();
+  }
+
+  unlockDoors() {
+    this.lockState = 'unlocked';
+    this.tempLockEndTime = 0;
+    this.emitLockState();
+  }
+
+  tempLockDoors(durationMs: number) {
+    this.lockState = 'temp_locked';
+    this.tempLockEndTime = Date.now() + durationMs;
+    this.emitLockState();
+  }
+
+  getLockState(): { state: 'unlocked' | 'locked' | 'temp_locked'; remainingSeconds: number | null } {
+    if (this.lockState === 'temp_locked') {
+      const remaining = Math.max(0, Math.ceil((this.tempLockEndTime - Date.now()) / 1000));
+      return { state: 'temp_locked', remainingSeconds: remaining };
+    }
+    return { state: this.lockState, remainingSeconds: null };
+  }
+
+  private emitLockState() {
+    if (this.onLockStateChange) {
+      this.onLockStateChange(this.getLockState());
+    }
+  }
+
   update(delta: number) {
+    // Check temp lock expiration
+    if (this.lockState === 'temp_locked' && Date.now() >= this.tempLockEndTime) {
+      this.lockState = 'unlocked';
+      this.tempLockEndTime = 0;
+      this.emitLockState();
+    }
+
     const speed = 3;
 
     for (const door of this.doors) {

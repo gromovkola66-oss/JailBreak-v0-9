@@ -50,6 +50,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [ptIsWarden, setPtIsWarden] = useState(false);
   const [ptCellsOpen, setPtCellsOpen] = useState(false);
 
+  // Garage door lock state
+  const [ptGarageLockState, setPtGarageLockState] = useState<{ state: 'unlocked' | 'locked' | 'temp_locked'; remainingSeconds: number | null }>({ state: 'unlocked', remainingSeconds: null });
+  const [ptShowTempLockOptions, setPtShowTempLockOptions] = useState(false);
+
   // === EDITOR ===
   useEffect(() => {
     if (mode !== 'editing') return;
@@ -116,6 +120,30 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       }
     };
   }, [mode, ptTeam]);
+
+  // Countdown timer for temp lock
+  useEffect(() => {
+    if (mode !== 'playtesting' || ptGarageLockState.state !== 'temp_locked') return;
+    const interval = setInterval(() => {
+      if (playtestRef.current) {
+        const newState = playtestRef.current.getGarageDoorLockState();
+        setPtGarageLockState({ ...newState });
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [mode, ptGarageLockState.state]);
+
+  const handleLockGarageDoors = useCallback(() => {
+    playtestRef.current?.lockGarageDoors();
+    setPtShowTempLockOptions(false);
+  }, []);
+  const handleUnlockGarageDoors = useCallback(() => {
+    playtestRef.current?.unlockGarageDoors();
+    setPtShowTempLockOptions(false);
+  }, []);
+  const handleTempLockGarageDoors = useCallback((minutes: number) => {
+    playtestRef.current?.tempLockGarageDoors(minutes);
+  }, []);
 
   const openTeamSelect = useCallback(() => {
     if (!editorRef.current) return;
@@ -184,6 +212,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       pt.onDoorStateUpdate = (cellsOpen) => {
         setPtCellsOpen(cellsOpen);
       };
+      pt.onGarageDoorLockUpdate = (state) => {
+        setPtGarageLockState({ ...state });
+      };
 
       pt.start();
       // Whether any cell-doors were placed on this map (controls availability
@@ -207,6 +238,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setPtGuardMenuOpen(false);
     setPtIsWarden(false);
     setPtCellsOpen(false);
+    setPtGarageLockState({ state: 'unlocked', remainingSeconds: null });
+    setPtShowTempLockOptions(false);
     setMode('editing');
   }, []);
 
@@ -492,25 +525,30 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
           {/* Terminal mode overlay */}
           {ptCameraState?.inTerminalMode && (
-            <div className="absolute inset-0 pointer-events-auto">
+            <div className="absolute inset-0 pointer-events-auto cursor-default">
               {/* Desktop view */}
               {ptCameraState.terminalView === 'desktop' && (
                 <div className="absolute inset-0 bg-[#008080] flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                  {/* JailBreak watermark */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15 pointer-events-none" style={{ animation: 'gentleSpin 4s ease-in-out infinite' }}>
+                    <span className="text-7xl font-black text-blue-400">Jail</span>
+                    <span className="text-7xl font-black text-orange-400">Break</span>
+                  </div>
                   {/* Desktop icons */}
-                  <div className="flex-1 p-4 flex flex-col gap-4">
+                  <div className="flex-1 p-4 flex flex-col gap-4 z-10">
                     <div
-                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
                       onClick={() => handleOpenTerminalApp('cameras')}
                     >
-                      <span className="text-3xl">📹</span>
-                      <span className="text-white text-xs text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Камеры</span>
+                      <span className="text-6xl">📹</span>
+                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Камеры</span>
                     </div>
                     <div
-                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
                       onClick={() => handleOpenTerminalApp('doors')}
                     >
-                      <span className="text-3xl">🚪</span>
-                      <span className="text-white text-xs text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Двери</span>
+                      <span className="text-6xl">🚪</span>
+                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Двери</span>
                     </div>
                   </div>
                   {/* Taskbar */}
@@ -532,93 +570,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
               {/* Cameras view */}
               {ptCameraState.terminalView === 'cameras' && (
-                <>
+                <div className="absolute inset-0 bg-[#008080] flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                  <div className="flex-1 flex items-center justify-center">
                   {/* Grid view */}
                   {ptCameraState.selectedCameraIndex === null && (
-                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center">
-                      <div className="text-green-400 text-2xl font-bold mb-6 font-mono">СИСТЕМА НАБЛЮДЕНИЯ</div>
-                      {ptCameraState.cameras.length === 0 ? (
-                        <div className="text-gray-400 text-lg font-mono">Нет подключённых камер</div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-4 w-[600px] max-w-[80vw]">
-                          {ptCameraState.cameras.map((cam, idx) => (
-                            <div
-                              key={cam.id}
-                              className="bg-gray-900 border border-green-600/50 rounded-lg p-4 cursor-pointer hover:border-green-400 hover:bg-gray-800 transition-colors"
-                              onClick={() => handleSelectCamera(idx)}
-                            >
-                              <div className="text-green-400 font-mono text-sm mb-1">CAM {idx + 1}</div>
-                              <div className="text-gray-300 text-lg">{cam.label}</div>
-                              <div className="mt-2 h-24 bg-gray-950 rounded flex items-center justify-center border border-gray-700 overflow-hidden">
-                                {ptCameraState.screenshots && ptCameraState.screenshots[idx] ? (
-                                  <img src={ptCameraState.screenshots[idx]} alt={`Camera ${idx + 1}`} className="w-full h-full object-cover" />
-                                ) : (
-                                  <span className="text-gray-500 text-sm font-mono">LIVE</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="mt-6 flex items-center gap-6 text-sm">
-                        <div
-                          className="text-gray-300 cursor-pointer hover:text-white"
-                          onClick={handleBackToTerminalDesktop}
-                        >
-                          ← Рабочий стол
-                        </div>
-                        <div className="text-gray-400">
-                          <span className="text-yellow-400 font-bold">E</span> - Выйти
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Zoomed camera view */}
-                  {ptCameraState.selectedCameraIndex !== null && (
-                    <div className="absolute inset-0 flex flex-col">
-                      <div className="bg-black/70 px-4 py-2 flex items-center justify-between">
-                        <div className="text-green-400 font-mono text-sm">
-                          CAM {ptCameraState.selectedCameraIndex + 1} - {ptCameraState.cameras[ptCameraState.selectedCameraIndex]?.label}
-                        </div>
-                        <div className="text-green-400 font-mono text-sm animate-pulse">REC</div>
-                      </div>
-                      <div className="flex-1 relative pointer-events-none">
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-400/[0.02] to-transparent bg-[length:100%_4px] animate-pulse"></div>
-                      </div>
-                      <div className="bg-black/70 px-4 py-2 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div
-                            className="text-gray-300 text-sm cursor-pointer hover:text-white"
-                            onClick={() => handleSelectCamera(null)}
-                          >
-                            ← Назад к сетке
-                          </div>
-                          <div
-                            className="text-gray-300 text-sm cursor-pointer hover:text-white"
-                            onClick={handleBackToTerminalDesktop}
-                          >
-                            ← Рабочий стол
-                          </div>
-                        </div>
-                        <div className="text-gray-400 text-sm">
-                          <span className="text-yellow-400 font-bold">E</span> - Выйти
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Doors view */}
-              {ptCameraState.terminalView === 'doors' && (
-                <div className="absolute inset-0 bg-[#008080] flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
-                  {/* Centered Win95 window */}
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="w-[400px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                    <div className="w-[700px] max-w-[80vw] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
                       {/* Title bar */}
                       <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
-                        <span className="text-xs">Двери</span>
+                        <span className="text-xs">Система наблюдения</span>
                         <button
                           className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
                           onClick={handleBackToTerminalDesktop}
@@ -627,10 +586,186 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                         </button>
                       </div>
                       {/* Window body */}
-                      <div className="p-6 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
-                        <div className="text-center">
-                          <div className="text-4xl mb-3">🚧</div>
-                          <div className="text-sm">Система находится в разработке</div>
+                      <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
+                        {ptCameraState.cameras.length === 0 ? (
+                          <div className="text-center py-8 text-gray-600">Нет подключённых камер</div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-3">
+                            {ptCameraState.cameras.map((cam, idx) => (
+                              <div
+                                key={cam.id}
+                                className="border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#c0c0c0] p-3 cursor-pointer hover:bg-[#d4d4d4] transition-colors"
+                                onClick={() => handleSelectCamera(idx)}
+                              >
+                                <div className="text-xs font-bold mb-1">CAM {idx + 1}</div>
+                                <div className="text-xs mb-2">{cam.label}</div>
+                                <div className="h-20 bg-black border border-gray-600 flex items-center justify-center overflow-hidden">
+                                  {ptCameraState.screenshots && ptCameraState.screenshots[idx] ? (
+                                    <img src={ptCameraState.screenshots[idx]} alt={`Camera ${idx + 1}`} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <span className="text-gray-500 text-xs">LIVE</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Zoomed camera view */}
+                  {ptCameraState.selectedCameraIndex !== null && (
+                    <div className="absolute inset-0 flex flex-col">
+                      <div className="bg-[#c0c0c0] border-b-2 border-gray-700 px-4 py-1 flex items-center justify-between">
+                        <div className="text-xs font-bold">
+                          CAM {ptCameraState.selectedCameraIndex + 1} - {ptCameraState.cameras[ptCameraState.selectedCameraIndex]?.label}
+                        </div>
+                        <div className="text-red-600 text-xs font-bold animate-pulse">REC</div>
+                      </div>
+                      <div className="flex-1 relative pointer-events-none">
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-400/[0.02] to-transparent bg-[length:100%_4px] animate-pulse"></div>
+                      </div>
+                      <div className="bg-[#c0c0c0] border-t-2 border-white px-4 py-1 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div
+                            className="text-xs cursor-pointer hover:underline"
+                            onClick={() => handleSelectCamera(null)}
+                          >
+                            ← Назад к сетке
+                          </div>
+                          <div
+                            className="text-xs cursor-pointer hover:underline"
+                            onClick={handleBackToTerminalDesktop}
+                          >
+                            ← Рабочий стол
+                          </div>
+                        </div>
+                        <div className="text-xs">
+                          <span className="text-yellow-700 font-bold">E</span> - Выйти
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  </div>
+                  {/* Taskbar */}
+                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2">
+                    <button className="h-[22px] px-2 flex items-center gap-1 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white">
+                      <span className="w-3 h-3 bg-green-600 inline-block"></span>
+                      <span className="font-bold text-xs">Пуск</span>
+                    </button>
+                    <div className="flex-1"></div>
+                    <div className="text-xs text-gray-700 mr-2">
+                      E - Выйти
+                    </div>
+                    <div className="h-[22px] px-2 flex items-center border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white text-xs">
+                      {new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Doors view */}
+              {ptCameraState.terminalView === 'doors' && (
+                <div className="absolute inset-0 bg-[#008080] flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                  {/* Centered Win95 window */}
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="w-[450px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                      {/* Title bar */}
+                      <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                        <span className="text-xs">Управление дверями</span>
+                        <button
+                          className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                          onClick={handleBackToTerminalDesktop}
+                        >
+                          X
+                        </button>
+                      </div>
+                      {/* Window body */}
+                      <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
+                        {/* Status indicator */}
+                        <div className="mb-4 p-3 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-white">
+                          {ptGarageLockState.state === 'unlocked' && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                              <span className="font-bold text-green-700">Двери разблокированы</span>
+                            </div>
+                          )}
+                          {ptGarageLockState.state === 'locked' && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                              <span className="font-bold text-red-700">Двери заблокированы</span>
+                            </div>
+                          )}
+                          {ptGarageLockState.state === 'temp_locked' && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                              <div>
+                                <span className="font-bold text-amber-700">Двери заблокированы временно</span>
+                                {ptGarageLockState.remainingSeconds !== null && (
+                                  <div className="text-xs text-amber-600 mt-0.5">
+                                    Осталось: {Math.floor(ptGarageLockState.remainingSeconds / 60)}:{String(ptGarageLockState.remainingSeconds % 60).padStart(2, '0')}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex flex-col gap-2">
+                          <button
+                            className={`border-2 px-4 py-2 text-left font-bold ${
+                              ptGarageLockState.state === 'locked'
+                                ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#a0a0a0]'
+                                : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white'
+                            }`}
+                            onClick={handleLockGarageDoors}
+                          >
+                            🔒 Заблокировать двери
+                          </button>
+                          <button
+                            className={`border-2 px-4 py-2 text-left font-bold ${
+                              ptGarageLockState.state === 'unlocked'
+                                ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#a0a0a0]'
+                                : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white'
+                            }`}
+                            onClick={handleUnlockGarageDoors}
+                          >
+                            🔓 Разблокировать двери
+                          </button>
+                          <button
+                            className={`border-2 px-4 py-2 text-left font-bold ${
+                              ptGarageLockState.state === 'temp_locked'
+                                ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#a0a0a0]'
+                                : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white'
+                            }`}
+                            onClick={() => setPtShowTempLockOptions(prev => !prev)}
+                          >
+                            ⏱️ Временно заблокировать
+                          </button>
+                          {(ptShowTempLockOptions || ptGarageLockState.state === 'temp_locked') && (
+                            <div className="flex gap-2 ml-6 mt-1">
+                              <button
+                                className="border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] px-3 py-1 text-xs font-bold hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                                onClick={() => handleTempLockGarageDoors(5)}
+                              >
+                                5 мин
+                              </button>
+                              <button
+                                className="border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] px-3 py-1 text-xs font-bold hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                                onClick={() => handleTempLockGarageDoors(10)}
+                              >
+                                10 мин
+                              </button>
+                              <button
+                                className="border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] px-3 py-1 text-xs font-bold hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                                onClick={() => handleTempLockGarageDoors(15)}
+                              >
+                                15 мин
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
