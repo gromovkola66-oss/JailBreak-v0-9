@@ -175,6 +175,16 @@ export class FirstPersonController {
   isMoving(): boolean { return this.moveForward || this.moveBackward || this.moveLeft || this.moveRight; }
 
   update(delta: number) {
+    const MAX_STEP = 1 / 60; // Never move more than 1/60s worth in one step
+    const steps = Math.ceil(delta / MAX_STEP);
+    const subDelta = delta / steps;
+
+    for (let i = 0; i < steps; i++) {
+      this.updateStep(subDelta);
+    }
+  }
+
+  private updateStep(delta: number) {
     // Track previous frame feet position for fall-through detection
     this.prevFeetY = this.camera.position.y - this.currentHeight;
 
