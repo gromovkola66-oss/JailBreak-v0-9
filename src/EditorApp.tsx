@@ -801,7 +801,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                 <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
                   {/* Wallpaper background */}
                   <div className="absolute inset-0" style={{ background: TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
-                  <div className="flex-1 flex items-center justify-center p-4">
+                  <div className="flex-1 flex items-center justify-center p-4 relative z-10">
                     <div className="w-[95vw] max-w-[1100px] h-[85vh] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg flex flex-col">
                       {/* Title bar */}
                       <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between shrink-0">
@@ -842,7 +842,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     </div>
                   </div>
                   {/* Taskbar */}
-                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2 shrink-0">
+                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2 shrink-0 relative z-10">
                     <button className="h-[22px] px-2 flex items-center gap-1 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white">
                       <span className="w-3 h-3 bg-green-600 inline-block"></span>
                       <span className="font-bold text-xs">Пуск</span>
@@ -905,7 +905,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   {/* Wallpaper background */}
                   <div className="absolute inset-0" style={{ background: TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   {/* Centered Win95 window */}
-                  <div className="flex-1 flex items-center justify-center">
+                  <div className="flex-1 flex items-center justify-center relative z-10">
                     <div className="w-[450px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
                       {/* Title bar */}
                       <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
@@ -1007,7 +1007,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     </div>
                   </div>
                   {/* Taskbar */}
-                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2">
+                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2 relative z-10">
                     <button className="h-[22px] px-2 flex items-center gap-1 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white">
                       <span className="w-3 h-3 bg-green-600 inline-block"></span>
                       <span className="font-bold text-xs">Пуск</span>
