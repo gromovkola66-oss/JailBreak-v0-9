@@ -18,6 +18,7 @@ import {
   isFogEnabled,
   pruneShadowCasters,
 } from '../game/QualitySettings';
+import { DayNightCycle } from '../game/DayNightCycle';
 
 export class PlaytestMode {
   private scene: THREE.Scene;
@@ -47,6 +48,11 @@ export class PlaytestMode {
   // Dropped items (non-weapon pickables)
   private droppedItems: { mesh: THREE.Group; itemType: string; position: THREE.Vector3 }[] = [];
 
+  private dayNightCycle: DayNightCycle;
+  private skyMesh: THREE.Mesh;
+  private ambientLight: THREE.AmbientLight;
+  private sunLight: THREE.DirectionalLight;
+
   public onStatsUpdate?: (fps: number, pos: THREE.Vector3) => void;
   public onCombatUpdate?: (state: CombatState) => void;
   public onCameraSystemUpdate?: (state: CameraSystemState) => void;
@@ -66,8 +72,12 @@ export class PlaytestMode {
 
     // Sky dome
     const skyGeo = new THREE.SphereGeometry(800, 32, 32);
+    const skyUniforms = {
+      uTime: { value: 0 } as THREE.IUniform<number>,
+      uSunPosition: { value: new THREE.Vector3(0, 1, 0) } as THREE.IUniform<THREE.Vector3>,
+    };
     const skyMat = new THREE.ShaderMaterial({
-      uniforms: {},
+      uniforms: skyUniforms,
       vertexShader: `
         varying vec3 vWorldPosition;
         void main() {
@@ -77,31 +87,122 @@ export class PlaytestMode {
         }
       `,
       fragmentShader: `
+        uniform float uTime;
+        uniform vec3 uSunPosition;
         varying vec3 vWorldPosition;
-        void main() {
-          float h = normalize(vWorldPosition).y;
-          vec3 topColor = vec3(0.04, 0.1, 0.29);
-          vec3 midColor = vec3(0.29, 0.56, 0.85);
-          vec3 horizonColor = vec3(0.78, 0.88, 0.94);
-          vec3 warmBand = vec3(1.0, 0.83, 0.63);
 
-          vec3 color;
-          if (h > 0.3) {
-            color = mix(midColor, topColor, (h - 0.3) / 0.7);
-          } else if (h > 0.0) {
-            color = mix(horizonColor, midColor, h / 0.3);
-          } else if (h > -0.1) {
-            color = mix(warmBand, horizonColor, (h + 0.1) / 0.1);
-          } else {
-            color = warmBand;
+        // Simple hash for stars/clouds
+        float hash(vec3 p) {
+          p = fract(p * vec3(443.897, 441.423, 437.195));
+          p += dot(p, p.yzx + 19.19);
+          return fract((p.x + p.y) * p.z);
+        }
+
+        float noise(vec3 p) {
+          vec3 i = floor(p);
+          vec3 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          float n = mix(
+            mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x),
+                mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+            mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
+                mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y),
+            f.z);
+          return n;
+        }
+
+        float fbm(vec3 p) {
+          float v = 0.0;
+          float a = 0.5;
+          for (int i = 0; i < 4; i++) {
+            v += a * noise(p);
+            p *= 2.0;
+            a *= 0.5;
           }
-          gl_FragColor = vec4(color, 1.0);
+          return v;
+        }
+
+        void main() {
+          vec3 dir = normalize(vWorldPosition);
+          float h = dir.y;
+
+          // Sun elevation factor: >0 day, <0 night
+          float sunElev = uSunPosition.y;
+
+          // Day colors
+          vec3 dayTop = vec3(0.2, 0.5, 0.95);
+          vec3 dayHorizon = vec3(0.7, 0.85, 1.0);
+
+          // Night colors
+          vec3 nightTop = vec3(0.02, 0.02, 0.12);
+          vec3 nightHorizon = vec3(0.05, 0.05, 0.2);
+
+          // Dawn/dusk colors
+          vec3 dawnColor = vec3(1.0, 0.5, 0.2);
+          vec3 duskPurple = vec3(0.6, 0.2, 0.5);
+
+          // Sky gradient base
+          float dayFactor = smoothstep(-0.1, 0.3, sunElev);
+          vec3 topColor = mix(nightTop, dayTop, dayFactor);
+          vec3 horizonColor = mix(nightHorizon, dayHorizon, dayFactor);
+
+          vec3 sky;
+          if (h > 0.0) {
+            sky = mix(horizonColor, topColor, pow(h, 0.6));
+          } else {
+            sky = horizonColor;
+          }
+
+          // Dawn/dusk glow near horizon when sun is near horizon
+          float horizonGlow = smoothstep(0.3, 0.0, abs(sunElev)) * smoothstep(-0.3, 0.1, h) * smoothstep(0.4, 0.0, h);
+          vec3 glowColor = mix(duskPurple, dawnColor, smoothstep(-0.1, 0.1, sunElev));
+          sky = mix(sky, glowColor, horizonGlow * 0.7);
+
+          // Sun disc
+          float sunDist = length(dir - normalize(uSunPosition));
+          float sunDisc = smoothstep(0.04, 0.02, sunDist);
+          float sunGlow = smoothstep(0.4, 0.0, sunDist) * 0.3;
+          vec3 sunColor = vec3(1.0, 0.95, 0.8);
+          sky += sunColor * (sunDisc + sunGlow) * step(0.0, sunElev);
+
+          // Moon (opposite side from sun)
+          vec3 moonDir = -normalize(uSunPosition);
+          moonDir.y = abs(moonDir.y); // keep moon above horizon at night
+          float moonDist = length(dir - moonDir);
+          float moonDisc = smoothstep(0.035, 0.025, moonDist);
+          float moonGlow = smoothstep(0.2, 0.0, moonDist) * 0.15;
+          float nightFactor = smoothstep(0.1, -0.1, sunElev);
+          sky += vec3(0.8, 0.85, 1.0) * (moonDisc + moonGlow) * nightFactor;
+
+          // Stars
+          float starField = 0.0;
+          if (h > 0.0) {
+            vec3 starCoord = dir * 200.0;
+            float starHash = hash(floor(starCoord));
+            float starBright = step(0.985, starHash);
+            float twinkle = sin(uTime * 100.0 + starHash * 6.28) * 0.3 + 0.7;
+            starField = starBright * twinkle * nightFactor * smoothstep(0.0, 0.2, h);
+          }
+          sky += vec3(1.0) * starField;
+
+          // Clouds (layered noise, visible in day, faint at night)
+          if (h > 0.0) {
+            vec3 cloudCoord = dir / max(h, 0.01) * 3.0;
+            float cloud = fbm(cloudCoord + vec3(uTime * 2.0, 0.0, 0.0));
+            cloud = smoothstep(0.4, 0.7, cloud);
+            float cloudAlpha = cloud * 0.6 * smoothstep(0.0, 0.15, h);
+            vec3 cloudColor = mix(vec3(0.1, 0.1, 0.2), vec3(1.0), dayFactor);
+            sky = mix(sky, cloudColor, cloudAlpha);
+          }
+
+          gl_FragColor = vec4(sky, 1.0);
         }
       `,
       side: THREE.BackSide,
       depthWrite: false,
     });
-    this.scene.add(new THREE.Mesh(skyGeo, skyMat));
+    this.skyMesh = new THREE.Mesh(skyGeo, skyMat);
+    this.scene.add(this.skyMesh);
     if (isFogEnabled()) {
       this.scene.fog = new THREE.Fog(0xc8e0f0, 20, 200);
     }
@@ -234,12 +335,15 @@ export class PlaytestMode {
     };
 
     // Освещение
-    this.scene.add(new THREE.AmbientLight(0x808080, 1.5));
-    const sun = new THREE.DirectionalLight(0xffffff, 0.55);
-    sun.position.set(20, 30, 10);
-    configureSunShadow(sun, 42);
-    this.scene.add(sun);
-    this.scene.add(new THREE.DirectionalLight(0xffffee, 0.3).translateX(-20).translateY(10));
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
+    this.scene.add(this.ambientLight);
+    this.sunLight = new THREE.DirectionalLight(0xffffff, 0.55);
+    this.sunLight.position.set(20, 30, 10);
+    configureSunShadow(this.sunLight, 42);
+    this.scene.add(this.sunLight);
+
+    // Day/Night cycle
+    this.dayNightCycle = new DayNightCycle(this.ambientLight, this.sunLight, skyUniforms);
 
     // Загружаем карту
     this.loadMap(mapData, team);
@@ -576,9 +680,24 @@ export class PlaytestMode {
       }
     }
 
-    // Remove original individual objects
+    // Remove original individual objects (but first extract any lights)
+    const extractedLights: THREE.Light[] = [];
     for (const obj of objectsToRemove) {
+      obj.traverse((node) => {
+        if (node instanceof THREE.Light) {
+          const light = node.clone();
+          // Apply world position to the cloned light
+          const worldPos = new THREE.Vector3();
+          node.getWorldPosition(worldPos);
+          light.position.copy(worldPos);
+          extractedLights.push(light);
+        }
+      });
       this.scene.remove(obj);
+    }
+    // Add extracted lights back to scene
+    for (const light of extractedLights) {
+      this.scene.add(light);
     }
 
     // Спавн
@@ -712,6 +831,12 @@ export class PlaytestMode {
 
     // Always update camera system (renders terminal screen textures)
     this.cameraSystem.update(delta, this.controller.camera);
+
+    // Update day/night cycle
+    this.dayNightCycle.update(delta);
+
+    // Keep sky dome centered on camera
+    this.skyMesh.position.copy(this.controller.camera.position);
 
     // Render
     if (this.inTerminalMode && this.cameraSystem.selectedCameraIndex !== null) {
