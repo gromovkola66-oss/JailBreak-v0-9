@@ -36,8 +36,6 @@ export interface QualityConfig {
   shadowCasterMinSize: number;
   /** Scene fog. Cheap, but disabling on 'low' saves a per-fragment add. */
   fogEnabled: boolean;
-  /** Whether to merge child meshes by material when placing objects. */
-  mergeObjectsOnPlace: boolean;
 }
 
 const PRESETS: Record<Quality, QualityConfig> = {
@@ -49,7 +47,6 @@ const PRESETS: Record<Quality, QualityConfig> = {
     shadowType: THREE.BasicShadowMap,
     shadowCasterMinSize: Number.POSITIVE_INFINITY, // all casters disabled anyway
     fogEnabled: false,
-    mergeObjectsOnPlace: true,
   },
   medium: {
     antialias: true,
@@ -59,7 +56,6 @@ const PRESETS: Record<Quality, QualityConfig> = {
     shadowType: THREE.PCFShadowMap, // hard edges but cheaper than PCFSoft
     shadowCasterMinSize: 0.3,
     fogEnabled: true,
-    mergeObjectsOnPlace: true,
   },
   high: {
     antialias: true,
@@ -69,7 +65,6 @@ const PRESETS: Record<Quality, QualityConfig> = {
     shadowType: THREE.PCFSoftShadowMap,
     shadowCasterMinSize: 0.1,
     fogEnabled: true,
-    mergeObjectsOnPlace: true,
   },
 };
 

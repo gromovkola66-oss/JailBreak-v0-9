@@ -503,6 +503,11 @@ export class MapEditor {
     if (!obj) return;
     const data = this.placedObjectsData.find(d => d.id === id);
     if (data) this.pushHistory({ action: 'delete', data: { ...data } });
+    obj.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.geometry) {
+        child.geometry.dispose();
+      }
+    });
     this.scene.remove(obj);
     this.placedObjects.delete(id);
     this.placedObjectsData = this.placedObjectsData.filter(d => d.id !== id);
@@ -523,7 +528,14 @@ export class MapEditor {
       this.pushHistory({ action: 'multi_delete', data: multiData[0], multiData: multiData.map(d => ({ ...d })) });
       for (const id of ids) {
         const obj = this.placedObjects.get(id);
-        if (obj) this.scene.remove(obj);
+        if (obj) {
+          obj.traverse((child) => {
+            if (child instanceof THREE.Mesh && child.geometry) {
+              child.geometry.dispose();
+            }
+          });
+          this.scene.remove(obj);
+        }
         this.placedObjects.delete(id);
         this.placedObjectsData = this.placedObjectsData.filter(d => d.id !== id);
       }
