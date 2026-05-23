@@ -453,10 +453,12 @@ export class PlaytestMode {
       if (distance < pickupRange) {
         // Money bag - special handling
         if (item.itemType === 'money_bag') {
-          this.wallet.addMoney(1000);
-          this.scene.remove(item.mesh);
-          this.droppedItems.splice(i, 1);
-          soundSystem.playPickup();
+          const added = this.wallet.addMoney(1000);
+          if (added) {
+            this.scene.remove(item.mesh);
+            this.droppedItems.splice(i, 1);
+            soundSystem.playPickup();
+          }
           return;
         }
 
