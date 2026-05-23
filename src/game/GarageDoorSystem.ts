@@ -11,9 +11,11 @@ export interface GarageDoor {
 
 export class GarageDoorSystem {
   private doors: GarageDoor[] = [];
+  private autoCloseTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private interactionRange = 3.5;
 
   public onDoorStateChange?: (doorId: string, isOpen: boolean) => void;
+  public onAutoClose?: (doorId: string) => void;
 
   registerDoor(id: string, mesh: THREE.Object3D, position: THREE.Vector3, doorHeight: number): GarageDoor {
     const closedPos = position.clone();
@@ -39,11 +41,43 @@ export class GarageDoorSystem {
 
     door.isOpen = !door.isOpen;
 
+    if (door.isOpen) {
+      // Door was opened - start auto-close timer
+      const timer = setTimeout(() => {
+        this.autoCloseDoor(doorId);
+      }, 5000);
+      this.autoCloseTimers.set(doorId, timer);
+    } else {
+      // Door was manually closed - cancel any existing auto-close timer
+      const existingTimer = this.autoCloseTimers.get(doorId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        this.autoCloseTimers.delete(doorId);
+      }
+    }
+
     if (this.onDoorStateChange) {
       this.onDoorStateChange(doorId, door.isOpen);
     }
 
     return door.isOpen;
+  }
+
+  private autoCloseDoor(doorId: string) {
+    const door = this.doors.find(d => d.id === doorId);
+    if (!door) return;
+    if (!door.isOpen) return;
+
+    door.isOpen = false;
+    this.autoCloseTimers.delete(doorId);
+
+    if (this.onDoorStateChange) {
+      this.onDoorStateChange(doorId, false);
+    }
+
+    if (this.onAutoClose) {
+      this.onAutoClose(doorId);
+    }
   }
 
   canInteract(playerPosition: THREE.Vector3): { canInteract: boolean; door: GarageDoor | null } {

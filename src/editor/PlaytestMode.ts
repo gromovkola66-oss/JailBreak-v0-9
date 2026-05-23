@@ -219,6 +219,18 @@ export class PlaytestMode {
       }
       this.controller.setColliders(this.colliders);
     };
+    this.garageDoorSystem.onAutoClose = (doorId) => {
+      soundSystem.playGarageDoor(false);
+      const boxes = this.garageDoorColliders.get(doorId);
+      if (boxes) {
+        for (const box of boxes) {
+          if (!this.colliders.includes(box)) {
+            this.colliders.push(box);
+          }
+        }
+      }
+      this.controller.setColliders(this.colliders);
+    };
 
     // Освещение
     this.scene.add(new THREE.AmbientLight(0x808080, 1.5));
