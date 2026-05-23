@@ -38,6 +38,10 @@ export class FirstPersonController {
   public cameraShakeAmount = 0;
   public recoilPitch = 0;
 
+  // Terrain integration
+  public terrainHeightFn: ((x: number, z: number) => number) | null = null;
+  public speedMultiplier: number = 1.0;
+
   private prevFeetY = 0;
   private colliders: THREE.Box3[] = [];
   private pointerLockEnabled = true;
@@ -217,6 +221,7 @@ export class FirstPersonController {
       let speed = this.walkSpeed;
       if (this.isSprinting && this.isMoving()) speed = this.sprintSpeed;
       if (this.isCrouching) speed = this.crouchSpeed;
+      speed *= this.speedMultiplier;
 
       // Direction
       this.direction.z = Number(this.moveForward) - Number(this.moveBackward);
@@ -303,7 +308,7 @@ export class FirstPersonController {
 
     // Check if player lands on top of a collider
     const feetY = this.camera.position.y - this.currentHeight;
-    let groundY = 0; // default floor level
+    let groundY = this.terrainHeightFn ? this.terrainHeightFn(this.camera.position.x, this.camera.position.z) : 0; // terrain or default floor level
     for (const collider of this.colliders) {
       // Check if player is horizontally overlapping this collider
       if (this.camera.position.x + 0.3 > collider.min.x &&

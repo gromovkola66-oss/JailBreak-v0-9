@@ -124,13 +124,25 @@ const M = {
   agedStain: new THREE.MeshLambertMaterial({ color: 0x5a5548 }),
   exitGreen: new THREE.MeshStandardMaterial({ color: 0x00aa44, roughness: 0.4, emissive: 0x00aa44, emissiveIntensity: 0.6 }),
   exitGreenFrame: new THREE.MeshStandardMaterial({ color: 0x006633, roughness: 0.5 }),
+  // Terrain materials
+  leafGreen: new THREE.MeshStandardMaterial({ color: 0x3a8a2a, roughness: 0.85 }),
+  leafDark: new THREE.MeshStandardMaterial({ color: 0x2a6a1a, roughness: 0.85 }),
+  leafLight: new THREE.MeshStandardMaterial({ color: 0x5aaa3a, roughness: 0.8 }),
+  barkWhite: new THREE.MeshStandardMaterial({ color: 0xe8e0d8, roughness: 0.9 }),
+  barkBrown: new THREE.MeshStandardMaterial({ color: 0x5a3a20, roughness: 0.9 }),
+  barkDark: new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 0.92 }),
+  grassGreen: new THREE.MeshStandardMaterial({ color: 0x4a7a2a, roughness: 0.9 }),
+  sandBeige: new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.85 }),
+  flowerRed: new THREE.MeshStandardMaterial({ color: 0xcc3333, roughness: 0.8 }),
+  flowerYellow: new THREE.MeshStandardMaterial({ color: 0xddcc22, roughness: 0.8 }),
+  flowerWhite: new THREE.MeshStandardMaterial({ color: 0xeeeedd, roughness: 0.8 }),
 };
 
 export interface EditorObjectType {
   id: string;
   name: string;
   icon: string;
-  category: 'walls' | 'items' | 'lighting' | 'scripts' | 'building' | 'things';
+  category: 'walls' | 'items' | 'lighting' | 'scripts' | 'building' | 'things' | 'terrain';
   description?: string;
   create: () => THREE.Group;
 }
@@ -3276,6 +3288,291 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
     }
   },
 
+  // ============ ЛАНДШАФТ / TERRAIN ============
+  {
+    id: 'tree_birch', name: '\u0411\u0435\u0440\u0451\u0437\u0430', icon: '\uD83C\uDF33', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      // Trunk - tapered white cylinder
+      g.add(pos(cyl(0.08, 0.15, 5, M.barkWhite), 0, 2.5, 0));
+      // Bark marks
+      for (let i = 0; i < 5; i++) {
+        g.add(pos(box(0.06, 0.02, 0.02, M.barkDark), 0.08, 1 + i * 0.8, 0));
+      }
+      // Canopy clusters (icosahedron-like using dodecahedrons from cache)
+      const icoKey = 'ico_0.9';
+      let icoGeo = geoCache.get(icoKey);
+      if (!icoGeo) { icoGeo = new THREE.IcosahedronGeometry(0.9, 1); geoCache.set(icoKey, icoGeo); }
+      const icoKey2 = 'ico_1.0';
+      let icoGeo2 = geoCache.get(icoKey2);
+      if (!icoGeo2) { icoGeo2 = new THREE.IcosahedronGeometry(1.0, 1); geoCache.set(icoKey2, icoGeo2); }
+      const icoKey3 = 'ico_0.8';
+      let icoGeo3 = geoCache.get(icoKey3);
+      if (!icoGeo3) { icoGeo3 = new THREE.IcosahedronGeometry(0.8, 1); geoCache.set(icoKey3, icoGeo3); }
+      const c1 = new THREE.Mesh(icoGeo, M.leafGreen); c1.position.set(0, 3.5, 0); c1.castShadow = true; g.add(c1);
+      const c2 = new THREE.Mesh(icoGeo2, M.leafLight); c2.position.set(0.4, 4.2, 0.3); c2.castShadow = true; g.add(c2);
+      const c3 = new THREE.Mesh(icoGeo3, M.leafDark); c3.position.set(-0.3, 4.8, -0.2); c3.castShadow = true; g.add(c3);
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'tree_oak', name: '\u0414\u0443\u0431', icon: '\uD83C\uDF33', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      // Thick trunk
+      g.add(pos(cyl(0.15, 0.25, 4, M.barkBrown), 0, 2, 0));
+      // Canopy - dodecahedrons
+      const dodKey = 'dod_0.9';
+      let dodGeo = geoCache.get(dodKey);
+      if (!dodGeo) { dodGeo = new THREE.DodecahedronGeometry(0.9, 0); geoCache.set(dodKey, dodGeo); }
+      const dodKey2 = 'dod_0.7';
+      let dodGeo2 = geoCache.get(dodKey2);
+      if (!dodGeo2) { dodGeo2 = new THREE.DodecahedronGeometry(0.7, 0); geoCache.set(dodKey2, dodGeo2); }
+      const dodKey3 = 'dod_1.0';
+      let dodGeo3 = geoCache.get(dodKey3);
+      if (!dodGeo3) { dodGeo3 = new THREE.DodecahedronGeometry(1.0, 0); geoCache.set(dodKey3, dodGeo3); }
+      const m1 = new THREE.Mesh(dodGeo, M.leafGreen); m1.position.set(0, 3.5, 0); m1.castShadow = true; g.add(m1);
+      const m2 = new THREE.Mesh(dodGeo2, M.leafDark); m2.position.set(0.6, 3.8, 0.4); m2.castShadow = true; g.add(m2);
+      const m3 = new THREE.Mesh(dodGeo3, M.leafLight); m3.position.set(-0.5, 4.2, -0.3); m3.castShadow = true; g.add(m3);
+      const m4 = new THREE.Mesh(dodGeo2, M.leafGreen); m4.position.set(0.3, 4.6, 0.5); m4.castShadow = true; g.add(m4);
+      const m5 = new THREE.Mesh(dodGeo, M.leafDark); m5.position.set(-0.4, 4.9, 0.2); m5.castShadow = true; g.add(m5);
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'tree_pine', name: '\u0415\u043b\u044c', icon: '\uD83C\uDF32', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      // Trunk
+      g.add(pos(cyl(0.05, 0.1, 5, M.barkBrown), 0, 2.5, 0));
+      // Cone layers
+      const coneKey1 = 'cone_1.5_2.0';
+      let coneGeo1 = geoCache.get(coneKey1);
+      if (!coneGeo1) { coneGeo1 = new THREE.ConeGeometry(1.5, 2.0, 8); geoCache.set(coneKey1, coneGeo1); }
+      const coneKey2 = 'cone_1.0_1.5';
+      let coneGeo2 = geoCache.get(coneKey2);
+      if (!coneGeo2) { coneGeo2 = new THREE.ConeGeometry(1.0, 1.5, 8); geoCache.set(coneKey2, coneGeo2); }
+      const coneKey3 = 'cone_0.6_1.2';
+      let coneGeo3 = geoCache.get(coneKey3);
+      if (!coneGeo3) { coneGeo3 = new THREE.ConeGeometry(0.6, 1.2, 8); geoCache.set(coneKey3, coneGeo3); }
+      const c1 = new THREE.Mesh(coneGeo1, M.leafDark); c1.position.set(0, 2.0, 0); c1.castShadow = true; g.add(c1);
+      const c2 = new THREE.Mesh(coneGeo2, M.leafDark); c2.position.set(0, 3.5, 0); c2.castShadow = true; g.add(c2);
+      const c3 = new THREE.Mesh(coneGeo3, M.leafDark); c3.position.set(0, 4.6, 0); c3.castShadow = true; g.add(c3);
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'bush_green', name: '\u041a\u0443\u0441\u0442', icon: '\uD83C\uDF3F', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      const sphKey1 = 'sph_0.4';
+      let sphGeo1 = geoCache.get(sphKey1);
+      if (!sphGeo1) { sphGeo1 = new THREE.SphereGeometry(0.4, 8, 6); geoCache.set(sphKey1, sphGeo1); }
+      const sphKey2 = 'sph_0.35';
+      let sphGeo2 = geoCache.get(sphKey2);
+      if (!sphGeo2) { sphGeo2 = new THREE.SphereGeometry(0.35, 8, 6); geoCache.set(sphKey2, sphGeo2); }
+      const sphKey3 = 'sph_0.5';
+      let sphGeo3 = geoCache.get(sphKey3);
+      if (!sphGeo3) { sphGeo3 = new THREE.SphereGeometry(0.5, 8, 6); geoCache.set(sphKey3, sphGeo3); }
+      const s1 = new THREE.Mesh(sphGeo1, M.leafGreen); s1.position.set(0, 0.4, 0); s1.castShadow = true; g.add(s1);
+      const s2 = new THREE.Mesh(sphGeo2, M.leafDark); s2.position.set(0.3, 0.35, 0.2); s2.castShadow = true; g.add(s2);
+      const s3 = new THREE.Mesh(sphGeo3, M.leafLight); s3.position.set(-0.2, 0.5, -0.15); s3.castShadow = true; g.add(s3);
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'bush_flowers', name: '\u041a\u0443\u0441\u0442 \u0441 \u0446\u0432\u0435\u0442\u0430\u043c\u0438', icon: '\uD83C\uDF3A', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      const sphKey = 'sph_0.4';
+      let sphGeo = geoCache.get(sphKey);
+      if (!sphGeo) { sphGeo = new THREE.SphereGeometry(0.4, 8, 6); geoCache.set(sphKey, sphGeo); }
+      const sphKey2 = 'sph_0.35';
+      let sphGeo2 = geoCache.get(sphKey2);
+      if (!sphGeo2) { sphGeo2 = new THREE.SphereGeometry(0.35, 8, 6); geoCache.set(sphKey2, sphGeo2); }
+      const s1 = new THREE.Mesh(sphGeo, M.leafGreen); s1.position.set(0, 0.4, 0); s1.castShadow = true; g.add(s1);
+      const s2 = new THREE.Mesh(sphGeo2, M.leafLight); s2.position.set(0.3, 0.35, 0.2); s2.castShadow = true; g.add(s2);
+      const s3 = new THREE.Mesh(sphGeo, M.leafDark); s3.position.set(-0.2, 0.45, -0.15); s3.castShadow = true; g.add(s3);
+      // Flower dots
+      g.add(pos(box(0.06, 0.06, 0.06, M.flowerRed), 0.2, 0.7, 0.1));
+      g.add(pos(box(0.06, 0.06, 0.06, M.flowerYellow), -0.15, 0.65, 0.2));
+      g.add(pos(box(0.06, 0.06, 0.06, M.flowerWhite), 0.1, 0.6, -0.2));
+      g.add(pos(box(0.06, 0.06, 0.06, M.flowerRed), -0.25, 0.55, -0.1));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'grass_tall', name: '\u0412\u044b\u0441\u043e\u043a\u0430\u044f \u0442\u0440\u0430\u0432\u0430', icon: '\uD83C\uDF3E', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      for (let x = -0.8; x <= 0.8; x += 0.4) {
+        for (let z = -0.8; z <= 0.8; z += 0.4) {
+          const h = 0.6 + Math.random() * 0.4;
+          g.add(pos(box(0.05, h, 0.05, M.grassGreen), x + Math.random() * 0.1, h / 2, z + Math.random() * 0.1));
+        }
+      }
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'rock_large', name: '\u0411\u043e\u043b\u044c\u0448\u043e\u0439 \u043a\u0430\u043c\u0435\u043d\u044c', icon: '\uD83E\uDEA8', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      const dodKey = 'dod_1.2';
+      let dodGeo = geoCache.get(dodKey);
+      if (!dodGeo) { dodGeo = new THREE.DodecahedronGeometry(1.2, 0); geoCache.set(dodKey, dodGeo); }
+      const rock = new THREE.Mesh(dodGeo, M.conc3);
+      rock.scale.set(1.0, 0.7, 1.1);
+      rock.position.set(0, 0.7, 0);
+      rock.castShadow = true;
+      rock.receiveShadow = true;
+      g.add(rock);
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'rock_small', name: '\u041c\u0430\u043b\u044b\u0439 \u043a\u0430\u043c\u0435\u043d\u044c', icon: '\uD83E\uDEA8', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      const dodKey = 'dod_0.5';
+      let dodGeo = geoCache.get(dodKey);
+      if (!dodGeo) { dodGeo = new THREE.DodecahedronGeometry(0.5, 0); geoCache.set(dodKey, dodGeo); }
+      const rock = new THREE.Mesh(dodGeo, M.conc3);
+      rock.scale.set(1.1, 0.8, 0.9);
+      rock.position.set(0, 0.35, 0);
+      rock.castShadow = true;
+      rock.receiveShadow = true;
+      g.add(rock);
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'ground_grass', name: '\u0417\u0435\u043c\u043b\u044f (\u0442\u0440\u0430\u0432\u0430)', icon: '\uD83D\uDFE9', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(8, 0.1, 8, M.grassGreen), 0, 0.05, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'ground_dirt', name: '\u0417\u0435\u043c\u043b\u044f (\u0433\u0440\u0443\u043d\u0442)', icon: '\uD83D\uDFEB', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(8, 0.1, 8, M.barkBrown), 0, 0.05, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'ground_sand', name: '\u0417\u0435\u043c\u043b\u044f (\u043f\u0435\u0441\u043e\u043a)', icon: '\uD83C\uDFD6\uFE0F', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(8, 0.1, 8, M.sandBeige), 0, 0.05, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'ground_asphalt', name: '\u0410\u0441\u0444\u0430\u043b\u044c\u0442', icon: '\u2B1B', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(8, 0.1, 8, M.metalDark), 0, 0.05, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'water_shallow', name: '\u0412\u043e\u0434\u0430 (\u043c\u0435\u043b\u043a\u0430\u044f)', icon: '\uD83D\uDCA7', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      const geo = new THREE.PlaneGeometry(4, 4);
+      geo.rotateX(-Math.PI / 2);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x4488aa, transparent: true, opacity: 0.5, roughness: 0.1 });
+      const plane = new THREE.Mesh(geo, mat);
+      plane.position.set(0, 0.05, 0);
+      plane.receiveShadow = true;
+      g.add(plane);
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'water_deep', name: '\u0412\u043e\u0434\u0430 (\u0433\u043b\u0443\u0431\u043e\u043a\u0430\u044f)', icon: '\uD83C\uDF0A', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      const geo = new THREE.PlaneGeometry(4, 4);
+      geo.rotateX(-Math.PI / 2);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x1a3a5a, transparent: true, opacity: 0.7, roughness: 0.1 });
+      const plane = new THREE.Mesh(geo, mat);
+      plane.position.set(0, 0.05, 0);
+      plane.receiveShadow = true;
+      g.add(plane);
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'slope_small', name: '\u041f\u0430\u043d\u0434\u0443\u0441 \u043c\u0430\u043b\u044b\u0439', icon: '\uD83D\uDCD0', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      // Wedge: 4m wide, 1m rise, 4m deep
+      const geo = new THREE.BufferGeometry();
+      const w = 2; // half width
+      const h = 1;
+      const d = 2; // half depth
+      // Vertices: front-bottom-left, front-bottom-right, back-bottom-left, back-bottom-right, back-top-left, back-top-right
+      const vertices = new Float32Array([
+        // Bottom face (y=0)
+        -w, 0, d,   w, 0, d,   w, 0, -d,
+        -w, 0, d,   w, 0, -d,  -w, 0, -d,
+        // Back face (z=-d, rectangle from bottom to top)
+        -w, 0, -d,  w, 0, -d,  w, h, -d,
+        -w, 0, -d,  w, h, -d,  -w, h, -d,
+        // Sloped top face (front bottom to back top)
+        -w, 0, d,   -w, h, -d,  w, h, -d,
+        -w, 0, d,   w, h, -d,   w, 0, d,
+        // Left side triangle
+        -w, 0, d,   -w, 0, -d,  -w, h, -d,
+        // Right side triangle
+        w, 0, -d,   w, 0, d,    w, h, -d,
+      ]);
+      geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      geo.computeVertexNormals();
+      const mesh = new THREE.Mesh(geo, M.conc2);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      g.add(mesh);
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'slope_large', name: '\u041f\u0430\u043d\u0434\u0443\u0441 \u0431\u043e\u043b\u044c\u0448\u043e\u0439', icon: '\uD83D\uDCD0', category: 'terrain',
+    create: () => {
+      const g = new THREE.Group();
+      // Wedge: 4m wide, 2m rise, 4m deep
+      const geo = new THREE.BufferGeometry();
+      const w = 2; // half width
+      const h = 2;
+      const d = 2; // half depth
+      const vertices = new Float32Array([
+        // Bottom face
+        -w, 0, d,   w, 0, d,   w, 0, -d,
+        -w, 0, d,   w, 0, -d,  -w, 0, -d,
+        // Back face
+        -w, 0, -d,  w, 0, -d,  w, h, -d,
+        -w, 0, -d,  w, h, -d,  -w, h, -d,
+        // Sloped top face
+        -w, 0, d,   -w, h, -d,  w, h, -d,
+        -w, 0, d,   w, h, -d,   w, 0, d,
+        // Left side triangle
+        -w, 0, d,   -w, 0, -d,  -w, h, -d,
+        // Right side triangle
+        w, 0, -d,   w, 0, d,    w, h, -d,
+      ]);
+      geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+      geo.computeVertexNormals();
+      const mesh = new THREE.Mesh(geo, M.conc2);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      g.add(mesh);
+      return mergeGroup(g);
+    }
+  },
 ];
 
 function createGeometryForShape(shape: VoxelShape): THREE.BufferGeometry {

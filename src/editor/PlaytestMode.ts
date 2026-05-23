@@ -13,6 +13,8 @@ import { soundSystem } from '../game/SoundSystem';
 import { ITEM_DEFS } from '../game/ItemDefs';
 import { WalletSystem, WalletState } from '../game/economy/WalletSystem';
 import { RentalDoorSystem, RentalDoor } from '../game/RentalDoorSystem';
+import { TerrainSystem } from '../game/TerrainSystem';
+import { WaterSystem } from '../game/WaterSystem';
 import {
   applyToRenderer,
   configureSunShadow,
@@ -40,6 +42,11 @@ export class PlaytestMode {
   private garageDoorColliders: Map<string, THREE.Box3[]> = new Map();
   private rentalDoorColliders: Map<string, THREE.Box3[]> = new Map();
   private inTerminalMode = false;
+
+  // Terrain & Water
+  private terrainSystem: TerrainSystem | null = null;
+  private waterSystem: WaterSystem | null = null;
+  private waterDamageAccumulator = 0;
 
   private isRunning = false;
   private prevTime = 0;
@@ -631,6 +638,19 @@ export class PlaytestMode {
     let cameraCount = 0;
     let doorCellIndex = 0;
 
+    // Terrain system
+    if (mapData.terrain) {
+      this.terrainSystem = new TerrainSystem(this.scene, mapData.terrain.size, mapData.terrain.resolution);
+      this.terrainSystem.importData(mapData.terrain);
+      this.controller.terrainHeightFn = this.terrainSystem.getHeightAt.bind(this.terrainSystem);
+    }
+
+    // Water system
+    if (mapData.waterZones && mapData.waterZones.length > 0) {
+      this.waterSystem = new WaterSystem(this.scene);
+      this.waterSystem.importData(mapData.waterZones);
+    }
+
     for (const objData of mapData.objects) {
       const objType = getObjectById(objData.type);
       if (!objType) continue;
@@ -835,6 +855,22 @@ export class PlaytestMode {
         const wireBox = new THREE.Box3().setFromObject(obj);
         const dps = obj.userData.damagePerSecond || 5;
         this.barbedWireZones.push({ box: wireBox, damagePerSecond: dps });
+        continue;
+      }
+
+      // Water objects - register as water zones for player mechanics
+      if (objData.type === 'water_shallow' || objData.type === 'water_deep') {
+        const obj = objType.create();
+        obj.position.set(objData.position.x, objData.position.y, objData.position.z);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        this.scene.add(obj);
+        // Register in water system for player interaction
+        if (!this.waterSystem) {
+          this.waterSystem = new WaterSystem(this.scene);
+        }
+        const waterType = objData.type === 'water_shallow' ? 'shallow' : 'deep';
+        const waterPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
+        this.waterSystem.addZone(waterPos, 4, 4, waterType);
         continue;
       }
 
@@ -1165,6 +1201,32 @@ export class PlaytestMode {
         }
       }
 
+      // Water system update & player effects
+      if (this.waterSystem) {
+        this.waterSystem.update(time / 1000);
+        const playerPos = this.controller.camera.position;
+        const playerFeetPos = new THREE.Vector3(playerPos.x, playerPos.y - 1.7, playerPos.z);
+        const waterCheck = this.waterSystem.isInWater(playerFeetPos);
+        if (waterCheck.inWater) {
+          if (waterCheck.type === 'shallow') {
+            this.controller.speedMultiplier = 0.4;
+            this.waterDamageAccumulator = 0;
+          } else {
+            this.controller.speedMultiplier = 0.3;
+            // Deep water: 10 HP/sec damage
+            this.waterDamageAccumulator += 10 * delta;
+            if (this.waterDamageAccumulator >= 1) {
+              const dmg = Math.floor(this.waterDamageAccumulator);
+              this.combat.takeDamage(dmg);
+              this.waterDamageAccumulator -= dmg;
+            }
+          }
+        } else {
+          this.controller.speedMultiplier = 1.0;
+          this.waterDamageAccumulator = 0;
+        }
+      }
+
       const isMoving = this.controller.isMoving();
       this.hands.setWalking(isMoving);
       this.hands.update(delta);
@@ -1316,6 +1378,8 @@ export class PlaytestMode {
 
   dispose() {
     this.stop();
+    if (this.terrainSystem) this.terrainSystem.dispose();
+    if (this.waterSystem) this.waterSystem.dispose();
     this.scene.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         obj.geometry.dispose();

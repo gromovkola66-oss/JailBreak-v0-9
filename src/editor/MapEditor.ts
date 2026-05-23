@@ -7,6 +7,8 @@ import {
   getRendererOptions,
   pruneShadowCasters,
 } from '../game/QualitySettings';
+import { TerrainSystem, TerrainData } from '../game/TerrainSystem';
+import { WaterZoneData } from '../game/WaterSystem';
 
 export interface PlacedObject {
   id: string;
@@ -24,6 +26,8 @@ export interface MapData {
   name: string;
   version: number;
   objects: PlacedObject[];
+  terrain?: TerrainData;
+  waterZones?: WaterZoneData[];
 }
 
 interface HistoryEntry {
@@ -76,6 +80,12 @@ export class MapEditor {
   // Y height
   private placementY = 0;
 
+  // Terrain mode
+  private terrainSystem: TerrainSystem;
+  private terrainMode = false;
+  private isTerrainPainting = false;
+  private terrainBrush = { type: 'raise' as 'raise' | 'lower' | 'flatten' | 'smooth' | 'paint', radius: 5, strength: 0.5, paintMaterial: 0 };
+
   // Callbacks
   public onObjectSelected?: (type: EditorObjectType | null) => void;
   public onObjectPlaced?: (count: number) => void;
@@ -85,6 +95,8 @@ export class MapEditor {
   public onHistoryChanged?: (canUndo: boolean, canRedo: boolean) => void;
   public onHeightChanged?: (y: number) => void;
   public onMultiSelectChanged?: (count: number) => void;
+  public onTerrainModeChanged?: (mode: boolean) => void;
+  public onTerrainBrushChanged?: (brush: { type: string; radius: number; strength: number; paintMaterial: number }) => void;
 
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
@@ -110,6 +122,9 @@ export class MapEditor {
     this.gridHelper.visible = this.gridEnabled;
     this.scene.add(this.gridHelper);
     this.scene.add(new THREE.AxesHelper(8));
+
+    // Terrain system
+    this.terrainSystem = new TerrainSystem(this.scene, 200, 64);
 
     this.renderer.domElement.addEventListener('mousemove', this.onMouseMove.bind(this));
     this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
@@ -146,6 +161,48 @@ export class MapEditor {
     this.onHeightChanged?.(this.placementY);
   }
   adjustPlacementY(delta: number) { this.setPlacementY(this.placementY + delta); }
+
+  // === TERRAIN MODE ===
+  setTerrainMode(on: boolean) {
+    this.terrainMode = on;
+    if (on) {
+      this.stopMovingSelected();
+      this.selectObjectType(null);
+      this.clearSelection();
+    }
+    this.isTerrainPainting = false;
+    this.onTerrainModeChanged?.(on);
+  }
+  getTerrainMode(): boolean { return this.terrainMode; }
+  setTerrainBrush(brush: Partial<{ type: 'raise' | 'lower' | 'flatten' | 'smooth' | 'paint'; radius: number; strength: number; paintMaterial: number }>) {
+    if (brush.type !== undefined) this.terrainBrush.type = brush.type;
+    if (brush.radius !== undefined) this.terrainBrush.radius = brush.radius;
+    if (brush.strength !== undefined) this.terrainBrush.strength = brush.strength;
+    if (brush.paintMaterial !== undefined) this.terrainBrush.paintMaterial = brush.paintMaterial;
+    this.onTerrainBrushChanged?.(this.terrainBrush);
+  }
+  getTerrainBrush() { return { ...this.terrainBrush }; }
+
+  private applyTerrainBrush(point: THREE.Vector3) {
+    const { type, radius, strength, paintMaterial } = this.terrainBrush;
+    switch (type) {
+      case 'raise': this.terrainSystem.raise(point.x, point.z, radius, strength); break;
+      case 'lower': this.terrainSystem.lower(point.x, point.z, radius, strength); break;
+      case 'flatten': this.terrainSystem.flatten(point.x, point.z, radius, point.y); break;
+      case 'smooth': this.terrainSystem.smooth(point.x, point.z, radius); break;
+      case 'paint': this.terrainSystem.paint(point.x, point.z, radius, paintMaterial); break;
+    }
+  }
+
+  private raycastTerrain(e: MouseEvent): THREE.Vector3 | null {
+    const r = this.renderer.domElement.getBoundingClientRect();
+    this.mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    this.mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+    this.raycaster.setFromCamera(this.mouse, this.editorCamera.camera);
+    const hits = this.raycaster.intersectObject(this.terrainSystem.getMesh());
+    if (hits.length > 0) return hits[0].point;
+    return null;
+  }
 
   // === SELECT OBJECT TYPE ===
   selectObjectType(typeId: string | null) {
@@ -225,16 +282,33 @@ export class MapEditor {
 
   private onMouseDown(e: MouseEvent) {
     if (e.button !== 0) return;
+    // Terrain mode
+    if (this.terrainMode) {
+      const point = this.raycastTerrain(e);
+      if (point) {
+        this.isTerrainPainting = true;
+        this.applyTerrainBrush(point);
+      }
+      return;
+    }
     // Try gizmo first
     if (this.tryGizmoClick(e)) return;
   }
 
   private onMouseUp(e: MouseEvent) {
     if (e.button !== 0) return;
+    if (this.isTerrainPainting) { this.isTerrainPainting = false; return; }
     if (this.isDraggingGizmo) { this.stopGizmoDrag(); return; }
   }
 
   private onMouseMove(e: MouseEvent) {
+    // Terrain painting
+    if (this.isTerrainPainting && this.terrainMode) {
+      const point = this.raycastTerrain(e);
+      if (point) this.applyTerrainBrush(point);
+      return;
+    }
+
     // Gizmo drag
     if (this.isDraggingGizmo) { this.handleGizmoDrag(e); return; }
 
@@ -254,6 +328,7 @@ export class MapEditor {
   private onClick(e: MouseEvent) {
     if (e.button !== 0) return;
     if (this.isDraggingGizmo) return;
+    if (this.terrainMode) return;
     if (this.selectedObjectType && this.ghostObject) { this.placeObject(); return; }
     if (this.isMovingSelected) { this.stopMovingSelected(); return; }
     this.trySelect(e);
@@ -800,7 +875,7 @@ export class MapEditor {
         if (this.selectedObject && !this.selectedObjectType) this.rotateSelectedAxis('z', 15);
         break;
       case 'Delete': case 'Backspace': this.deleteSelected(); break;
-      case 'Escape': this.stopMovingSelected(); this.selectObjectType(null); break;
+      case 'Escape': this.stopMovingSelected(); this.selectObjectType(null); if (this.terrainMode) this.setTerrainMode(false); break;
       case 'KeyG': this.toggleGrid(); break;
       case 'KeyM': this.toggleMoveSelected(); break;
       case 'PageUp': this.adjustPlacementY(0.5); break;
@@ -819,10 +894,13 @@ export class MapEditor {
   }
 
   // === IO ===
-  exportMap(): MapData { return { name: 'Untitled Map', version: 1, objects: [...this.placedObjectsData] }; }
+  exportMap(): MapData { return { name: 'Untitled Map', version: 1, objects: [...this.placedObjectsData], terrain: this.terrainSystem.exportData(), waterZones: [] }; }
   exportJSON(): string { return JSON.stringify(this.exportMap(), null, 2); }
   importMap(data: MapData) {
     this.clearMap();
+    if (data.terrain) {
+      this.terrainSystem.importData(data.terrain);
+    }
     for (const d of data.objects) {
       const t = getObjectById(d.type);
       if (!t) continue;
