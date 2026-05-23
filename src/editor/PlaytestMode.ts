@@ -65,7 +65,7 @@ export class PlaytestMode {
 
   // Interactive object zones
   private ladderZones: { box: THREE.Box3; topY: number }[] = [];
-  private windowObjects: { group: THREE.Group; glassMesh: THREE.Mesh | null; broken: boolean }[] = [];
+  private windowObjects: { group: THREE.Group; glassMesh: THREE.Mesh | null; broken: boolean; glassCollider: THREE.Box3 | null }[] = [];
   private barbedWireZones: { box: THREE.Box3; damagePerSecond: number }[] = [];
   private climbSoundTimer = 0;
   private barbedWireDamageAccumulator = 0;
@@ -287,6 +287,14 @@ export class PlaytestMode {
         if (win.glassMesh === glassMesh) {
           win.broken = true;
           glassMesh.visible = false;
+          // Remove glass collider so player can pass through
+          if (win.glassCollider) {
+            const idx = this.colliders.indexOf(win.glassCollider);
+            if (idx >= 0) {
+              this.colliders.splice(idx, 1);
+              this.controller.setColliders(this.colliders);
+            }
+          }
           soundSystem.playGlassBreak();
           break;
         }
@@ -309,6 +317,7 @@ export class PlaytestMode {
           mesh.position.copy(playerPos);
           mesh.userData.isItem = true;
           mesh.userData.itemType = 'money_bag';
+          mesh.userData.moneyAmount = droppedMoney;
           this.scene.add(mesh);
           this.droppedItems.push({ mesh, itemType: 'money_bag', position: playerPos.clone() });
         }
@@ -318,12 +327,20 @@ export class PlaytestMode {
       const droppedInvItems = this.inventory.dropAllItems();
       const playerDropPos = this.controller.camera.position.clone();
       playerDropPos.y -= 0.5;
-      for (const item of droppedInvItems) {
+      for (let i = 0; i < droppedInvItems.length; i++) {
+        const item = droppedInvItems[i];
         if (item.type === 'weapon') {
           // Weapon is already dropped by Combat.die()
           continue;
         }
-        this.combat.createDroppedItemMesh(playerDropPos.clone(), item.id);
+        const itemPos = playerDropPos.clone();
+        const angle = (i / droppedInvItems.length) * Math.PI * 2;
+        const spread = 0.5; // meters
+        const offsetX = Math.cos(angle) * spread;
+        const offsetZ = Math.sin(angle) * spread;
+        itemPos.x += offsetX;
+        itemPos.z += offsetZ;
+        this.combat.createDroppedItemMesh(itemPos, item.id);
       }
 
       // Play death sound
@@ -582,7 +599,8 @@ export class PlaytestMode {
       if (distance < pickupRange) {
         // Money bag - special handling
         if (item.itemType === 'money_bag') {
-          const added = this.wallet.addMoney(1000);
+          const amount = item.mesh.userData.moneyAmount || 1000;
+          const added = this.wallet.addMoney(amount);
           if (added) {
             this.scene.remove(item.mesh);
             this.droppedItems.splice(i, 1);
@@ -781,8 +799,28 @@ export class PlaytestMode {
             glassMesh = child;
           }
         });
-        this.addColliders(obj);
-        this.windowObjects.push({ group: obj, glassMesh, broken: false });
+        // Compute glass collider separately so it can be removed on break
+        let glassCollider: THREE.Box3 | null = null;
+        if (glassMesh) {
+          const glassBox = new THREE.Box3().setFromObject(glassMesh);
+          if (!glassBox.isEmpty()) {
+            glassCollider = glassBox;
+            this.colliders.push(glassCollider);
+          }
+        }
+        // Add colliders for non-glass parts (frame)
+        obj.traverse((child) => {
+          if (child instanceof THREE.Mesh && !child.userData.isGlass) {
+            const box = new THREE.Box3().setFromObject(child);
+            if (box.isEmpty()) return;
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            if (size.x < 0.03 && size.z < 0.03) return;
+            if (size.y < 0.15 && box.max.y < 0.3) return;
+            this.colliders.push(box);
+          }
+        });
+        this.windowObjects.push({ group: obj, glassMesh, broken: false, glassCollider });
         continue;
       }
 
