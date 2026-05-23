@@ -13,6 +13,8 @@ interface EditorUIProps {
   canUndo: boolean;
   canRedo: boolean;
   multiSelectCount: number;
+  terrainMode: boolean;
+  terrainBrush: { type: string; radius: number; strength: number; paintMaterial: number };
   onSelectType: (typeId: string | null) => void;
   onToggleGrid: () => void;
   onToggleMove: () => void;
@@ -28,16 +30,20 @@ interface EditorUIProps {
   onPlaytest: () => void;
   onUpdateGroupId?: (id: number) => void;
   onUpdateLabel?: (label: string) => void;
+  onToggleTerrainMode: () => void;
+  onTerrainBrushChange: (brush: { type: string; radius: number; strength: number; paintMaterial: number }) => void;
 }
 
 export const EditorUI = ({
   objectTypes, selectedType, selectedObject, objectCount,
   gridEnabled, moveModeEnabled, placementY,
   canUndo, canRedo, multiSelectCount,
+  terrainMode, terrainBrush,
   onSelectType, onToggleGrid, onToggleMove,
   onExport, onImport, onClear, onDelete, onRotate, onDuplicate,
   onUndo, onRedo, onBackToGame, onPlaytest,
   onUpdateGroupId, onUpdateLabel,
+  onToggleTerrainMode, onTerrainBrushChange,
 }: EditorUIProps) => {
   const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState('');
@@ -51,6 +57,7 @@ export const EditorUI = ({
     { id: 'lighting', name: 'Свет', icon: '💡', color: 'from-yellow-600 to-yellow-700' },
     { id: 'scripts', name: 'Скрипты', icon: '⚡', color: 'from-purple-700 to-purple-800' },
     { id: 'things', name: 'Вещи', icon: '🎒', color: 'from-red-700 to-red-800' },
+    { id: 'terrain', name: 'Рельеф', icon: '🌍', color: 'from-green-700 to-green-800' },
   ];
 
   const filteredObjects = objectTypes.filter(o => o.category === activeCategory);
@@ -105,6 +112,72 @@ export const EditorUI = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {activeCategory === 'terrain' && (
+            <div className="p-2 border-b border-gray-700 mb-2">
+              <button onClick={onToggleTerrainMode}
+                className={`w-full py-2 rounded-lg text-sm font-bold transition ${terrainMode ? 'bg-green-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}>
+                {terrainMode ? '🖌️ Кисть рельефа ВКЛ' : '🖌️ Кисть рельефа'}
+              </button>
+
+              {terrainMode && (
+                <div className="mt-2 space-y-2 bg-gray-800/50 rounded-lg p-2">
+                  <div className="grid grid-cols-5 gap-1">
+                    {[
+                      { id: 'raise', label: '⬆️', title: 'Поднять' },
+                      { id: 'lower', label: '⬇️', title: 'Опустить' },
+                      { id: 'flatten', label: '⏹️', title: 'Выровнять' },
+                      { id: 'smooth', label: '〰️', title: 'Сгладить' },
+                      { id: 'paint', label: '🎨', title: 'Красить' },
+                    ].map(b => (
+                      <button key={b.id} onClick={() => onTerrainBrushChange({...terrainBrush, type: b.id})}
+                        className={`py-1.5 rounded text-xs text-center transition ${terrainBrush.type === b.id ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                        title={b.title}>
+                        {b.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-400">
+                      <span>Радиус</span><span className="text-white">{terrainBrush.radius}m</span>
+                    </div>
+                    <input type="range" min="1" max="20" value={terrainBrush.radius}
+                      onChange={e => onTerrainBrushChange({...terrainBrush, radius: +e.target.value})}
+                      className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-400">
+                      <span>Сила</span><span className="text-white">{terrainBrush.strength.toFixed(1)}</span>
+                    </div>
+                    <input type="range" min="1" max="20" step="1" value={terrainBrush.strength * 10}
+                      onChange={e => onTerrainBrushChange({...terrainBrush, strength: +e.target.value / 10})}
+                      className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+                  </div>
+
+                  {terrainBrush.type === 'paint' && (
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">Материал</div>
+                      <div className="flex gap-2">
+                        {[
+                          { idx: 0, color: '#4a7a2a', name: 'Трава' },
+                          { idx: 1, color: '#8b6914', name: 'Грунт' },
+                          { idx: 2, color: '#d4a574', name: 'Песок' },
+                          { idx: 3, color: '#7a7a7a', name: 'Камень' },
+                        ].map(m => (
+                          <button key={m.idx} onClick={() => onTerrainBrushChange({...terrainBrush, paintMaterial: m.idx})}
+                            className={`w-8 h-8 rounded-full border-2 transition ${terrainBrush.paintMaterial === m.idx ? 'border-white scale-110' : 'border-gray-600 hover:border-gray-400'}`}
+                            style={{ backgroundColor: m.color }}
+                            title={m.name} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <button onClick={() => onSelectType(null)}
             className={`w-full text-left px-3 py-2 rounded-lg text-sm transition flex items-center gap-2 ${!selectedType ? 'bg-gray-600 text-white' : 'bg-gray-800/70 text-gray-300 hover:bg-gray-700'}`}>
             <span>🖱️</span><span>Выбор объектов</span>
@@ -199,7 +272,18 @@ export const EditorUI = ({
       )}
 
       {/* === BOTTOM HINT === */}
-      {selectedType && (
+      {terrainMode && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-900/95 border border-green-600/50 rounded-lg px-6 py-3 pointer-events-none">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🖌️</span>
+            <div>
+              <div className="text-green-300 font-bold">Режим рельефа</div>
+              <div className="text-gray-400 text-sm">ЛКМ — рисовать | ESC — выход из режима рельефа</div>
+            </div>
+          </div>
+        </div>
+      )}
+      {!terrainMode && selectedType && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-900/95 border border-gray-600 rounded-lg px-6 py-3 pointer-events-none">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{selectedType.icon}</span>
@@ -210,7 +294,7 @@ export const EditorUI = ({
           </div>
         </div>
       )}
-      {!selectedType && !selectedObject && (
+      {!terrainMode && !selectedType && !selectedObject && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-gray-900/85 border border-gray-700 rounded-lg px-5 py-2 pointer-events-none text-sm text-gray-300">
           Выбери объект слева или кликни по размещённому. <span className="text-yellow-400">❓</span> — справка.
         </div>

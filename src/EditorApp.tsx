@@ -62,6 +62,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [canRedo, setCanRedo] = useState(false);
   const [multiSelectCount, setMultiSelectCount] = useState(0);
 
+  // Terrain mode state
+  const [terrainMode, setTerrainMode] = useState(false);
+  const [terrainBrush, setTerrainBrush] = useState({ type: 'raise', radius: 5, strength: 0.5, paintMaterial: 0 });
+
   // Playtest state
   const [ptFps, setPtFps] = useState(0);
   const [ptPos, setPtPos] = useState<THREE.Vector3 | null>(null);
@@ -126,6 +130,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     editor.onHeightChanged = (y) => setPlacementY(y);
     editor.onHistoryChanged = (u, r) => { setCanUndo(u); setCanRedo(r); };
     editor.onMultiSelectChanged = (c) => setMultiSelectCount(c);
+    editor.onTerrainModeChanged = (mode: boolean) => setTerrainMode(mode);
+    editor.onTerrainBrushChanged = (brush: { type: string; radius: number; strength: number; paintMaterial: number }) => setTerrainBrush(brush);
 
     // Восстанавливаем карту если есть сохранение
     if (savedMapRef.current) {
@@ -431,6 +437,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const handleSelectType = useCallback((typeId: string | null) => { editorRef.current?.selectObjectType(typeId); }, []);
   const handleToggleGrid = useCallback(() => { editorRef.current?.toggleGrid(); }, []);
   const handleToggleMove = useCallback(() => { editorRef.current?.toggleMoveSelected(); }, []);
+  const handleToggleTerrainMode = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.setTerrainMode(!editor.getTerrainMode());
+  }, []);
+  const handleTerrainBrushChange = useCallback((brush: { type: string; radius: number; strength: number; paintMaterial: number }) => {
+    editorRef.current?.setTerrainBrush(brush as { type: 'raise' | 'lower' | 'flatten' | 'smooth' | 'paint'; radius: number; strength: number; paintMaterial: number });
+  }, []);
   const handleDuplicate = useCallback(() => { editorRef.current?.duplicateSelected(); }, []);
   const handleUndo = useCallback(() => { editorRef.current?.undo(); }, []);
   const handleRedo = useCallback(() => { editorRef.current?.redo(); }, []);
@@ -494,6 +508,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
           onPlaytest={openTeamSelect}
           onUpdateGroupId={handleUpdateGroupId}
           onUpdateLabel={handleUpdateLabel}
+          terrainMode={terrainMode}
+          terrainBrush={terrainBrush}
+          onToggleTerrainMode={handleToggleTerrainMode}
+          onTerrainBrushChange={handleTerrainBrushChange}
         />
       )}
 
