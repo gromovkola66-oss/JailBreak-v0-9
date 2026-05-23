@@ -51,7 +51,7 @@ export class GarageDoorSystem {
     let minDistance = this.interactionRange;
 
     for (const door of this.doors) {
-      const distance = playerPosition.distanceTo(door.closedPosition);
+      const distance = playerPosition.distanceTo(door.mesh.position);
       if (distance < minDistance) {
         minDistance = distance;
         nearest = door;

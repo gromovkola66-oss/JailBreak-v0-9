@@ -280,6 +280,7 @@ export class PlaytestMode {
         const { canInteract, door } = this.doorSystem.canInteract(this.controller.camera.position);
         if (canInteract && door) {
           this.doorSystem.toggleDoor(door.id);
+          return;
         }
       }
       // Garage door interaction (any team)
@@ -730,6 +731,7 @@ export class PlaytestMode {
     this.controller.dispose();
     this.combat.dispose();
     this.cameraSystem.dispose();
+    this.garageDoorSystem.onDoorStateChange = undefined;
     document.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('resize', this.boundOnResize);
   }
