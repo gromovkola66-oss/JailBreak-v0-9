@@ -720,7 +720,14 @@ export class MapEditor {
 
   private removeById(id: string) {
     const obj = this.placedObjects.get(id);
-    if (obj) this.scene.remove(obj);
+    if (obj) {
+      obj.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.geometry) {
+          child.geometry.dispose();
+        }
+      });
+      this.scene.remove(obj);
+    }
     this.placedObjects.delete(id);
     this.placedObjectsData = this.placedObjectsData.filter(d => d.id !== id);
     this.selectedObjects.delete(id);

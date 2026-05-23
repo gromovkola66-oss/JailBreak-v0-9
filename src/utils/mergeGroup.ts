@@ -52,12 +52,14 @@ export function mergeGroup(group: THREE.Group): THREE.Group {
     }
   });
 
-  // Preserve invisible collision meshes
+  // Preserve invisible collision meshes (using matrixWorld for hierarchy safety)
   for (const mesh of invisibleMeshes) {
     const clone = mesh.clone();
-    clone.position.copy(mesh.position);
-    clone.rotation.copy(mesh.rotation);
-    clone.scale.copy(mesh.scale);
+    clone.position.set(0, 0, 0);
+    clone.rotation.set(0, 0, 0);
+    clone.scale.set(1, 1, 1);
+    clone.geometry = mesh.geometry.clone();
+    clone.geometry.applyMatrix4(mesh.matrixWorld);
     result.add(clone);
   }
 
