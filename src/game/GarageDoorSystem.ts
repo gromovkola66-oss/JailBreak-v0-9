@@ -20,6 +20,7 @@ export class GarageDoorSystem {
   registerDoor(id: string, mesh: THREE.Object3D, position: THREE.Vector3, doorHeight: number): GarageDoor {
     const closedPos = position.clone();
     const openPos = position.clone();
+    // Door sinks below ground level when open (garage shutter sliding down out of view)
     openPos.y = closedPos.y - doorHeight;
 
     const door: GarageDoor = {
@@ -96,6 +97,13 @@ export class GarageDoorSystem {
       canInteract: nearest !== null,
       door: nearest,
     };
+  }
+
+  dispose() {
+    for (const timer of this.autoCloseTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.autoCloseTimers.clear();
   }
 
   update(delta: number) {

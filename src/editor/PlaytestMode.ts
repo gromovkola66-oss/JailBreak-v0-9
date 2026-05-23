@@ -219,17 +219,8 @@ export class PlaytestMode {
       }
       this.controller.setColliders(this.colliders);
     };
-    this.garageDoorSystem.onAutoClose = (doorId) => {
+    this.garageDoorSystem.onAutoClose = (_doorId) => {
       soundSystem.playGarageDoor(false);
-      const boxes = this.garageDoorColliders.get(doorId);
-      if (boxes) {
-        for (const box of boxes) {
-          if (!this.colliders.includes(box)) {
-            this.colliders.push(box);
-          }
-        }
-      }
-      this.controller.setColliders(this.colliders);
     };
 
     // Освещение
@@ -755,6 +746,7 @@ export class PlaytestMode {
     this.controller.dispose();
     this.combat.dispose();
     this.cameraSystem.dispose();
+    this.garageDoorSystem.dispose();
     this.garageDoorSystem.onDoorStateChange = undefined;
     document.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('resize', this.boundOnResize);
