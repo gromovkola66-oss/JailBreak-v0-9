@@ -418,7 +418,10 @@ export class PlaytestMode {
         obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
         this.scene.add(obj);
         const camPos = new THREE.Vector3(objData.position.x, objData.position.y + 3.4, objData.position.z);
-        const camRot = new THREE.Euler(-0.3, THREE.MathUtils.degToRad(objData.rotation), 0);
+        // Camera looks forward from the model's front face. The model's visual "lens"
+        // direction matches its local +Z, but Three.js cameras look along -Z,
+        // so we add PI to flip the view direction to match the model's facing.
+        const camRot = new THREE.Euler(-0.3, THREE.MathUtils.degToRad(objData.rotation) + Math.PI, 0);
         this.cameraSystem.registerCamera(
           `cam_${objData.id}`,
           camPos,

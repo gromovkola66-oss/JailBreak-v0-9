@@ -308,10 +308,10 @@ export class CameraSystem {
 
       this.renderer.setRenderTarget(this.terminalScreenTarget);
       this.renderer.render(this.scene, this.securityCamera);
-      this.renderer.setRenderTarget(null);
 
-      // Read pixels using pooled buffer
+      // Read pixels while render target is still bound
       this.renderer.readRenderTargetPixels(this.terminalScreenTarget, 0, 0, width, height, buffer);
+      this.renderer.setRenderTarget(null);
 
       // Flip vertically (WebGL reads bottom-to-top) using pooled imageData
       for (let y = 0; y < height; y++) {

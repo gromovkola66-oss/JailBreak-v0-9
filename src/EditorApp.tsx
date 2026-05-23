@@ -433,7 +433,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
           )}
 
           {/* Click to start */}
-          {!ptLocked && !ptInventory?.isOpen && (
+          {!ptLocked && !ptInventory?.isOpen && !ptCameraState?.inTerminalMode && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto">
               <div className="text-center text-white">
                 <h2 className="text-3xl font-bold mb-4">🧪 Тестирование карты</h2>
