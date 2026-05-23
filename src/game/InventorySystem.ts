@@ -104,6 +104,21 @@ export class InventorySystem {
     return this.isOpen;
   }
 
+  dropAllItems(): InventoryItem[] {
+    const dropped: InventoryItem[] = [];
+    for (let i = 0; i < this.slots.length; i++) {
+      const item = this.slots[i];
+      if (item && item.id !== 'fists') {
+        dropped.push(item);
+        this.slots[i] = null;
+      }
+    }
+    this.slots[0] = FISTS_ITEM;
+    this.equippedSlot = 0;
+    this.notifyStateChange();
+    return dropped;
+  }
+
   reset() {
     this.slots = [FISTS_ITEM, null, null, null, null, null];
     this.equippedSlot = 0;

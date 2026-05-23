@@ -600,6 +600,72 @@ export class SoundSystem {
     noise.start(now);
     noise.stop(now + 0.4);
   }
+
+  // === ЗВУК СМЕРТИ ===
+  playDeath() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Low rumble oscillator
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.exponentialRampToValueAtTime(30, now + 1.0);
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(this.masterVolume * 0.7, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+
+    // Noise burst (impact)
+    const bufferSize = Math.floor(ctx.sampleRate * 0.5);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 6) * 0.6;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(500, now);
+    filter.frequency.exponentialRampToValueAtTime(100, now + 0.5);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(this.masterVolume * 0.5, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+    osc.connect(oscGain).connect(ctx.destination);
+    noise.connect(filter).connect(noiseGain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 1.0);
+    noise.start(now);
+    noise.stop(now + 0.5);
+  }
+
+  // === ЗВУК РЕСПАВНА ===
+  playRespawn() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Rising tone (ascending notes)
+    const notes = [330, 440, 554, 659]; // E4, A4, C#5, E5
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, now + i * 0.12);
+      gain.gain.linearRampToValueAtTime(this.masterVolume * 0.3, now + i * 0.12 + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.3);
+
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + i * 0.12);
+      osc.stop(now + i * 0.12 + 0.3);
+    });
+  }
 }
 
 // Синглтон

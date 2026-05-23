@@ -46,6 +46,12 @@ export class PlaytestMode {
   private footstepTimer = 0;
   private readonly FOOTSTEP_INTERVAL = 0.4;
 
+  // Death/respawn state
+  private isDead = false;
+  private deathTimer = 0;
+  private readonly RESPAWN_DELAY = 5;
+  private spawnPoint: THREE.Vector3 | null = null;
+
   private raycaster = new THREE.Raycaster();
   private boundOnResize = this.onResize.bind(this);
   private boundAnimate = this.animate.bind(this);
@@ -73,6 +79,7 @@ export class PlaytestMode {
   public onShowRentalMenu?: (door: RentalDoor) => void;
   public onRentalExpired?: (door: RentalDoor) => void;
   public onRentalDoorNearby?: (info: { cellLabel: string; ownerId: string | null; expiresAt: number | null } | null) => void;
+  public onDeathStateChange?: (state: { isDead: boolean; respawnCountdown: number }) => void;
 
   private frameCount = 0;
   private fpsTime = 0;
@@ -263,6 +270,54 @@ export class PlaytestMode {
     // Handle dropped items removal from inventory
     this.combat.onItemDropped = (itemId: string) => {
       this.inventory.removeItem(itemId);
+    };
+
+    // Death handling
+    this.combat.onDeath = () => {
+      this.isDead = true;
+      this.deathTimer = this.RESPAWN_DELAY;
+
+      // Drop money
+      const droppedMoney = this.wallet.dropOnDeath();
+      if (droppedMoney > 0) {
+        const playerPos = this.controller.camera.position.clone();
+        playerPos.y -= 0.5;
+        const moneyObj = getObjectById('money_bag');
+        if (moneyObj) {
+          const mesh = moneyObj.create();
+          mesh.position.copy(playerPos);
+          mesh.userData.isItem = true;
+          mesh.userData.itemType = 'money_bag';
+          this.scene.add(mesh);
+          this.droppedItems.push({ mesh, itemType: 'money_bag', position: playerPos.clone() });
+        }
+      }
+
+      // Drop all inventory items
+      const droppedInvItems = this.inventory.dropAllItems();
+      const playerDropPos = this.controller.camera.position.clone();
+      playerDropPos.y -= 0.5;
+      for (const item of droppedInvItems) {
+        if (item.type === 'weapon') {
+          // Weapon is already dropped by Combat.die()
+          continue;
+        }
+        this.combat.createDroppedItemMesh(playerDropPos.clone(), item.id);
+      }
+
+      // Play death sound
+      soundSystem.playDeath();
+
+      // Exit pointer lock
+      document.exitPointerLock();
+
+      // Notify UI
+      this.onDeathStateChange?.({ isDead: true, respawnCountdown: this.deathTimer });
+    };
+
+    // Fall damage
+    this.controller.onFallDamage = (damage: number) => {
+      this.combat.takeDamage(damage);
     };
 
     // Inventory system
@@ -821,6 +876,7 @@ export class PlaytestMode {
 
     // Спавн
     if (spawnPoint) {
+      this.spawnPoint = spawnPoint.clone();
       this.controller.camera.position.copy(spawnPoint);
       // Adjust spawn height based on floor colliders below spawn point
       let bestFloorY = 0;
@@ -835,8 +891,10 @@ export class PlaytestMode {
         }
       }
       this.controller.camera.position.y = bestFloorY + 1.7;
+      this.spawnPoint.y = bestFloorY + 1.7;
       this.controller.initFeetPosition();
     } else {
+      this.spawnPoint = new THREE.Vector3(0, 1.7, 0);
       this.controller.camera.position.set(0, 1.7, 0);
       this.controller.initFeetPosition();
     }
@@ -916,6 +974,27 @@ export class PlaytestMode {
 
     // Skip movement in terminal mode
     if (!this.inTerminalMode) {
+      // Skip game logic when dead
+      if (this.isDead) {
+        this.deathTimer -= delta;
+        this.onDeathStateChange?.({ isDead: true, respawnCountdown: Math.max(0, this.deathTimer) });
+
+        if (this.deathTimer <= 0) {
+          // Respawn
+          this.isDead = false;
+          this.combat.respawn();
+          this.inventory.reset();
+
+          // Teleport to spawn point
+          if (this.spawnPoint) {
+            this.controller.camera.position.copy(this.spawnPoint);
+            this.controller.initFeetPosition();
+          }
+
+          soundSystem.playRespawn();
+          this.onDeathStateChange?.({ isDead: false, respawnCountdown: 0 });
+        }
+      } else {
       // Обновления
       this.controller.update(delta);
 
@@ -971,6 +1050,7 @@ export class PlaytestMode {
       // Terminal raycast
       this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.controller.camera);
       this.cameraSystem.checkRaycast(this.raycaster);
+      }
     }
 
     this.onStatsUpdate?.(this.currentFps, this.controller.camera.position);
@@ -1032,6 +1112,10 @@ export class PlaytestMode {
 
   hasDoors(): boolean {
     return this.doorSystem.getDoors().length > 0;
+  }
+
+  getIsDead(): boolean {
+    return this.isDead;
   }
 
   areCellsOpen(): boolean {

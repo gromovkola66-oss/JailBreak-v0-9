@@ -476,7 +476,7 @@ export class Combat {
     this.onItemDropped?.(itemType);
   }
 
-  private createDroppedItemMesh(position: THREE.Vector3, itemType: string) {
+  public createDroppedItemMesh(position: THREE.Vector3, itemType: string) {
     const itemGroup = new THREE.Group();
 
     switch (itemType) {

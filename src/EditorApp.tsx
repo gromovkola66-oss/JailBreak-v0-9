@@ -91,6 +91,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [ptRentalError, setPtRentalError] = useState<string | null>(null);
   const ptRentalMenuRef = useRef(ptRentalMenu);
 
+  // Death state
+  const [ptDeathState, setPtDeathState] = useState<{ isDead: boolean; respawnCountdown: number } | null>(null);
+
   // Rental door nearby info
   const [ptNearbyRentalDoor, setPtNearbyRentalDoor] = useState<{ cellLabel: string; ownerId: string | null; expiresAt: number | null } | null>(null);
   const [rentalTimeLeft, setRentalTimeLeft] = useState<string | null>(null);
@@ -345,6 +348,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         setPtNearbyRentalDoor(info);
       };
 
+      pt.onDeathStateChange = (state) => {
+        setPtDeathState({ ...state });
+      };
+
       pt.onWalletUpdate = (state) => {
         setPtWallet(prev => {
           if (prev && state.balance > prev.balance) {
@@ -386,6 +393,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setPtDoorLockedToast(false);
     setPtRentalMenu(null);
     setPtRentalError(null);
+    setPtDeathState(null);
     setMode('editing');
   }, []);
 
@@ -602,7 +610,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
           )}
 
           {/* Click to start */}
-          {!ptLocked && !ptInventory?.isOpen && !ptCameraState?.inTerminalMode && (
+          {!ptLocked && !ptInventory?.isOpen && !ptCameraState?.inTerminalMode && !ptDeathState?.isDead && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto">
               <div className="text-center text-white">
                 <h2 className="text-3xl font-bold mb-4">🧪 Тестирование карты</h2>
@@ -620,6 +628,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   ← Вернуться в редактор (F9)
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Death overlay */}
+          {ptDeathState?.isDead && (
+            <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50 pointer-events-none">
+              <div className="text-red-500 text-5xl font-bold mb-4">Вы погибли</div>
+              <div className="text-white text-xl">Респавн через: {Math.ceil(ptDeathState.respawnCountdown)}...</div>
             </div>
           )}
 
