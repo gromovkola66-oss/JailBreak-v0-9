@@ -894,7 +894,21 @@ export class MapEditor {
   }
 
   // === IO ===
-  exportMap(): MapData { return { name: 'Untitled Map', version: 1, objects: [...this.placedObjectsData], terrain: this.terrainSystem.exportData(), waterZones: [] }; }
+  exportMap(): MapData {
+    const waterZones: WaterZoneData[] = [];
+    for (const obj of this.placedObjectsData) {
+      if (obj.type === 'water_shallow' || obj.type === 'water_deep') {
+        waterZones.push({
+          id: obj.id,
+          position: { x: obj.position.x, y: obj.position.y, z: obj.position.z },
+          width: 4,
+          depth: 4,
+          type: obj.type === 'water_shallow' ? 'shallow' : 'deep',
+        });
+      }
+    }
+    return { name: 'Untitled Map', version: 1, objects: [...this.placedObjectsData], terrain: this.terrainSystem.exportData(), waterZones };
+  }
   exportJSON(): string { return JSON.stringify(this.exportMap(), null, 2); }
   importMap(data: MapData) {
     this.clearMap();
@@ -933,6 +947,7 @@ export class MapEditor {
     this.undoStack = [];
     this.redoStack = [];
     this.notifyHistory();
+    this.terrainSystem.resetTerrain();
     this.onObjectPlaced?.(0);
   }
 
@@ -955,5 +970,5 @@ export class MapEditor {
     this.renderer.render(this.scene, this.editorCamera.camera);
   }
   getObjectTypes() { return getAllEditorObjectTypes(); }
-  dispose() { this.stop(); this.renderer.domElement.parentElement?.removeChild(this.renderer.domElement); this.renderer.dispose(); this.editorCamera.dispose(); }
+  dispose() { this.stop(); this.terrainSystem.dispose(); this.renderer.domElement.parentElement?.removeChild(this.renderer.domElement); this.renderer.dispose(); this.editorCamera.dispose(); }
 }

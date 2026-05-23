@@ -3405,10 +3405,15 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
     id: 'grass_tall', name: '\u0412\u044b\u0441\u043e\u043a\u0430\u044f \u0442\u0440\u0430\u0432\u0430', icon: '\uD83C\uDF3E', category: 'terrain',
     create: () => {
       const g = new THREE.Group();
+      let i = 0;
       for (let x = -0.8; x <= 0.8; x += 0.4) {
         for (let z = -0.8; z <= 0.8; z += 0.4) {
-          const h = 0.6 + Math.random() * 0.4;
-          g.add(pos(box(0.05, h, 0.05, M.grassGreen), x + Math.random() * 0.1, h / 2, z + Math.random() * 0.1));
+          const seed = (i * 7 + 3) % 17;
+          const h = 0.6 + (seed / 17) * 0.4;
+          const offsetX = ((i * 13 + 5) % 11) / 110;
+          const offsetZ = ((i * 11 + 7) % 13) / 130;
+          g.add(pos(box(0.05, h, 0.05, M.grassGreen), x + offsetX, h / 2, z + offsetZ));
+          i++;
         }
       }
       return mergeGroup(g);

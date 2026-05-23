@@ -172,6 +172,12 @@ export class TerrainSystem {
   }
 
   getHeightAt(x: number, z: number): number {
+    // Return 0 for positions outside the terrain bounds
+    const halfSize = this.size / 2;
+    if (x < -halfSize || x > halfSize || z < -halfSize || z > halfSize) {
+      return 0;
+    }
+
     // Convert world position to grid coordinates
     const gx = (x / this.size + 0.5) * (this.resolution - 1);
     const gz = (z / this.size + 0.5) * (this.resolution - 1);
@@ -198,6 +204,24 @@ export class TerrainSystem {
     const h0 = h00 * (1 - fx) + h10 * fx;
     const h1 = h01 * (1 - fx) + h11 * fx;
     return h0 * (1 - fz) + h1 * fz;
+  }
+
+  resetTerrain(): void {
+    this.heightData.fill(0);
+    this.materialMap.fill(0);
+
+    const positions = this.geometry.attributes.position;
+    const colors = this.geometry.attributes.color;
+    const grassColor = new THREE.Color(TerrainSystem.MATERIAL_COLORS[0]);
+
+    for (let i = 0; i < this.heightData.length; i++) {
+      positions.setY(i, 0);
+      colors.setXYZ(i, grassColor.r, grassColor.g, grassColor.b);
+    }
+
+    positions.needsUpdate = true;
+    colors.needsUpdate = true;
+    this.geometry.computeVertexNormals();
   }
 
   exportData(): TerrainData {
