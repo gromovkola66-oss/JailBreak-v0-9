@@ -18,6 +18,7 @@ export interface RentalDoor {
   closedPosition: THREE.Vector3;
   ownerId: string | null;
   expiresAt: number | null;
+  expiredGracePeriod: number | null;
 }
 
 export const RENTAL_OPTIONS: RentalOption[] = [
@@ -54,6 +55,7 @@ export class RentalDoorSystem {
       closedPosition: closedPos,
       ownerId: null,
       expiresAt: null,
+      expiredGracePeriod: null,
     };
 
     this.doors.push(door);
@@ -117,13 +119,22 @@ export class RentalDoorSystem {
 
       // Check expiry
       if (door.expiresAt !== null && Date.now() > door.expiresAt) {
-        door.ownerId = null;
-        door.expiresAt = null;
+        if (door.expiredGracePeriod === null) {
+          // Start grace period: warn player, close after 5 seconds
+          door.expiredGracePeriod = Date.now() + 5000;
+          door.ownerId = null;
+          door.expiresAt = null;
+          this.onRentalExpired?.(door);
+        }
+      }
+
+      // After grace period elapses, actually close the door
+      if (door.expiredGracePeriod !== null && Date.now() > door.expiredGracePeriod) {
+        door.expiredGracePeriod = null;
         if (door.isOpen) {
           door.isOpen = false;
           this.onDoorStateChange?.(door.id, false);
         }
-        this.onRentalExpired?.(door);
       }
     }
   }

@@ -430,7 +430,7 @@ export class PlaytestMode {
         return;
       }
       // Item pickup
-      this.tryPickupItem();
+      if (this.tryPickupItem()) return;
       // Door interaction (guards only)
       if (this.team === 'guard') {
         const { canInteract, door } = this.doorSystem.canInteract(this.controller.camera.position);
@@ -474,7 +474,7 @@ export class PlaytestMode {
     }
   };
 
-  private tryPickupItem() {
+  private tryPickupItem(): boolean {
     const playerPos = this.controller.camera.position;
     const pickupRange = 2;
 
@@ -485,7 +485,7 @@ export class PlaytestMode {
       if (def) {
         this.inventory.addItem(def);
       }
-      return;
+      return true;
     }
 
     // Check map-placed items
@@ -505,7 +505,7 @@ export class PlaytestMode {
             this.droppedItems.splice(i, 1);
             soundSystem.playPickup();
           }
-          return;
+          return true;
         }
 
         const def = ITEM_DEFS[item.itemType];
@@ -517,9 +517,11 @@ export class PlaytestMode {
           this.droppedItems.splice(i, 1);
           soundSystem.playPickup();
         }
-        return;
+        return true;
       }
     }
+
+    return false;
   }
 
   private loadMap(mapData: MapData, team: 'guard' | 'prisoner') {
@@ -1046,6 +1048,8 @@ export class PlaytestMode {
     this.garageDoorSystem.dispose();
     this.garageDoorSystem.onDoorStateChange = undefined;
     this.garageDoorSystem.onLockStateChange = undefined;
+    this.rentalDoorSystem.onDoorStateChange = undefined;
+    this.rentalDoorSystem.onRentalExpired = undefined;
     document.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('resize', this.boundOnResize);
   }

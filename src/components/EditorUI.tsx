@@ -175,7 +175,7 @@ export const EditorUI = ({
                 {(selectedObject.type === 'camera' || selectedObject.type === 'bars_door_rental') && (
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-400 text-sm">{selectedObject.type === 'bars_door_rental' ? 'Название камеры' : 'Название камеры'}</span>
+                      <span className="text-gray-400 text-sm">{selectedObject.type === 'bars_door_rental' ? 'Название камеры/ячейки' : 'Название камеры'}</span>
                       <input
                         type="text"
                         value={selectedObject.label ?? ''}

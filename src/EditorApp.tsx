@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+
 import * as THREE from 'three';
 import { MapEditor, MapData, PlacedObject } from './editor/MapEditor';
 import { PlaytestMode } from './editor/PlaytestMode';
@@ -88,11 +89,15 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   // Rental menu state
   const [ptRentalMenu, setPtRentalMenu] = useState<{ doorId: string; cellLabel: string } | null>(null);
   const [ptRentalError, setPtRentalError] = useState<string | null>(null);
+  const ptRentalMenuRef = useRef(ptRentalMenu);
 
   // Terminal wallpaper & start menu state
   const [terminalWallpaperIdx, setTerminalWallpaperIdx] = useState(() => Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | null>(null);
+
+  // === Keep rental menu ref in sync ===
+  useEffect(() => { ptRentalMenuRef.current = ptRentalMenu; }, [ptRentalMenu]);
 
   // === EDITOR ===
   useEffect(() => {
@@ -141,28 +146,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     document.addEventListener('pointerlockchange', handlePointerLock);
 
     const handleKey = (e: KeyboardEvent) => {
-      if (ptRentalMenu) {
-        if (e.code === 'Escape') {
-          setPtRentalMenu(null);
-          setPtRentalError(null);
-          playtestRef.current?.closeRentalMenu();
-          return;
-        }
-        const optMap: Record<string, string> = { 'Digit1': 'rent_1h', 'Digit2': 'rent_24h', 'Digit3': 'buy' };
-        const optId = optMap[e.code];
-        if (optId) {
-          const success = playtestRef.current?.rentDoor(ptRentalMenu.doorId, optId);
-          if (success) {
-            setPtRentalMenu(null);
-            setPtRentalError(null);
-            playtestRef.current?.closeRentalMenu();
-          } else {
-            setPtRentalError('\u041d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u0441\u0440\u0435\u0434\u0441\u0442\u0432');
-            setTimeout(() => setPtRentalError(null), 2000);
-          }
-          return;
-        }
-      }
+      if (ptRentalMenuRef.current) return;
       if (e.code === 'F9') {
         e.preventDefault();
         stopPlaytest();
@@ -181,7 +165,40 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         playtestRef.current = null;
       }
     };
-  }, [mode, ptTeam, ptRentalMenu]);
+  }, [mode, ptTeam]);
+
+  // === RENTAL MENU KEYBOARD HANDLING ===
+  useEffect(() => {
+    if (!ptRentalMenu) return;
+
+    const handleRentalKey = (e: KeyboardEvent) => {
+      if (e.code === 'Escape') {
+        setPtRentalMenu(null);
+        setPtRentalError(null);
+        playtestRef.current?.closeRentalMenu();
+        return;
+      }
+      const optMap: Record<string, string> = { 'Digit1': 'rent_1h', 'Digit2': 'rent_24h', 'Digit3': 'buy' };
+      const optId = optMap[e.code];
+      if (optId) {
+        const success = playtestRef.current?.rentDoor(ptRentalMenu.doorId, optId);
+        if (success) {
+          setPtRentalMenu(null);
+          setPtRentalError(null);
+          playtestRef.current?.closeRentalMenu();
+        } else {
+          setPtRentalError('\u041d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u0441\u0440\u0435\u0434\u0441\u0442\u0432');
+          setTimeout(() => setPtRentalError(null), 2000);
+        }
+        return;
+      }
+    };
+    document.addEventListener('keydown', handleRentalKey);
+
+    return () => {
+      document.removeEventListener('keydown', handleRentalKey);
+    };
+  }, [ptRentalMenu]);
 
   // Countdown timer updates come from GarageDoorSystem via onGarageDoorLockUpdate callback
   // (no polling needed - the system emits every second during temp_locked state)
