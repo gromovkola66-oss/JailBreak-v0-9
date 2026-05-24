@@ -2683,6 +2683,35 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
   },
 
   {
+    id: 'storage_locker', name: '\u0428\u043a\u0430\u0444 \u0445\u0440\u0430\u043d\u0435\u043d\u0438\u044f', icon: '\uD83D\uDDC4', category: 'scripts',
+    create: () => {
+      const g = new THREE.Group();
+      // Корпус шкафа (темный металл)
+      g.add(pos(box(0.6, 1.9, 0.5, M.metalDark), 0, 0.95, 0));
+      // Дверная панель (чуть светлее)
+      g.add(pos(box(0.56, 1.84, 0.04, M.metalMid), 0, 0.95, 0.24));
+      // Ручка двери
+      g.add(pos(box(0.04, 0.12, 0.04, M.chrome), 0.2, 0.95, 0.27));
+      // Вентиляционные щели наверху
+      for (let i = 0; i < 4; i++) {
+        g.add(pos(box(0.3, 0.015, 0.02, M.metalDark), 0, 1.7 + i * 0.04, 0.26));
+      }
+      // Замок (навесной)
+      g.add(pos(box(0.06, 0.08, 0.04, M.metalMid), 0.2, 0.8, 0.27));
+      g.add(pos(cyl(0.02, 0.02, 0.05, M.chrome, 8), 0.2, 0.86, 0.28));
+      // Пятна ржавчины
+      g.add(pos(box(0.12, 0.08, 0.02, M.metalRust), -0.15, 0.3, 0.25));
+      g.add(pos(box(0.08, 0.1, 0.02, M.metalRust), 0.1, 1.5, 0.25));
+      // Ножки
+      g.add(pos(box(0.08, 0.05, 0.08, M.metalDark), -0.22, 0.025, -0.18));
+      g.add(pos(box(0.08, 0.05, 0.08, M.metalDark), 0.22, 0.025, -0.18));
+      g.add(pos(box(0.08, 0.05, 0.08, M.metalDark), -0.22, 0.025, 0.18));
+      g.add(pos(box(0.08, 0.05, 0.08, M.metalDark), 0.22, 0.025, 0.18));
+      return mergeGroup(g);
+    }
+  },
+
+  {
     id: 'money_bag', name: '\u041c\u0435\u0448\u043e\u043a \u0434\u0435\u043d\u0435\u0433 (1000\u20bd)', icon: '\uD83D\uDCB0', category: 'scripts',
     create: () => {
       const g = new THREE.Group();

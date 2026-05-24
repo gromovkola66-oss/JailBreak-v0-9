@@ -12,6 +12,7 @@ import { CameraSystemState } from './game/CameraSystem';
 import { InventoryState } from './game/InventorySystem';
 import { WalletState } from './game/economy/WalletSystem';
 import { RentalDoor, RENTAL_OPTIONS } from './game/RentalDoorSystem';
+import { LockerState } from './game/LockerSystem';
 import { RARITY_COLORS } from './game/ItemDefs';
 import { CharacterModel } from './game/CharacterModel';
 
@@ -102,6 +103,11 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   // Death state
   const [ptDeathState, setPtDeathState] = useState<{ isDead: boolean; respawnCountdown: number } | null>(null);
 
+  // Locker state
+  const [ptLockerState, setPtLockerState] = useState<LockerState | null>(null);
+  const [ptLockerAccessDenied, setPtLockerAccessDenied] = useState(false);
+  const [lockerMoneyInput, setLockerMoneyInput] = useState('');
+
   // Drag-over slot highlight
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
 
@@ -175,6 +181,11 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       if (e.code === 'KeyM' && ptTeam === 'guard') {
         setPtGuardMenuOpen(prev => !prev);
       }
+      // Close locker with Escape
+      if (e.code === 'Escape' && playtestRef.current && ptLockerState) {
+        playtestRef.current.lockerClose();
+        return;
+      }
     };
     document.addEventListener('keydown', handleKey);
 
@@ -186,7 +197,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         playtestRef.current = null;
       }
     };
-  }, [mode, ptTeam]);
+  }, [mode, ptTeam, ptLockerState]);
 
   // === RENTAL MENU KEYBOARD HANDLING ===
   useEffect(() => {
@@ -429,6 +440,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         setPtDeathState({ ...state });
       };
 
+      pt.onLockerUpdate = (state) => {
+        setPtLockerState(state ? { ...state } : null);
+      };
+      pt.onLockerAccessDenied = () => {
+        setPtLockerAccessDenied(true);
+        setTimeout(() => setPtLockerAccessDenied(false), 2500);
+      };
+
       pt.onWalletUpdate = (state) => {
         setPtWallet(prev => {
           if (prev && state.balance > prev.balance) {
@@ -477,6 +496,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setPtRentalMenu(null);
     setPtRentalError(null);
     setPtDeathState(null);
+    setPtLockerState(null);
+    setPtLockerAccessDenied(false);
+    setLockerMoneyInput('');
     setMode('editing');
   }, []);
 
@@ -675,7 +697,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
             <div className={`absolute top-14 right-4 bg-black/60 px-4 py-2 rounded-lg font-mono text-sm transition-all duration-300 ${
               moneyFlash === 'gain' ? 'text-green-400 scale-105' : moneyFlash === 'loss' ? 'text-red-400 scale-105' : 'text-white'
             }`}>
-              <span className="text-yellow-400">{'\u20bd'}</span> {ptWallet.balance} / {ptWallet.maxCarry}
+              <span className="text-yellow-400">{'\u20bd'}</span> {ptWallet.balance}
             </div>
           )}
 
@@ -1476,6 +1498,136 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Locker access denied toast */}
+          {ptLockerAccessDenied && (
+            <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-red-800/90 text-white px-6 py-3 rounded-lg pointer-events-none z-50">
+              <span className="font-bold">{'\uD83D\uDD12'} {'\u0412\u0430\u043c \u043d\u0443\u0436\u043d\u043e \u0430\u0440\u0435\u043d\u0434\u043e\u0432\u0430\u0442\u044c \u043a\u0430\u043c\u0435\u0440\u0443 \u0447\u0442\u043e\u0431\u044b \u043e\u0442\u043a\u0440\u044b\u0442\u044c \u0448\u043a\u0430\u0444'}</span>
+            </div>
+          )}
+
+          {/* Locker UI */}
+          {ptLockerState && ptLockerState.isOpen && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto z-40">
+              <div
+                className="w-[600px] max-h-[85vh] rounded-2xl border border-white/10 overflow-hidden flex flex-col"
+                style={{
+                  animation: 'inventorySlideIn 0.3s ease forwards',
+                  background: 'rgba(15, 15, 25, 0.9)',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{'\uD83D\uDDC4'}</span>
+                    <div>
+                      <div className="text-white font-bold">{'\u0428\u043a\u0430\u0444 \u0445\u0440\u0430\u043d\u0435\u043d\u0438\u044f'}</div>
+                      <div className="text-gray-400 text-xs">{ptLockerState.linkedCellLabel || '\u041e\u0431\u0449\u0438\u0439'}</div>
+                    </div>
+                  </div>
+                  <button
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-700 hover:bg-red-600 text-gray-300 hover:text-white transition-colors cursor-pointer"
+                    onClick={() => playtestRef.current?.lockerClose()}
+                  >
+                    &#x2715;
+                  </button>
+                </div>
+
+                {/* Money section */}
+                <div className="p-4 border-b border-white/10">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm text-gray-300">{'\u0414\u0435\u043d\u044c\u0433\u0438 \u0432 \u0448\u043a\u0430\u0444\u0443'}:</div>
+                    <div className="text-yellow-400 font-bold">{'\u20bd'} {ptLockerState.storedMoney}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-white text-sm outline-none focus:border-yellow-400"
+                      placeholder={'\u0421\u0443\u043c\u043c\u0430'}
+                      value={lockerMoneyInput}
+                      onChange={(e) => setLockerMoneyInput(e.target.value)}
+                    />
+                    <button
+                      className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-sm rounded transition-colors cursor-pointer"
+                      onClick={() => {
+                        const amount = parseInt(lockerMoneyInput, 10);
+                        if (amount > 0) {
+                          playtestRef.current?.lockerDepositMoney(amount);
+                          setLockerMoneyInput('');
+                        }
+                      }}
+                    >
+                      {'\u0412\u043d\u0435\u0441\u0442\u0438'}
+                    </button>
+                    <button
+                      className="px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded transition-colors cursor-pointer"
+                      onClick={() => {
+                        const amount = parseInt(lockerMoneyInput, 10);
+                        if (amount > 0) {
+                          playtestRef.current?.lockerWithdrawMoney(amount);
+                          setLockerMoneyInput('');
+                        }
+                      }}
+                    >
+                      {'\u0417\u0430\u0431\u0440\u0430\u0442\u044c'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Slots grid (30 slots in 6x5) */}
+                <div className="p-4 overflow-y-auto flex-1">
+                  <div className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">{'\u041f\u0440\u0435\u0434\u043c\u0435\u0442\u044b'} ({ptLockerState.slots.filter(s => s !== null).length}/30)</div>
+                  <div className="grid grid-cols-6 gap-2">
+                    {ptLockerState.slots.map((item, index) => (
+                      <div
+                        key={index}
+                        className="relative w-[75px] h-[75px] rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105"
+                        style={{
+                          background: 'linear-gradient(180deg, rgba(40,40,55,0.8) 0%, rgba(20,20,30,0.9) 100%)',
+                          border: `2px solid ${item ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'}`,
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)'
+                        }}
+                        onClick={() => {
+                          if (item) {
+                            playtestRef.current?.lockerWithdraw(index);
+                          }
+                        }}
+                        onDragOver={(e) => { e.preventDefault(); }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const fromIdx = e.dataTransfer.getData('text/plain');
+                          if (fromIdx !== '') {
+                            playtestRef.current?.lockerDeposit(parseInt(fromIdx, 10));
+                          }
+                        }}
+                      >
+                        {item ? (
+                          <>
+                            <span className="text-xl">{item.icon}</span>
+                            <span className="text-[8px] text-gray-300 mt-0.5 text-center leading-tight max-w-[70px] truncate">{item.name}</span>
+                            {item.quantity > 1 && (
+                              <span className="absolute bottom-0.5 right-1 bg-black/80 text-white text-[8px] font-bold px-1 rounded-full">{item.quantity}</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-[9px] text-gray-600">{'\u041f\u0443\u0441\u0442\u043e'}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Footer hints */}
+                <div className="p-3 border-t border-white/10 text-center text-gray-500 text-xs">
+                  {'\u041b\u041a\u041c'} - {'\u0437\u0430\u0431\u0440\u0430\u0442\u044c'} | {'\u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0438\u0437 \u0438\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044f'} | Esc - {'\u0437\u0430\u043a\u0440\u044b\u0442\u044c'}
+                </div>
+              </div>
             </div>
           )}
 

@@ -13,6 +13,7 @@ import { soundSystem } from '../game/SoundSystem';
 import { ITEM_DEFS } from '../game/ItemDefs';
 import { WalletSystem, WalletState } from '../game/economy/WalletSystem';
 import { RentalDoorSystem, RentalDoor } from '../game/RentalDoorSystem';
+import { LockerSystem, LockerState } from '../game/LockerSystem';
 import { TerrainSystem } from '../game/TerrainSystem';
 import { WaterSystem } from '../game/WaterSystem';
 import {
@@ -36,6 +37,7 @@ export class PlaytestMode {
   private doorSystem: DoorSystem;
   private garageDoorSystem: GarageDoorSystem;
   private rentalDoorSystem: RentalDoorSystem;
+  private lockerSystem: LockerSystem;
   private team: 'guard' | 'prisoner';
   private colliders: THREE.Box3[] = [];
   private doorColliders: Map<string, THREE.Box3[]> = new Map();
@@ -96,6 +98,8 @@ export class PlaytestMode {
   public onRentalExpired?: (door: RentalDoor) => void;
   public onRentalDoorNearby?: (info: { cellLabel: string; ownerId: string | null; expiresAt: number | null } | null) => void;
   public onDeathStateChange?: (state: { isDead: boolean; respawnCountdown: number }) => void;
+  public onLockerUpdate?: (state: LockerState | null) => void;
+  public onLockerAccessDenied?: () => void;
 
   private frameCount = 0;
   private fpsTime = 0;
@@ -500,6 +504,12 @@ export class PlaytestMode {
       this.onRentalExpired?.(door);
     };
 
+    // Система шкафов хранения
+    this.lockerSystem = new LockerSystem();
+    this.lockerSystem.onStateChange = (state) => {
+      this.onLockerUpdate?.(state);
+    };
+
     // Освещение
     this.ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
     this.scene.add(this.ambientLight);
@@ -602,6 +612,24 @@ export class PlaytestMode {
               this.rentalDoorSystem.toggleDoor(rentalDoor.id, 'prisoner');
             } else if (result.type === 'menu') {
               this.onShowRentalMenu?.(rentalDoor);
+              document.exitPointerLock();
+            }
+          }
+          return;
+        }
+      }
+      // Locker interaction
+      {
+        const { canInteract: canLocker, lockerId } = this.lockerSystem.canInteract(this.controller.camera.position);
+        if (canLocker && lockerId) {
+          if (this.lockerSystem.isOpen()) {
+            this.lockerSystem.close();
+            document.body.requestPointerLock();
+          } else {
+            const opened = this.lockerSystem.tryOpen(lockerId, this.team, this.rentalDoorSystem);
+            if (!opened) {
+              this.onLockerAccessDenied?.();
+            } else {
               document.exitPointerLock();
             }
           }
@@ -810,6 +838,21 @@ export class PlaytestMode {
         const door = this.doorSystem.registerDoor(doorCellIndex, obj, pos, rotRad);
         this.doorColliders.set(door.id, doorBoxes);
         doorCellIndex++;
+        continue;
+      }
+
+      // Шкаф хранения — регистрируем в системе шкафов
+      if (objData.type === 'storage_locker') {
+        const obj = objType.create();
+        obj.userData.__interactive = true;
+        obj.position.set(objData.position.x, objData.position.y, objData.position.z);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        this.scene.add(obj);
+        obj.updateMatrixWorld(true);
+        this.addColliders(obj);
+        const lockerPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
+        const lockerId = `locker_${objData.id}`;
+        this.lockerSystem.registerLocker(lockerId, objData.label || '', lockerPos);
         continue;
       }
 
@@ -1471,6 +1514,36 @@ export class PlaytestMode {
   }
 
   closeRentalMenu() {
+    document.body.requestPointerLock();
+  }
+
+  // === Locker methods ===
+  lockerDeposit(slotIndex: number): void {
+    const lockerId = this.lockerSystem.getOpenLockerId();
+    if (!lockerId) return;
+    this.lockerSystem.depositItem(lockerId, slotIndex, this.inventory);
+  }
+
+  lockerWithdraw(lockerSlotIndex: number): void {
+    const lockerId = this.lockerSystem.getOpenLockerId();
+    if (!lockerId) return;
+    this.lockerSystem.withdrawItem(lockerId, lockerSlotIndex, this.inventory);
+  }
+
+  lockerDepositMoney(amount: number): void {
+    const lockerId = this.lockerSystem.getOpenLockerId();
+    if (!lockerId) return;
+    this.lockerSystem.depositMoney(lockerId, amount, this.wallet);
+  }
+
+  lockerWithdrawMoney(amount: number): void {
+    const lockerId = this.lockerSystem.getOpenLockerId();
+    if (!lockerId) return;
+    this.lockerSystem.withdrawMoney(lockerId, amount, this.wallet);
+  }
+
+  lockerClose(): void {
+    this.lockerSystem.close();
     document.body.requestPointerLock();
   }
 

@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Remove money carry limit, create LockerSystem, add storage locker to editor, wire up interaction and UI in PlaytestMode and EditorApp",
+  "status": "in_progress",
+  "steps": [
+    "1. In src/game/economy/EconomyConfig.ts: change MAX_CARRY_DEFAULT from 1000 to Infinity.",
+    "2. In src/game/economy/WalletSystem.ts: remove the cap logic in addMoney(). Currently it returns false if balance >= maxCarry and caps the addition with Math.min. Instead, always add the full amount with no ceiling. Keep the maxCarry property for UI display but set it to Infinity. Update getState() to reflect this.",
+    "3. Create new file src/game/LockerSystem.ts with the following: (a) LockerState interface: { isOpen: boolean, slots: (InventoryItem | null)[] (30 slots), storedMoney: number, linkedCellLabel: string, lockerObjectId: string }. (b) LockerSystem class with: a Map of lockers keyed by lockerObjectId, methods registerLocker(id, cellLabel), tryOpen(lockerObjectId, team, rentalDoorSystem) that checks if rental door with matching cellLabel has ownerId === 'player' (prisoners only; guards always can open), open()/close() methods, depositMoney(lockerId, amount, walletSystem), withdrawMoney(lockerId, amount, walletSystem), depositItem(lockerId, slotIndex, inventorySystem) that moves item from player inventory to locker slot, withdrawItem(lockerId, lockerSlotIndex, inventorySystem) that moves item from locker to player inventory. (c) onStateChange callback emitting LockerState. (d) A large comment block at the top explaining the binding mechanism between locker and rental door via matching label field. (e) interactionRange of 2.5 for proximity detection. (f) findNearest(position) and canInteract(position) methods returning nearest locker.",
+    "4. In src/editor/EditorObjects.ts: add a new object with id 'storage_locker' (name: 'Шкаф хранения', icon: a locker emoji, category: 'scripts') to the EDITOR_OBJECTS array, inserted after 'bars_door_rental' and before 'money_bag'. The 3D model should be a tall (1.9m height) dark gray metal locker using box/cyl primitives with: main body (0.6 x 1.9 x 0.5), door panel on front with handle, horizontal vents/slats near top, a padlock detail, rust patches, and a slight color accent to distinguish from the decorative 'locker' item in the 'items' category. Use M.metalDark, M.metalMid, M.metalRust, M.chrome materials.",
+    "5. In src/editor/MapEditor.ts: in the placeObject method, add 'storage_locker' to the condition that assigns data.label = '' (same line as 'camera' and 'bars_door_rental'), so when placed it gets a label field editable in the properties panel.",
+    "6. In src/editor/PlaytestMode.ts: (a) Import LockerSystem and LockerState. (b) Add a private lockerSystem: LockerSystem field, instantiate it in constructor. (c) Add public callbacks: onLockerUpdate?: (state: LockerState | null) => void, onLockerAccessDenied?: () => void. (d) In loadMap(), add a handler for objData.type === 'storage_locker': create the mesh, position it, add to scene, add colliders, then register it with lockerSystem.registerLocker(objectId, objData.label). (e) In onKeyDown handler for 'KeyE': after rental door check, add locker interaction check. Call lockerSystem.canInteract(playerPos), if canInteract, call lockerSystem.tryOpen(lockerId, team, rentalDoorSystem). If access denied, fire onLockerAccessDenied callback. If granted, open locker, fire onLockerUpdate, exit pointer lock. (f) Add public methods: lockerDeposit(slotIndex), lockerWithdraw(lockerSlotIndex), lockerDepositMoney(amount), lockerWithdrawMoney(amount), lockerClose() that re-requests pointer lock. (g) In the escape/E handling for closing, check if locker is open and close it.",
+    "7. In src/EditorApp.tsx: (a) Import LockerState from LockerSystem. (b) Add React state: ptLockerState (LockerState | null), ptLockerAccessDenied (boolean). (c) Wire up pt.onLockerUpdate and pt.onLockerAccessDenied in startPlaytest. (d) Add keyboard handler: when locker is open, Escape or E closes it via playtestRef.current.lockerClose(). (e) Render Locker UI panel when ptLockerState is open: a centered modal with glassmorphism background (same style as inventory), 30 slots in a 5x6 grid (or 6x5), scrollable with overflow-y: auto if content exceeds viewport. At top: money section showing stored money with deposit/withdraw buttons and an input field for amount. Slots support drag-and-drop from/to player inventory (same drag pattern as inventory swapSlots but crossing between systems). (f) Show access denied toast: 'Вам нужно арендовать камеру чтобы открыть шкаф'. (g) Update wallet display to show Infinity symbol or just current balance without the '/max' part since limit is removed.",
+    "8. Update the wallet HUD display in EditorApp.tsx: since maxCarry is now Infinity, change the display from '{balance} / {maxCarry}' to just show the balance (e.g., remove the '/ 1000' suffix or show the ruble sign and balance only)."
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with no TypeScript errors",
+    "EconomyConfig.ts has MAX_CARRY_DEFAULT set to Infinity",
+    "WalletSystem.addMoney() no longer caps at any limit",
+    "LockerSystem.ts exists with 30-slot storage, money storage, tryOpen access check against RentalDoorSystem",
+    "EditorObjects.ts has 'storage_locker' object in 'scripts' category with a visible 3D model",
+    "MapEditor.ts assigns a label field to storage_locker on placement",
+    "PlaytestMode.ts registers locker objects from map data and handles E-key interaction with access control",
+    "EditorApp.tsx renders locker UI with 30 scrollable slots and money deposit/withdraw when locker is open",
+    "EditorApp.tsx wallet display no longer shows '/1000' limit"
+  ],
+  "verification": [
+    "Run `cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npm run build` and confirm exit code 0 with no errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

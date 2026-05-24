@@ -371,7 +371,7 @@ export class MapEditor {
     if (this.selectedObjectType.id === 'terminal' || this.selectedObjectType.id === 'camera') {
       data.groupId = 1;
     }
-    if (this.selectedObjectType.id === 'camera' || this.selectedObjectType.id === 'bars_door_rental') {
+    if (this.selectedObjectType.id === 'camera' || this.selectedObjectType.id === 'bars_door_rental' || this.selectedObjectType.id === 'storage_locker') {
       data.label = '';
     }
     this.placedObjectsData.push(data);

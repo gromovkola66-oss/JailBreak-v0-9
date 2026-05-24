@@ -12,8 +12,7 @@ export class WalletSystem {
   public onStateChange?: (state: WalletState) => void;
 
   addMoney(amount: number): boolean {
-    if (this.balance >= this.maxCarry) return false;
-    this.balance = Math.min(this.balance + amount, this.maxCarry);
+    this.balance += amount;
     this.notifyStateChange();
     return true;
   }

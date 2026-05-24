@@ -161,4 +161,8 @@ export class RentalDoorSystem {
       door,
     };
   }
+
+  isDoorOwnedByPlayer(cellLabel: string): boolean {
+    return this.doors.some(d => d.cellLabel === cellLabel && d.ownerId === 'player');
+  }
 }
