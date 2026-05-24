@@ -12,6 +12,7 @@ import { CameraSystemState } from './game/CameraSystem';
 import { InventoryState } from './game/InventorySystem';
 import { WalletState } from './game/economy/WalletSystem';
 import { RentalDoor, RENTAL_OPTIONS } from './game/RentalDoorSystem';
+import { RARITY_COLORS } from './game/ItemDefs';
 
 // 10 prison-themed CSS wallpapers (simple reliable gradients)
 const TERMINAL_WALLPAPERS: { background: string }[] = [
@@ -664,64 +665,148 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
             </div>
           )}
 
-          {/* Inventory Wheel */}
+          {/* Inventory Grid */}
           {ptInventory?.isOpen && (
-            <div className="fixed inset-0 bg-black/60 pointer-events-auto">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <div className="w-[420px] h-[420px] rounded-full border-2 border-white/20 relative bg-gradient-radial from-gray-900/80 to-transparent">
-                  {/* Rotating dashed ring decoration */}
-                  <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[430px] h-[430px] pointer-events-none" style={{ animation: 'ringRotate 20s linear infinite' }}>
-                    <circle cx="215" cy="215" r="210" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeDasharray="10 5" />
-                  </svg>
+            <div className="fixed inset-0 bg-black/60 pointer-events-auto" onClick={() => playtestRef.current?.inventoryEquipSlot(ptInventory.equippedSlot)}>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px]" onClick={(e) => e.stopPropagation()}>
+                {/* Category tabs */}
+                <div className="flex gap-1 mb-3 justify-center">
+                  {[
+                    { key: null, label: '\u0412\u0441\u0435' },
+                    { key: 'melee', label: '\u041e\u0440\u0443\u0436\u0438\u0435' },
+                    { key: 'tool', label: '\u0418\u043d\u0441\u0442\u0440\u0443\u043c\u0435\u043d\u0442\u044b' },
+                    { key: 'consumable', label: '\u0420\u0430\u0441\u0445\u043e\u0434\u043d\u0438\u043a\u0438' },
+                    { key: 'ammo', label: '\u0411\u043e\u0435\u043f\u0440\u0438\u043f\u0430\u0441\u044b' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key || 'all'}
+                      className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                        ptInventory.activeCategory === tab.key
+                          ? 'bg-yellow-500 text-black'
+                          : 'bg-gray-700/80 text-gray-300 hover:bg-gray-600'
+                      }`}
+                      onClick={() => playtestRef.current?.inventorySetCategory(tab.key)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 4x4 Grid */}
+                <div className="grid grid-cols-4 gap-2 bg-gray-900/90 border border-gray-600/50 rounded-xl p-4">
                   {ptInventory.slots.map((item, index) => {
-                    const angle = (index * Math.PI * 2) / 6 - Math.PI / 2;
-                    const isHighlighted = ptInventory.hoveredSlot === index || ptInventory.equippedSlot === index;
+                    const isEquipped = ptInventory.equippedSlot === index;
+                    const isDragSource = ptInventory.dragFromSlot === index;
+                    const isHovered = ptInventory.hoveredSlot === index;
+                    const rarityColor = item?.rarity ? RARITY_COLORS[item.rarity] || '#b0b0b0' : '#4a4a4a';
+                    const categoryMatch = !ptInventory.activeCategory || !item || (item.category || item.type) === ptInventory.activeCategory;
+                    const dimmed = ptInventory.activeCategory && item && !categoryMatch;
+
                     return (
                       <div
                         key={index}
-                        className={`absolute w-20 h-20 -translate-x-1/2 -translate-y-1/2 rounded-full flex flex-col items-center justify-center cursor-pointer transition-all ${
-                          isHighlighted
-                            ? 'border-2 border-yellow-400 bg-gradient-to-b from-gray-700/90 to-gray-900/90 scale-110 shadow-[0_0_20px_rgba(250,204,21,0.4)]'
-                            : 'border-2 border-gray-600/50 bg-gradient-to-b from-gray-700/90 to-gray-900/90 hover:border-gray-400'
-                        }`}
-                        style={{
-                          top: `calc(50% + ${Math.sin(angle) * 170}px)`,
-                          left: `calc(50% + ${Math.cos(angle) * 170}px)`,
-                          animation: 'slotAppear 0.3s ease forwards',
-                          animationDelay: `${index * 0.05}s`,
-                          opacity: 0,
-                          ...(isHighlighted ? { animation: 'slotAppear 0.3s ease forwards, pulseGlow 1.5s ease-in-out infinite' } : {}),
-                        }}
-                        onClick={() => playtestRef.current?.inventoryEquipSlot(index)}
+                        className={`relative w-[110px] h-[110px] rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all select-none ${
+                          isEquipped
+                            ? 'ring-2 ring-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.4)]'
+                            : ''
+                        } ${isDragSource ? 'opacity-40 scale-95' : ''} ${dimmed ? 'opacity-30' : ''}`}
+                        style={{ border: `2px solid ${item ? rarityColor : '#3a3a3a'}`, background: 'linear-gradient(180deg, rgba(55,55,70,0.9) 0%, rgba(30,30,40,0.95) 100%)' }}
+                        onClick={() => { if (item) playtestRef.current?.inventoryEquipSlot(index); }}
                         onMouseEnter={() => playtestRef.current?.inventorySetHovered(index)}
                         onMouseLeave={() => playtestRef.current?.inventorySetHovered(null)}
+                        onMouseDown={(e) => { if (e.button === 0 && item) playtestRef.current?.inventorySwapSlots(ptInventory.dragFromSlot ?? -1, -1); }}
+                        onContextMenu={(e) => { e.preventDefault(); if (item && item.id !== 'fists') playtestRef.current?.inventoryDropItem(index); }}
+                        draggable={!!item && item.id !== 'fists'}
+                        onDragStart={() => { if (item) playtestRef.current?.inventorySwapSlots(-1, -1); }}
                       >
                         {item ? (
                           <>
-                            <span className="text-2xl">{item.icon}</span>
-                            <span className="text-xs text-white mt-0.5">{item.name}</span>
+                            <span className="text-3xl">{item.icon}</span>
+                            <span className="text-[10px] text-gray-300 mt-1 text-center leading-tight max-w-[90px] truncate">{item.name}</span>
+                            {item.quantity > 1 && (
+                              <span className="absolute top-1 right-1 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                {item.quantity}
+                              </span>
+                            )}
+                            {isEquipped && (
+                              <span className="absolute top-1 left-1 text-yellow-400 text-[10px]">E</span>
+                            )}
                           </>
                         ) : (
-                          <span className="text-xs text-gray-500">Пусто</span>
+                          <span className="text-xs text-gray-600">{'\u041f\u0443\u0441\u0442\u043e'}</span>
+                        )}
+
+                        {/* Tooltip */}
+                        {isHovered && item && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 border border-gray-600 rounded-lg p-3 w-48 z-50 pointer-events-none text-left">
+                            <div className="text-white font-bold text-sm">{item.icon} {item.name}</div>
+                            {item.description && <div className="text-gray-400 text-xs mt-1">{item.description}</div>}
+                            {item.rarity && (
+                              <div className="text-xs mt-1" style={{ color: RARITY_COLORS[item.rarity] || '#b0b0b0' }}>
+                                {item.rarity === 'common' ? '\u041e\u0431\u044b\u0447\u043d\u044b\u0439' : item.rarity === 'uncommon' ? '\u041d\u0435\u043e\u0431\u044b\u0447\u043d\u044b\u0439' : item.rarity === 'rare' ? '\u0420\u0435\u0434\u043a\u0438\u0439' : '\u042d\u043f\u0438\u0447\u0435\u0441\u043a\u0438\u0439'}
+                              </div>
+                            )}
+                            <div className="text-gray-500 text-xs mt-1">{item.type}</div>
+                          </div>
                         )}
                       </div>
                     );
                   })}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                    <div className="text-white font-bold text-lg">
-                      {ptInventory.slots[ptInventory.equippedSlot]?.name || 'Пусто'}
-                    </div>
-                    {ptInventory.slots[ptInventory.hoveredSlot ?? -1] && (
-                      <div className="text-gray-400 text-sm mt-1">
-                        {ptInventory.slots[ptInventory.hoveredSlot!]?.name}
-                      </div>
-                    )}
-                  </div>
                 </div>
-                <div className="text-center mt-4 text-gray-400 text-sm">
-                  Q - Закрыть
+
+                <div className="text-center mt-3 text-gray-400 text-sm">
+                  Q - \u0417\u0430\u043a\u0440\u044b\u0442\u044c | \u041b\u041a\u041c - \u042d\u043a\u0438\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c | \u041f\u041a\u041c - \u0411\u0440\u043e\u0441\u0438\u0442\u044c
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Hotbar (first 4 slots) - visible when inventory is CLOSED and pointer is locked */}
+          {!ptInventory?.isOpen && ptLocked && ptInventory && (
+            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2">
+              {ptInventory.slots.slice(0, 4).map((item, index) => {
+                const isEquipped = ptInventory.equippedSlot === index;
+                const rarityColor = item?.rarity ? RARITY_COLORS[item.rarity] || '#b0b0b0' : '#3a3a3a';
+                return (
+                  <div
+                    key={index}
+                    className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center transition-all ${
+                      isEquipped ? 'ring-2 ring-yellow-400 scale-110' : ''
+                    }`}
+                    style={{ border: `2px solid ${item ? rarityColor : '#3a3a3a'}`, background: 'rgba(20,20,30,0.8)' }}
+                  >
+                    {item ? (
+                      <>
+                        <span className="text-xl">{item.icon}</span>
+                        {item.quantity > 1 && (
+                          <span className="text-[9px] text-white font-bold">{item.quantity}</span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-[9px] text-gray-600">{index + 1}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Pickup notifications */}
+          {ptInventory && ptInventory.notifications && ptInventory.notifications.length > 0 && (
+            <div className="absolute top-20 right-4 flex flex-col gap-2 pointer-events-none">
+              {ptInventory.notifications.map((notif, idx) => {
+                const rarityColor = notif.item.rarity ? RARITY_COLORS[notif.item.rarity] || '#b0b0b0' : '#b0b0b0';
+                return (
+                  <div
+                    key={`${notif.timestamp}-${idx}`}
+                    className="bg-black/80 border rounded-lg px-4 py-2 flex items-center gap-2"
+                    style={{ borderColor: rarityColor, animation: 'slotAppear 0.3s ease forwards' }}
+                  >
+                    <span className="text-lg">{notif.item.icon}</span>
+                    <span className="text-sm font-medium" style={{ color: rarityColor }}>{notif.item.name}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
 
