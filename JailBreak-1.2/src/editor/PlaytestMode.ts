@@ -573,10 +573,8 @@ export class PlaytestMode {
         this.cameraSystem.exitTerminalMode();
         return;
       }
-      // Close locker (no pointer lock required, similar to terminal exit)
+      // If locker is open, don't process E here - React handles close
       if (this.lockerSystem.isOpen()) {
-        this.lockerSystem.close();
-        document.body.requestPointerLock();
         return;
       }
       // All other E interactions require pointer lock
@@ -1550,7 +1548,6 @@ export class PlaytestMode {
 
   lockerClose(): void {
     this.lockerSystem.close();
-    this.renderer.domElement.requestPointerLock();
   }
 
   dispose() {

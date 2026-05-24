@@ -105,6 +105,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
   // Locker state
   const [ptLockerState, setPtLockerState] = useState<LockerState | null>(null);
+  const ptLockerStateRef = useRef<LockerState | null>(null);
   const [ptLockerAccessDenied, setPtLockerAccessDenied] = useState(false);
   const [lockerMoneyInput, setLockerMoneyInput] = useState('');
 
@@ -122,6 +123,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
   // === Keep rental menu ref in sync ===
   useEffect(() => { ptRentalMenuRef.current = ptRentalMenu; }, [ptRentalMenu]);
+
+  // === Keep locker state ref in sync ===
+  useEffect(() => { ptLockerStateRef.current = ptLockerState; }, [ptLockerState]);
 
   // === EDITOR ===
   useEffect(() => {
@@ -182,7 +186,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         setPtGuardMenuOpen(prev => !prev);
       }
       // Close locker with Escape or E
-      if ((e.code === 'Escape' || e.code === 'KeyE') && playtestRef.current && ptLockerState) {
+      if ((e.code === 'Escape' || e.code === 'KeyE') && playtestRef.current && ptLockerStateRef.current) {
         e.preventDefault();
         e.stopPropagation();
         playtestRef.current.lockerClose();
@@ -199,7 +203,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         playtestRef.current = null;
       }
     };
-  }, [mode, ptTeam, ptLockerState]);
+  }, [mode, ptTeam]);
 
   // === RENTAL MENU KEYBOARD HANDLING ===
   useEffect(() => {
@@ -1519,11 +1523,12 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
           {/* Locker UI */}
           {ptLockerState && ptLockerState.isOpen && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto z-40">
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto z-40"
+              onClick={() => playtestRef.current?.lockerClose()}>
               <div
                 className="w-[900px] max-w-[95vw] max-h-[85vh] rounded-2xl border border-white/10 overflow-hidden flex flex-col"
                 style={{
-                  animation: 'inventorySlideIn 0.3s ease forwards',
+                  animation: 'lockerFadeIn 0.2s ease',
                   background: 'rgba(15, 15, 25, 0.9)',
                   backdropFilter: 'blur(20px)',
                   boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)'
