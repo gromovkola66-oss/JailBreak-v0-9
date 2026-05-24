@@ -1550,7 +1550,7 @@ export class PlaytestMode {
 
   lockerClose(): void {
     this.lockerSystem.close();
-    document.body.requestPointerLock();
+    this.renderer.domElement.requestPointerLock();
   }
 
   dispose() {

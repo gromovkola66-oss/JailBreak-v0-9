@@ -648,7 +648,7 @@ export const MainMenu = ({ onOpenEditor }: MainMenuProps) => {
             <span className="text-orange-400" style={{ textShadow: '0 0 30px rgba(249,115,22,0.5)' }}>Break</span>
           </h1>
           <p className="text-gray-500 text-sm tracking-[0.3em] uppercase" style={{ animation: 'fadeIn 1s ease 0.5s forwards', opacity: 0 }}>
-            Версия 0.8
+            Версия 1.1
           </p>
         </div>
       </div>

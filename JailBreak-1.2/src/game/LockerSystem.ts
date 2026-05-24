@@ -80,8 +80,6 @@ export class LockerSystem {
     }
 
     // Заключенные - проверяем, арендована ли камера с таким groupId
-    // groupId <= 0 означает ненастроенный шкаф - запрещаем доступ
-    if (locker.groupId <= 0) return false;
     if (!rentalDoorSystem.isDoorOwnedByPlayerByGroupId(locker.groupId)) return false;
 
     this.open(lockerId);

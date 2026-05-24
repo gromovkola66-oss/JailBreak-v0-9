@@ -183,6 +183,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       }
       // Close locker with Escape or E
       if ((e.code === 'Escape' || e.code === 'KeyE') && playtestRef.current && ptLockerState) {
+        e.preventDefault();
+        e.stopPropagation();
         playtestRef.current.lockerClose();
         return;
       }
