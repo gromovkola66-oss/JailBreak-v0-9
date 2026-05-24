@@ -1169,6 +1169,13 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       <span className="text-6xl">🚪</span>
                       <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Двери</span>
                     </div>
+                    <div
+                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      onClick={(e) => { e.stopPropagation(); setTerminalApp('cells'); }}
+                    >
+                      <span className="text-6xl">🔒</span>
+                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Клетки</span>
+                    </div>
                   </div>
 
                   {/* Info app window */}
