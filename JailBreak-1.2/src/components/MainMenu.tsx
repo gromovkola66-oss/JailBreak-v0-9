@@ -12,7 +12,7 @@ interface MainMenuProps {
   onOpenEditor: () => void;
 }
 
-// === 3D SCENE - prison corridor with guard ===
+// === 3D SCENE - prison yard cutscene ===
 const MenuScene = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -21,459 +21,373 @@ const MenuScene = () => {
     const W = containerRef.current.clientWidth, H = containerRef.current.clientHeight;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x080810);
-    scene.fog = new THREE.FogExp2(0x080810, 0.035);
+
+    // Sky gradient via Canvas texture
+    const skyCanvas = document.createElement('canvas');
+    skyCanvas.width = 2;
+    skyCanvas.height = 256;
+    const ctx = skyCanvas.getContext('2d')!;
+    const grad = ctx.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, '#0a0a2a');
+    grad.addColorStop(0.4, '#2a1040');
+    grad.addColorStop(0.7, '#803820');
+    grad.addColorStop(1.0, '#ff8030');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 2, 256);
+    const skyTex = new THREE.CanvasTexture(skyCanvas);
+    scene.background = skyTex;
 
     const renderer = new THREE.WebGLRenderer(getRendererOptions());
     renderer.setSize(W, H);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.9;
     applyToRenderer(renderer);
     containerRef.current.appendChild(renderer.domElement);
 
     const camera = new THREE.PerspectiveCamera(50, W / H, 0.1, 100);
 
-    // Materials
-    const conc = new THREE.MeshStandardMaterial({ color: 0x5a5a5a, roughness: 0.9 });
-    const concD = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.95 });
-    const metal = new THREE.MeshStandardMaterial({ color: 0x2d2d2d, roughness: 0.3, metalness: 0.9 });
-    const metalL = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.3, metalness: 0.7 });
-    const skin = new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.75 });
-    const guardBlue = new THREE.MeshStandardMaterial({ color: 0x1e3a6e, roughness: 0.8 });
-    const guardBlueD = new THREE.MeshStandardMaterial({ color: 0x162e58, roughness: 0.85 });
-    const bootsMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 });
-    const pantsMat = new THREE.MeshStandardMaterial({ color: 0x2a2a3a, roughness: 0.85 });
-    const beltMat = new THREE.MeshStandardMaterial({ color: 0x3a3020, roughness: 0.8 });
-    const wood = new THREE.MeshStandardMaterial({ color: 0x6b4513, roughness: 0.8 });
-    const lampMat = new THREE.MeshStandardMaterial({ color: 0xffffee, emissive: 0xffffaa, emissiveIntensity: 1.2 });
-    const redLightMat = new THREE.MeshStandardMaterial({ color: 0xff2200, emissive: 0xff2200, emissiveIntensity: 0.6 });
-    const puddle = new THREE.MeshStandardMaterial({ color: 0x222233, roughness: 0.05, metalness: 0.8, transparent: true, opacity: 0.6 });
-    const signMat = new THREE.MeshStandardMaterial({ color: 0xcccc44, roughness: 0.7 });
-    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.9 });
-    const bedMat = new THREE.MeshStandardMaterial({ color: 0x556655, roughness: 0.9 });
-    const pipeMat = new THREE.MeshStandardMaterial({ color: 0x7a4a2a, roughness: 0.7, metalness: 0.4 });
-    const badgeMat = new THREE.MeshStandardMaterial({ color: 0xccaa22, roughness: 0.5, metalness: 0.6 });
-    const holsterMat = new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 0.85 });
-    const beretMat = new THREE.MeshStandardMaterial({ color: 0x1a1a3a, roughness: 0.8 });
-    const clockMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.7 });
-    const steamMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.15 });
+    // Shared materials
+    const concMat = new THREE.MeshStandardMaterial({ color: 0x6a6a6a, roughness: 0.95 });
+    const concDark = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.95 });
+    const metalMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.3, metalness: 0.85 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.75 });
+    const orangeMat = new THREE.MeshStandardMaterial({ color: 0xe86820, roughness: 0.8 });
+    const orangeDark = new THREE.MeshStandardMaterial({ color: 0xc05818, roughness: 0.85 });
+    const orangeCollar = new THREE.MeshStandardMaterial({ color: 0xd06020, roughness: 0.8 });
+    const beltMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.85 });
+    const bootMat = new THREE.MeshStandardMaterial({ color: 0x1a1008, roughness: 0.9 });
+    const bootLace = new THREE.MeshStandardMaterial({ color: 0x888870, roughness: 0.8 });
+    const tattooMat = new THREE.MeshStandardMaterial({ color: 0x445566, roughness: 0.8 });
+    const buzzMat = new THREE.MeshStandardMaterial({ color: 0x8a6a4a, roughness: 0.85 });
+    const yellowLine = new THREE.MeshStandardMaterial({ color: 0xccaa22, roughness: 0.7 });
+    const whiteLine = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.8 });
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x6b4020, roughness: 0.85 });
 
     // Helpers
     const bx = (w: number, h: number, d: number, m: THREE.Material) => {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
-      mesh.castShadow = true; mesh.receiveShadow = true; return mesh;
+      return mesh;
     };
-    const cy = (r: number, h: number, m: THREE.Material, seg = 10) => {
+    const cy = (r: number, h: number, m: THREE.Material, seg = 8) => {
       const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), m);
-      mesh.castShadow = true; mesh.receiveShadow = true; return mesh;
+      return mesh;
     };
     const ps = (mesh: THREE.Object3D, x: number, y: number, z: number) => {
       mesh.position.set(x, y, z); return mesh;
     };
 
+    // === GROUND ===
+    const ground = bx(30, 0.1, 30, concMat);
+    ground.receiveShadow = true;
+    ps(ground, 0, 0, 0);
+    scene.add(ground);
+
+    // Painted lines
+    scene.add(ps(bx(0.08, 0.02, 12, yellowLine), -2, 0.06, -2));
+    scene.add(ps(bx(0.08, 0.02, 12, yellowLine), 2, 0.06, -2));
+    scene.add(ps(bx(6, 0.02, 0.08, whiteLine), 0, 0.06, 3));
+    scene.add(ps(bx(4, 0.02, 0.06, whiteLine), 0, 0.06, -1));
+
+    // Cracks/wear patches
+    scene.add(ps(bx(1.2, 0.01, 0.8, concDark), 1, 0.06, 1));
+    scene.add(ps(bx(0.7, 0.01, 1.5, concDark), -1.5, 0.06, -2));
+    scene.add(ps(bx(0.9, 0.01, 0.6, concDark), 2, 0.06, -3));
+
+    // === CHAIN-LINK FENCE ===
+    const fenceZ = -4;
+    const fencePosts: THREE.Mesh[] = [];
+    for (let x = -3; x <= 3; x += 2) {
+      const post = cy(0.04, 3, metalMat);
+      post.castShadow = true;
+      ps(post, x, 1.5, fenceZ);
+      scene.add(post);
+      fencePosts.push(post);
+
+      // Top rail
+      if (x < 3) {
+        const rail = bx(2, 0.04, 0.04, metalMat);
+        ps(rail, x + 1, 3, fenceZ);
+        scene.add(rail);
+        // Bottom rail
+        const bRail = bx(2, 0.04, 0.04, metalMat);
+        ps(bRail, x + 1, 0.1, fenceZ);
+        scene.add(bRail);
+      }
+
+      // Vertical wires between posts
+      if (x < 3) {
+        for (let i = 1; i <= 4; i++) {
+          const wire = cy(0.008, 2.8, metalMat, 4);
+          ps(wire, x + i * 0.4, 1.5, fenceZ);
+          scene.add(wire);
+        }
+        // Horizontal wires
+        for (let hy = 1.0; hy <= 2.2; hy += 1.2) {
+          const hWire = bx(2, 0.015, 0.015, metalMat);
+          ps(hWire, x + 1, hy, fenceZ);
+          scene.add(hWire);
+        }
+      }
+
+      // Barbed wire on top
+      if (x < 3) {
+        for (let bw = 0; bw < 3; bw++) {
+          const barb = bx(0.06, 0.06, 0.02, metalMat);
+          barb.rotation.z = Math.PI / 4;
+          ps(barb, x + 0.6 * bw + 0.3, 3.1, fenceZ);
+          scene.add(barb);
+        }
+      }
+    }
+
+    // === GUARD TOWER ===
+    const tower = new THREE.Group();
+    // 4 legs
+    for (const tx of [-1.2, 1.2]) {
+      for (const tz of [-1.2, 1.2]) {
+        const leg = cy(0.15, 6, metalMat);
+        ps(leg, tx, 3, tz);
+        tower.add(leg);
+      }
+    }
+    // Platform
+    const platform = bx(3, 0.2, 3, concMat);
+    ps(platform, 0, 6, 0);
+    tower.add(platform);
+    // Cabin
+    const cabin = bx(2, 2.5, 2, concDark);
+    ps(cabin, 0, 7.35, 0);
+    tower.add(cabin);
+    // Roof
+    const roof = bx(2.4, 0.15, 2.4, metalMat);
+    ps(roof, 0, 8.7, 0);
+    tower.add(roof);
+    tower.position.set(0, 0, -10);
+    scene.add(tower);
+
+    // === BENCH ===
+    const bench = new THREE.Group();
+    bench.add(ps(bx(1.2, 0.06, 0.3, woodMat), 0, 0.45, 0));
+    bench.add(ps(bx(0.08, 0.45, 0.08, woodMat), -0.5, 0.22, 0));
+    bench.add(ps(bx(0.08, 0.45, 0.08, woodMat), 0.5, 0.22, 0));
+    bench.position.set(3, 0, 1);
+    scene.add(bench);
+
+    // Debris
+    scene.add(ps(bx(0.15, 0.08, 0.12, concDark), -2.5, 0.04, 0.5));
+    scene.add(ps(bx(0.1, 0.06, 0.1, concDark), 2.8, 0.03, -1));
+    scene.add(ps(bx(0.2, 0.05, 0.08, concDark), -1, 0.03, 2));
+
+    // === PRISONER CHARACTER ===
+    const prisoner = new THREE.Group();
+
+    // Head
+    const head = bx(0.2, 0.24, 0.2, skinMat);
+    ps(head, 0, 1.63, 0);
+    prisoner.add(head);
+    // Nose
+    prisoner.add(ps(bx(0.04, 0.06, 0.04, skinMat), 0, 1.6, 0.12));
+    // Ears
+    prisoner.add(ps(bx(0.04, 0.06, 0.04, skinMat), -0.12, 1.63, 0));
+    prisoner.add(ps(bx(0.04, 0.06, 0.04, skinMat), 0.12, 1.63, 0));
+    // Buzz cut
+    prisoner.add(ps(bx(0.2, 0.06, 0.2, buzzMat), 0, 1.77, 0));
+
+    // Neck
+    prisoner.add(ps(bx(0.08, 0.06, 0.08, skinMat), 0, 1.48, 0));
+
+    // Torso
+    const chest = bx(0.38, 0.4, 0.22, orangeMat);
+    ps(chest, 0, 1.24, 0);
+    prisoner.add(chest);
+    // Collar
+    prisoner.add(ps(bx(0.3, 0.04, 0.18, orangeCollar), 0, 1.46, 0));
+    // Pocket patches
+    prisoner.add(ps(bx(0.08, 0.08, 0.01, orangeDark), -0.08, 1.3, 0.115));
+    prisoner.add(ps(bx(0.08, 0.08, 0.01, orangeDark), 0.08, 1.3, 0.115));
+
+    // Belt
+    prisoner.add(ps(bx(0.4, 0.06, 0.24, beltMat), 0, 1.02, 0));
+
+    // Arms
+    const armL = bx(0.1, 0.4, 0.1, orangeMat);
+    ps(armL, -0.26, 1.24, 0);
+    prisoner.add(armL);
+    const armR = bx(0.1, 0.4, 0.1, orangeMat);
+    ps(armR, 0.26, 1.24, -0.15);
+    armR.rotation.x = -0.8;
+    prisoner.add(armR);
+
+    // Tattoo patches on arms
+    prisoner.add(ps(bx(0.04, 0.06, 0.02, tattooMat), -0.26, 1.15, 0.06));
+    prisoner.add(ps(bx(0.03, 0.05, 0.02, tattooMat), -0.26, 1.28, 0.06));
+    prisoner.add(ps(bx(0.04, 0.05, 0.02, tattooMat), 0.26, 1.15, 0.06));
+
+    // Hands
+    const handL = bx(0.08, 0.1, 0.06, skinMat);
+    ps(handL, -0.26, 1.0, 0.02);
+    prisoner.add(handL);
+    // Left fingers
+    for (let f = 0; f < 4; f++) {
+      const finger = bx(0.015, 0.06, 0.015, skinMat);
+      ps(finger, -0.26 + (f - 1.5) * 0.018, 0.93, 0.02);
+      prisoner.add(finger);
+    }
+
+    // Right hand gripping fence
+    const handR = bx(0.08, 0.1, 0.06, skinMat);
+    ps(handR, 0.26, 1.42, -0.38);
+    prisoner.add(handR);
+    // Right fingers (gripping)
+    for (let f = 0; f < 4; f++) {
+      const finger = bx(0.015, 0.06, 0.015, skinMat);
+      finger.rotation.x = 1.2;
+      ps(finger, 0.26 + (f - 1.5) * 0.018, 1.44, -0.41);
+      prisoner.add(finger);
+    }
+
+    // Legs
+    const legL = bx(0.14, 0.45, 0.16, orangeDark);
+    ps(legL, -0.1, 0.72, 0);
+    prisoner.add(legL);
+    const legR = bx(0.14, 0.45, 0.16, orangeDark);
+    ps(legR, 0.1, 0.72, 0.04);
+    legR.rotation.x = -0.05;
+    prisoner.add(legR);
+
+    // Boots
+    const bootL = bx(0.13, 0.15, 0.22, bootMat);
+    ps(bootL, -0.1, 0.42, 0.02);
+    prisoner.add(bootL);
+    const bootR = bx(0.13, 0.15, 0.22, bootMat);
+    ps(bootR, 0.1, 0.42, 0.06);
+    prisoner.add(bootR);
+    // Boot laces
+    prisoner.add(ps(bx(0.06, 0.015, 0.01, bootLace), -0.1, 0.46, 0.12));
+    prisoner.add(ps(bx(0.06, 0.015, 0.01, bootLace), -0.1, 0.49, 0.12));
+    prisoner.add(ps(bx(0.06, 0.015, 0.01, bootLace), 0.1, 0.46, 0.16));
+    prisoner.add(ps(bx(0.06, 0.015, 0.01, bootLace), 0.1, 0.49, 0.16));
+
+    // Pose: slight lean forward
+    prisoner.rotation.x = 0.05;
+    prisoner.position.set(0, 0.05, -3.5);
+    scene.add(prisoner);
+
+    // === SEARCHLIGHT ===
+    const spotTarget = new THREE.Object3D();
+    spotTarget.position.set(0, 0, -3);
+    scene.add(spotTarget);
+    const spotLight = new THREE.SpotLight(0xffffff, 2, 30, 0.4, 0.5);
+    spotLight.position.set(0, 8.5, -10);
+    spotLight.target = spotTarget;
+    spotLight.castShadow = true;
+    spotLight.shadow.mapSize.set(512, 512);
+    scene.add(spotLight);
+
+    // Visible light cone (semi-transparent)
+    const coneMat = new THREE.MeshBasicMaterial({ color: 0xffffee, transparent: true, opacity: 0.04, side: THREE.DoubleSide });
+    const coneGeo = new THREE.ConeGeometry(2.5, 8, 12, 1, true);
+    const coneMesh = new THREE.Mesh(coneGeo, coneMat);
+    ps(coneMesh, 0, 4.5, -10);
+    coneMesh.rotation.x = Math.PI;
+    scene.add(coneMesh);
+
     // === LIGHTING ===
-    scene.add(new THREE.AmbientLight(0x1a1a2e, 0.4));
-    const lamps: THREE.PointLight[] = [];
-    for (let z = -8; z <= 8; z += 4) {
-      const lampMesh = bx(0.5, 0.04, 0.15, lampMat);
-      ps(lampMesh, 0, 3.8, z);
-      scene.add(lampMesh);
-      const pl = new THREE.PointLight(0xffeecc, 0.8, 8);
-      pl.position.set(0, 3.6, z);
-      pl.castShadow = true;
-      pl.shadow.mapSize.set(512, 512);
-      scene.add(pl);
-      lamps.push(pl);
-    }
+    // Warm dusk sun
+    const sunLight = new THREE.DirectionalLight(0xff8844, 0.7);
+    sunLight.position.set(5, 1, 3);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(512, 512);
+    sunLight.shadow.camera.near = 0.1;
+    sunLight.shadow.camera.far = 25;
+    sunLight.shadow.camera.left = -8;
+    sunLight.shadow.camera.right = 8;
+    sunLight.shadow.camera.top = 8;
+    sunLight.shadow.camera.bottom = -2;
+    scene.add(sunLight);
 
-    // Directional light for bar shadows
-    const dirLight = new THREE.DirectionalLight(0xffeedd, 0.3);
-    dirLight.position.set(2, 3.5, 0);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.set(1024, 1024);
-    dirLight.shadow.camera.near = 0.1;
-    dirLight.shadow.camera.far = 10;
-    dirLight.shadow.camera.left = -5;
-    dirLight.shadow.camera.right = 5;
-    dirLight.shadow.camera.top = 5;
-    dirLight.shadow.camera.bottom = -5;
-    scene.add(dirLight);
+    // Cold blue ambient
+    scene.add(new THREE.AmbientLight(0x334466, 0.3));
 
-    // Red emergency light in the distance
-    const redLightMesh = bx(0.15, 0.15, 0.15, redLightMat);
-    ps(redLightMesh, 1.8, 3.5, -8);
-    scene.add(redLightMesh);
-    const redPL = new THREE.PointLight(0xff2200, 0.4, 6);
-    redPL.position.set(1.8, 3.5, -8);
-    scene.add(redPL);
+    // Tower point light (warm flicker)
+    const towerLight = new THREE.PointLight(0xffaa44, 0.3, 15);
+    towerLight.position.set(0, 7.5, -10);
+    scene.add(towerLight);
 
-    // === CORRIDOR ===
-    const floor = bx(4, 0.1, 20, concD);
-    floor.receiveShadow = true;
-    ps(floor, 0, 0, 0);
-    scene.add(floor);
-    scene.add(ps(bx(4, 0.15, 20, concD), 0, 4, 0));
-    scene.add(ps(bx(0.3, 4, 20, conc), -2.15, 2, 0));
-    scene.add(ps(bx(0.3, 4, 20, conc), 2.15, 2, 0));
-
-    // Cell bars (left wall)
-    for (let z = -6; z <= 6; z += 4) {
-      scene.add(ps(bx(0.1, 3, 0.1, metal), -1.95, 1.6, z - 0.8));
-      scene.add(ps(bx(0.1, 3, 0.1, metal), -1.95, 1.6, z + 0.8));
-      scene.add(ps(bx(0.1, 0.1, 1.7, metal), -1.95, 3.1, z));
-      for (let dz = -0.6; dz <= 0.6; dz += 0.25) {
-        const bar = cy(0.02, 3, metal);
-        bar.castShadow = true;
-        ps(bar, -1.95, 1.6, z + dz);
-        scene.add(bar);
-      }
-      for (const y of [0.5, 1.6, 2.7]) {
-        scene.add(ps(bx(0.05, 0.05, 1.6, metalL), -1.95, y, z));
-      }
-      // Cell interiors
-      scene.add(ps(bx(0.6, 0.15, 0.3, bedMat), -2.8, 0.3, z - 0.2));
-      scene.add(ps(bx(0.6, 0.02, 0.3, whiteMat), -2.8, 0.38, z - 0.2));
-      scene.add(ps(bx(0.15, 0.25, 0.15, whiteMat), -2.5, 0.15, z + 0.5));
-      scene.add(ps(bx(0.4, 0.03, 0.15, wood), -2.8, 1.5, z + 0.4));
-    }
-
-    // Pipes on ceiling
-    const pipe1 = cy(0.06, 20, pipeMat);
-    pipe1.rotation.x = Math.PI / 2;
-    ps(pipe1, 1.2, 3.85, 0);
-    scene.add(pipe1);
-    const pipe2 = cy(0.04, 20, pipeMat);
-    pipe2.rotation.x = Math.PI / 2;
-    ps(pipe2, -1.0, 3.9, 0);
-    scene.add(pipe2);
-
-    // Floor markings
-    scene.add(ps(bx(0.08, 0.01, 18, new THREE.MeshStandardMaterial({ color: 0xccaa00, roughness: 0.7 })), 0, 0.06, 0));
-
-    // Puddles
-    scene.add(ps(bx(0.8, 0.005, 0.5, puddle), 0.5, 0.06, 2));
-    scene.add(ps(bx(0.6, 0.005, 0.4, puddle), -0.3, 0.06, -4));
-    scene.add(ps(bx(0.5, 0.005, 0.6, puddle), 0.8, 0.06, -7));
-
-    // Warning signs on right wall
-    scene.add(ps(bx(0.02, 0.3, 0.4, signMat), 2.0, 2.2, 3));
-    scene.add(ps(bx(0.02, 0.2, 0.15, redLightMat), 2.0, 2.25, 3));
-    // Bulletin board
-    scene.add(ps(bx(0.02, 0.5, 0.7, new THREE.MeshStandardMaterial({ color: 0x664422, roughness: 0.85 })), 2.0, 2.0, -2));
-    scene.add(ps(bx(0.02, 0.08, 0.12, whiteMat), 2.0, 2.1, -1.85));
-    scene.add(ps(bx(0.02, 0.08, 0.12, whiteMat), 2.0, 2.0, -2.1));
-    scene.add(ps(bx(0.02, 0.08, 0.12, signMat), 2.0, 2.15, -2.15));
-
-    // Security camera on ceiling
-    const camGroup = new THREE.Group();
-    camGroup.add(ps(bx(0.12, 0.08, 0.12, metal), 0, 0, 0));
-    const camCyl = cy(0.04, 0.15, metal);
-    camCyl.rotation.z = Math.PI / 2;
-    ps(camCyl, 0.08, -0.04, 0);
-    camGroup.add(camCyl);
-    const camLens = cy(0.03, 0.04, new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.9 }));
-    camLens.rotation.z = Math.PI / 2;
-    ps(camLens, 0.16, -0.04, 0);
-    camGroup.add(camLens);
-    ps(camGroup, 1.5, 3.9, 1);
-    scene.add(camGroup);
-
-    // Clock on wall
-    const clockGroup = new THREE.Group();
-    const clockFace = cy(0.15, 0.03, clockMat, 20);
-    clockFace.rotation.x = Math.PI / 2;
-    clockGroup.add(clockFace);
-    const clockRim = cy(0.16, 0.04, metal, 20);
-    clockRim.rotation.x = Math.PI / 2;
-    ps(clockRim, 0, 0, -0.005);
-    clockGroup.add(clockRim);
-    const hourHand = bx(0.01, 0.08, 0.005, metal);
-    ps(hourHand, 0, 0.03, 0.02);
-    clockGroup.add(hourHand);
-    const minHand = bx(0.008, 0.11, 0.005, metal);
-    ps(minHand, 0, 0.04, 0.02);
-    minHand.rotation.z = 1.2;
-    clockGroup.add(minHand);
-    ps(clockGroup, 2.0, 2.8, 5);
-    clockGroup.rotation.y = -Math.PI / 2;
-    scene.add(clockGroup);
-
-    // Dust particles
-    const dustCount = 300;
+    // === DUST PARTICLES ===
+    const dustCount = 150;
     const dustGeo = new THREE.BufferGeometry();
     const dustPositions = new Float32Array(dustCount * 3);
     const dustVelocities = new Float32Array(dustCount * 3);
     for (let i = 0; i < dustCount; i++) {
-      dustPositions[i * 3] = (Math.random() - 0.5) * 4;
-      dustPositions[i * 3 + 1] = Math.random() * 3.8;
-      dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 18;
-      dustVelocities[i * 3] = (Math.random() - 0.5) * 0.005;
-      dustVelocities[i * 3 + 1] = Math.random() * 0.008 + 0.002;
-      dustVelocities[i * 3 + 2] = (Math.random() - 0.5) * 0.005;
+      dustPositions[i * 3] = (Math.random() - 0.5) * 10;
+      dustPositions[i * 3 + 1] = Math.random() * 4;
+      dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 10 - 2;
+      dustVelocities[i * 3] = (Math.random() - 0.5) * 0.003;
+      dustVelocities[i * 3 + 1] = Math.random() * 0.006 + 0.002;
+      dustVelocities[i * 3 + 2] = (Math.random() - 0.5) * 0.003;
     }
     dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
-    const dustMtl = new THREE.PointsMaterial({ color: 0xccccaa, size: 0.02, transparent: true, opacity: 0.4, sizeAttenuation: true, depthWrite: false });
+    const dustMtl = new THREE.PointsMaterial({ color: 0xddcc88, size: 0.03, transparent: true, opacity: 0.5, sizeAttenuation: true, depthWrite: false });
     const dustPoints = new THREE.Points(dustGeo, dustMtl);
     scene.add(dustPoints);
 
-    // Steam particles from pipes
-    const steamParticles: THREE.Mesh[] = [];
-    for (let i = 0; i < 12; i++) {
-      const steam = bx(0.04, 0.04, 0.04, steamMat);
-      steam.castShadow = false;
-      steam.receiveShadow = false;
-      ps(steam, 1.2 + (Math.random() - 0.5) * 0.1, 3.5 + Math.random() * 0.4, (Math.random() - 0.5) * 8);
-      scene.add(steam);
-      steamParticles.push(steam);
-    }
-
-    // === GUARD (improved voxel-style) ===
-    const guard = new THREE.Group();
-
-    // Head
-    const head = bx(0.2, 0.26, 0.22, skin);
-    ps(head, 0, 1.78, 0);
-    guard.add(head);
-
-    // Beret
-    const beret = cy(0.14, 0.06, beretMat, 8);
-    ps(beret, 0, 1.94, 0);
-    guard.add(beret);
-    const beretTop = cy(0.11, 0.03, beretMat, 8);
-    ps(beretTop, 0.02, 1.97, 0);
-    guard.add(beretTop);
-
-    // Neck
-    guard.add(ps(bx(0.1, 0.06, 0.1, skin), 0, 1.62, 0));
-
-    // Torso (chest) - for breathing animation
-    const chest = bx(0.36, 0.3, 0.22, guardBlue);
-    ps(chest, 0, 1.42, 0);
-    guard.add(chest);
-
-    // Lower torso
-    guard.add(ps(bx(0.34, 0.2, 0.2, guardBlueD), 0, 1.17, 0));
-
-    // Badge on chest
-    guard.add(ps(bx(0.08, 0.06, 0.01, badgeMat), 0.1, 1.48, 0.115));
-
-    // Shoulders
-    guard.add(ps(bx(0.12, 0.04, 0.1, guardBlueD), -0.2, 1.55, 0));
-    guard.add(ps(bx(0.12, 0.04, 0.1, guardBlueD), 0.2, 1.55, 0));
-
-    // Belt
-    guard.add(ps(bx(0.37, 0.06, 0.23, beltMat), 0, 1.05, 0));
-    guard.add(ps(bx(0.06, 0.05, 0.02, badgeMat), 0, 1.05, 0.12));
-
-    // Holster
-    guard.add(ps(bx(0.06, 0.12, 0.08, holsterMat), 0.2, 0.98, 0.05));
-
-    // Legs
-    const legL = bx(0.14, 0.5, 0.16, pantsMat);
-    ps(legL, -0.09, 0.73, 0);
-    guard.add(legL);
-    const legR = bx(0.14, 0.5, 0.16, pantsMat);
-    ps(legR, 0.09, 0.73, 0);
-    guard.add(legR);
-
-    // Boots
-    const bootL = bx(0.12, 0.15, 0.22, bootsMat);
-    ps(bootL, -0.09, 0.42, 0.02);
-    guard.add(bootL);
-    const bootR = bx(0.12, 0.15, 0.22, bootsMat);
-    ps(bootR, 0.09, 0.42, 0.02);
-    guard.add(bootR);
-
-    // Arms
-    const armL = bx(0.1, 0.38, 0.1, guardBlue);
-    ps(armL, -0.25, 1.35, 0);
-    guard.add(armL);
-    const armR = bx(0.1, 0.38, 0.1, guardBlue);
-    ps(armR, 0.25, 1.35, 0);
-    guard.add(armR);
-
-    // Hands
-    const handL = bx(0.07, 0.1, 0.07, skin);
-    ps(handL, -0.25, 1.12, 0.1);
-    guard.add(handL);
-    const handR = bx(0.07, 0.1, 0.07, skin);
-    ps(handR, 0.25, 1.12, 0.15);
-    guard.add(handR);
-
-    // AK rifle
-    const ak = new THREE.Group();
-    ak.add(ps(bx(0.03, 0.03, 0.55, metal), 0, 0, -0.15));
-    ak.add(ps(bx(0.06, 0.07, 0.24, metal), 0, -0.01, 0.05));
-    ak.add(ps(bx(0.04, 0.14, 0.06, metal), 0, -0.09, 0.08));
-    ak.add(ps(bx(0.05, 0.06, 0.22, wood), 0, -0.02, 0.28));
-    ak.add(ps(bx(0.04, 0.04, 0.16, wood), 0, -0.02, -0.2));
-    ak.add(ps(bx(0.02, 0.02, 0.06, metal), 0, 0, -0.45));
-    ak.position.set(0.12, 1.18, 0.18);
-    ak.rotation.set(0.2, 0.05, -0.7);
-    guard.add(ak);
-
-    guard.position.set(0.5, 0.05, 5);
-    scene.add(guard);
-
-    // === ANIMATION STATE ===
+    // === ANIMATION ===
     let time = 0;
     let animId = 0;
 
-    // Patrol state
-    const patrolPoints = [-6, 6];
-    let patrolTarget = 1;
-    let guardZ = 5;
-    let guardFacing = 0;
-    let facingTarget = 0;
-    let idlePauseTimer = 0;
-    let isIdle = false;
-    let lookAroundPhase = 0;
-    let walkSpeed = 0;
-    const maxWalkSpeed = 1.8;
-
-    // Helpers
-    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-    const smoothstep = (t: number) => t * t * (3 - 2 * t);
-
-    // Camera state
-    let camAngle = 0;
-    let camCurrentY = 1.0;
-
     const animate = () => {
       animId = requestAnimationFrame(animate);
-      const delta = 0.016;
-      time += delta;
-
-      // === GUARD PATROL LOGIC ===
-      const targetZ = patrolPoints[patrolTarget];
-      const distToTarget = Math.abs(guardZ - targetZ);
-
-      if (isIdle) {
-        idlePauseTimer -= delta;
-        lookAroundPhase += delta * 1.5;
-        walkSpeed = lerp(walkSpeed, 0, 0.1);
-
-        if (idlePauseTimer <= 0) {
-          isIdle = false;
-          patrolTarget = patrolTarget === 0 ? 1 : 0;
-          facingTarget = patrolTarget === 1 ? 0 : Math.PI;
-        }
-      } else {
-        if (distToTarget < 0.1) {
-          isIdle = true;
-          idlePauseTimer = 2.0 + Math.random() * 1.5;
-          lookAroundPhase = 0;
-          walkSpeed = lerp(walkSpeed, 0, 0.15);
-        } else {
-          const dir = targetZ > guardZ ? 1 : -1;
-          facingTarget = dir > 0 ? 0 : Math.PI;
-          const accelZone = Math.min(distToTarget / 2, 1.0);
-          const targetSpeed = maxWalkSpeed * smoothstep(Math.min(accelZone, 1));
-          walkSpeed = lerp(walkSpeed, targetSpeed, 0.05);
-          guardZ += dir * walkSpeed * delta;
-        }
-      }
-
-      // Smooth facing
-      let facingDiff = facingTarget - guardFacing;
-      if (facingDiff > Math.PI) facingDiff -= Math.PI * 2;
-      if (facingDiff < -Math.PI) facingDiff += Math.PI * 2;
-      guardFacing += facingDiff * 0.06;
-      guard.rotation.y = guardFacing;
-      guard.position.z = guardZ;
-
-      // Walk cycle
-      const walkPhase = time * 6;
-      const walkAmount = Math.min(walkSpeed / maxWalkSpeed, 1);
-
-      // Head bob
-      guard.position.y = 0.05 + Math.abs(Math.sin(walkPhase)) * 0.015 * walkAmount;
-
-      // Body lean
-      const leanDir = facingTarget === 0 ? 1 : -1;
-      guard.rotation.x = walkAmount * 0.03 * leanDir;
+      time += 0.016;
 
       // Breathing
-      const breathe = Math.sin(time * 2.0) * 0.005;
-      chest.scale.y = 1 + breathe * 2;
-      chest.position.y = 1.42 + breathe;
+      const breathe = Math.sin(time * 2) * 0.004;
+      chest.scale.y = 1 + breathe;
+      chest.position.y = 1.24 + breathe * 0.5;
 
-      // Weight shift when idle
-      if (isIdle) {
-        guard.position.x = 0.5 + Math.sin(time * 0.8) * 0.01;
-      } else {
-        guard.position.x = 0.5;
-      }
+      // Head turn
+      head.rotation.y = Math.sin(time * 0.4) * 0.15;
 
-      // Head animation
-      if (isIdle) {
-        head.rotation.y = Math.sin(lookAroundPhase) * 0.4;
-        head.rotation.x = Math.sin(lookAroundPhase * 0.7) * 0.08;
-      } else {
-        head.rotation.y = lerp(head.rotation.y, Math.sin(time * 0.9) * 0.08, 0.05);
-        head.rotation.x = lerp(head.rotation.x, 0, 0.05);
-      }
+      // Weight shift
+      prisoner.position.x = Math.sin(time * 0.6) * 0.005;
 
-      // Leg swing
-      const legSwing = Math.sin(walkPhase) * 0.4 * walkAmount;
-      legL.rotation.x = -legSwing;
-      legR.rotation.x = legSwing;
-      bootL.rotation.x = -legSwing * 0.3;
-      bootR.rotation.x = legSwing * 0.3;
-      bootL.position.y = 0.42 + Math.max(0, Math.sin(walkPhase)) * 0.02 * walkAmount;
-      bootR.position.y = 0.42 + Math.max(0, -Math.sin(walkPhase)) * 0.02 * walkAmount;
+      // Right hand micro-adjustment
+      handR.scale.x = 1 + Math.sin(time * 3) * 0.02;
+      handR.position.y = 1.42 + Math.sin(time * 2.5) * 0.003;
 
-      // Arm swing
-      const armSwing = Math.sin(walkPhase) * 0.2 * walkAmount;
-      armL.rotation.x = armSwing + 0.15;
-      armR.rotation.x = -armSwing * 0.5 + 0.2;
-      handL.position.z = 0.1 + armSwing * 0.02;
-      handR.position.z = 0.15 - armSwing * 0.01;
+      // Searchlight sweep
+      const slAngle = time * (Math.PI * 2 / 12);
+      spotTarget.position.x = Math.cos(slAngle) * 5;
+      spotTarget.position.z = -3 + Math.sin(slAngle) * 5;
+      coneMesh.position.x = Math.cos(slAngle) * 1.5;
+      coneMesh.rotation.z = Math.sin(slAngle) * 0.3;
 
-      // Weapon sway
-      ak.rotation.z = -0.7 + Math.sin(walkPhase * 0.5) * 0.03 * walkAmount;
-      ak.rotation.x = 0.2 + Math.sin(walkPhase) * 0.02 * walkAmount;
-      ak.position.y = 1.18 + Math.sin(walkPhase) * 0.005 * walkAmount;
+      // Tower light flicker
+      towerLight.intensity = 0.3 + Math.sin(time * 5) * 0.1 + Math.sin(time * 11) * 0.05;
 
-      // === CAMERA ===
-      camAngle += delta * 0.12;
-      const camRadius = 2.8 + Math.sin(camAngle * 0.3) * 0.4;
-      const camX = Math.sin(camAngle) * camRadius * 0.4;
-      const camZ = guardZ + 2.5 + Math.cos(camAngle) * camRadius * 0.6;
-      const camTargetY = 1.0 + Math.sin(camAngle * 0.2) * 0.1;
-      camCurrentY = lerp(camCurrentY, camTargetY, 0.02);
-      camera.position.set(camX, camCurrentY, camZ);
-      camera.lookAt(new THREE.Vector3(0.5, 1.3, guardZ));
-
-      // === LAMP FLICKER ===
-      for (let i = 0; i < lamps.length; i++) {
-        lamps[i].intensity = 0.8 + Math.sin(time * (6 + i * 3)) * 0.06 + Math.sin(time * (11 + i * 7)) * 0.04;
-      }
-      redPL.intensity = 0.4 + Math.sin(time * 8) * 0.1 + Math.sin(time * 13) * 0.05;
-
-      // === DUST ===
-      const posAttr = dustGeo.getAttribute("position");
+      // Dust particles
+      const posAttr = dustGeo.getAttribute('position');
       for (let i = 0; i < dustCount; i++) {
         dustPositions[i * 3] += dustVelocities[i * 3];
         dustPositions[i * 3 + 1] += dustVelocities[i * 3 + 1];
         dustPositions[i * 3 + 2] += dustVelocities[i * 3 + 2];
-        if (dustPositions[i * 3 + 1] > 3.8) {
+        if (dustPositions[i * 3 + 1] > 4.5) {
           dustPositions[i * 3 + 1] = 0.1;
-          dustPositions[i * 3] = (Math.random() - 0.5) * 4;
-          dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 18;
+          dustPositions[i * 3] = (Math.random() - 0.5) * 10;
+          dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 10 - 2;
         }
       }
       posAttr.needsUpdate = true;
 
-      // === STEAM ===
-      for (let i = 0; i < steamParticles.length; i++) {
-        const sp = steamParticles[i];
-        sp.position.y += 0.003;
-        if (sp.position.y > 3.95) {
-          sp.position.y = 3.5;
-          sp.position.x = 1.2 + (Math.random() - 0.5) * 0.1;
-          sp.position.z = (Math.random() - 0.5) * 8;
-        }
-        sp.scale.setScalar(1 + (sp.position.y - 3.5) * 2);
-      }
+      // Camera orbit
+      const camPeriod = 30;
+      const camAngle = (time / camPeriod) * Math.PI * 2;
+      const camRadius = 4.5;
+      const camX = Math.sin(camAngle) * camRadius;
+      const camZ = -3.5 + Math.cos(camAngle) * camRadius;
+      const camY = 1.5 + Math.sin(camAngle * 0.5) * 0.3;
+      camera.position.set(camX, camY, camZ);
+      camera.lookAt(new THREE.Vector3(0, 1.2, -3.5));
 
       renderer.render(scene, camera);
       if (!containerRef.current) cancelAnimationFrame(animId);
@@ -487,17 +401,21 @@ const MenuScene = () => {
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
-    window.addEventListener("resize", onResize);
+    window.addEventListener('resize', onResize);
 
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener('resize', onResize);
       renderer.domElement.parentElement?.removeChild(renderer.domElement);
       renderer.dispose();
     };
   }, []);
 
-  return <div ref={containerRef} className="w-full h-full" />;
+  return (
+    <div ref={containerRef} className="w-full h-full relative">
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%)' }} />
+    </div>
+  );
 };
 
 // === SETTINGS ===

@@ -1,0 +1,41 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Replace the current MenuScene in MainMenu.tsx with a new cinematic prison yard cutscene featuring a high-quality prisoner character, detailed environment, cinematic camera, and rich animations.",
+  "status": "in_progress",
+  "steps": [
+    "1. In src/components/MainMenu.tsx, completely replace the MenuScene component with a new implementation. Keep the same component interface (returns a div with ref, same className).",
+    "2. SCENE SETUP: Create a Three.js scene with a dusk sky gradient (warm orange at horizon fading to dark blue at top). Use a large background plane/sphere or scene.background with a vertical gradient via ShaderMaterial or a Canvas texture.",
+    "3. ENVIRONMENT - GROUND: Create a large concrete ground plane with subtle painted lines (white/yellow stripes using thin box meshes flush with ground). Add cracks/patches via slightly darker box meshes embedded in ground.",
+    "4. ENVIRONMENT - FENCE: Build a chain-link fence using vertical post cylinders (metallic gray), horizontal rail boxes connecting them, and a grid of thin vertical+horizontal wires between posts to suggest chain-link. Add barbed wire on top (small twisted cylinder segments along the top rail). Place fence at the back of scene.",
+    "5. ENVIRONMENT - GUARD TOWER: Build a guard tower silhouette in the background (4 tall cylinder legs, a box platform on top, a smaller box for the cabin with a flat roof, a small cylinder for the searchlight mount). Keep it semi-distant so it reads as a silhouette.",
+    "6. ENVIRONMENT - PROPS: Add a wooden bench (box seat + box legs), scattered debris on ground (small dark boxes), concrete barriers or bollards.",
+    "7. CHARACTER - PRISONER (high detail): Build a detailed prisoner character using box/cylinder primitives. Requirements: proper human proportions (~1.75m tall), head with nose bump (small box protruding), ear bumps (small boxes on sides), buzz-cut suggested by slightly darker material on top of head. Orange jumpsuit (two-tone: brighter chest, slightly darker legs). Collar detail (thin box around neck). Pocket patches on chest (2 small flat boxes). Boot laces suggested by thin contrasting lines. Hands with basic finger separation (4 thin boxes per hand). Darker patches on arms suggesting tattoos (use darker material boxes layered on arms).",
+    "8. CHARACTER POSE: Position the prisoner facing the fence, one hand gripping the fence (hand positioned on a fence wire, fingers wrapping around it). Slight lean forward. Weight on one leg (other leg slightly bent).",
+    "9. SEARCHLIGHT: Create a searchlight on the guard tower (a cone geometry or spotlight helper). Animate it rotating/sweeping across the ground. The light itself should be a SpotLight with visible cone (use a semi-transparent cone mesh).",
+    "10. ANIMATIONS - CHARACTER: Breathing (chest scale oscillation), subtle head turn (looking left then back to horizon over ~8 seconds), weight shift (very subtle body sway), hand grip micro-adjustments.",
+    "11. ANIMATIONS - ENVIRONMENT: Searchlight rotation (smooth circular sweep, ~12 second period), flickering light in guard tower (PointLight intensity oscillation), dust particles floating (reuse particle approach from existing code but with fewer particles ~150, warm-tinted).",
+    "12. CAMERA: Smooth dolly/orbit around the scene. Camera starts from behind-left, slowly orbits to the right side, maintaining focus on the prisoner. Gentle Y oscillation. Use sinusoidal paths for smooth cinematic feel. Full orbit period ~30 seconds for seamless loop.",
+    "13. LIGHTING: Main light - warm directional light from the setting sun (orange tint, positioned low on horizon). Fill light - cold blue ambient from opposite side. Harsh white searchlight (SpotLight). PointLight on tower (warm flicker). Keep shadow quality moderate for performance.",
+    "14. POST-PROCESSING: Add a CSS vignette overlay (radial gradient from transparent center to dark edges) as an absolutely positioned div over the 3D canvas. Add slight color grading via the renderer's toneMapping (ACESFilmicToneMapping) and toneMappingExposure.",
+    "15. PERFORMANCE: Keep total mesh count under 100. Use merged geometries where possible. Limit shadow-casting to key objects only. Reuse materials. Keep particle count to ~150.",
+    "16. Ensure the scene loops seamlessly (camera orbit + all animations cycle cleanly)."
+  ],
+  "acceptance_criteria": [
+    "MainMenu renders a new 3D scene with a prisoner character near a fence in a prison yard at dusk",
+    "Character has visible detail: nose, ears, collar, pocket patches, finger separation, tattoo patches",
+    "Environment includes: concrete ground with lines, chain-link fence with barbed wire, guard tower, bench, debris",
+    "Searchlight visibly sweeps across the scene",
+    "Character has breathing animation and subtle head turn",
+    "Camera smoothly orbits the scene",
+    "Dusk lighting with warm sun and cold fill is visible",
+    "CSS vignette overlay is present",
+    "TypeScript compiles without errors: `npx tsc --noEmit` passes",
+    "Total mesh count stays under 100"
+  ],
+  "verification": [
+    "Run `npx tsc --noEmit` in JailBreak-1.2/ and confirm no errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
