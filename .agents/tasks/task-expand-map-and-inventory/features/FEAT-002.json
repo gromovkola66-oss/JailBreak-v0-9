@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Expand inventory system: 16 slots in grid layout, item stacking, descriptions/tooltips, drag-and-drop rearrange, category filtering, drop action, item rarity system (color-coded), quick-use hotbar (always visible), and pickup notifications",
+  "status": "completed",
+  "steps": [
+    "1. Rewrite src/game/ItemDefs.ts: Add fields to ItemDef: `description: string`, `stackable: boolean`, `maxStack: number`, `rarity: 'common' | 'uncommon' | 'rare' | 'epic'`, `category: 'weapon' | 'melee' | 'consumable' | 'tool' | 'ammo'`. Update all existing items with these new fields. Add new stackable items: 'item_ammo_9mm' (ammo, stackable, max 30), 'item_ammo_rifle' (ammo, stackable, max 60), 'item_food_bread' (consumable, stackable, max 5). Add rarity to existing items (shiv=common, baton=uncommon, shield=rare, flashlight=uncommon, medkit=rare, bandage=common). Add a RARITY_COLORS map: common=#b0b0b0, uncommon=#4ade80, rare=#60a5fa, epic=#c084fc.",
+    "2. Rewrite src/game/InventorySystem.ts: Expand to 16 slots. Add `quantity` field to InventoryItem (default 1). Add stacking logic in addItem: if item is stackable and exists in inventory with quantity < maxStack, increment quantity instead of using new slot. Update InventoryState interface to include: `dragFromSlot: number | null`, `activeCategory: string | null`, `notifications: {item: InventoryItem, timestamp: number}[]`. Add methods: `swapSlots(from: number, to: number)`, `startDrag(slot: number)`, `endDrag(targetSlot: number)`, `setActiveCategory(cat: string | null)`, `getFilteredSlots()` (returns slots filtered by category), `dropItem(slotIndex: number): InventoryItem | null` (removes item from slot and returns it), `addNotification(item: InventoryItem)` (stores notification, auto-removes after 3 seconds). Keep the first 4 slots as the 'hotbar'. Ensure dropAllItems and reset still work.",
+    "3. In src/EditorApp.tsx, replace the radial inventory wheel UI with a new grid-based inventory panel. The new UI should include: (a) A 4x4 grid of 16 slots with proper styling. (b) Each slot shows item icon, name (small), quantity badge if > 1, and a colored border based on rarity. (c) Tooltip on hover showing item name, description, rarity, and type. (d) Drag-and-drop: mouse down on slot starts drag (shows item following cursor), mouse up on another slot calls swapSlots. (e) Category filter tabs at top: All / Weapons / Tools / Consumables / Ammo. (f) Right-click on slot to drop item. (g) Hotbar always visible at bottom of screen (first 4 slots) when inventory is closed AND pointer is locked (in-game). Equipped slot highlighted in hotbar. (h) Pickup notification toasts in top-right: slide in, show item icon + name + rarity color, fade out after 3s.",
+    "4. In src/editor/PlaytestMode.ts, update inventory integration: when items are picked up, call `inventory.addNotification(item)` after addItem. Add a new public method `inventoryDropItem(slotIndex: number)` that calls inventory.dropItem and spawns a 3D pickup in the world at the player's position (reuse existing droppedItems pattern). Add `inventorySwapSlots(from: number, to: number)` and `inventorySetCategory(cat: string | null)` public methods. Update the onInventoryUpdate callback to include the new state fields.",
+    "5. Wire up all new methods in EditorApp.tsx: create handlers for swap, drop, category filter, and pass them to the inventory UI. Ensure hotbar renders with the first 4 inventory slots. Add pickup notification rendering in the playtest UI section."
+  ],
+  "acceptance_criteria": [
+    "Inventory has 16 slots displayed as 4x4 grid when opened (Q key)",
+    "Stackable items stack correctly (e.g., picking up 2 bandages shows quantity 2 in one slot)",
+    "Hovering a slot shows tooltip with item description and rarity",
+    "Dragging items between slots swaps their positions",
+    "Category filter buttons filter visible items",
+    "Right-clicking a slot drops the item",
+    "Items have colored borders based on rarity (common=gray, uncommon=green, rare=blue, epic=purple)",
+    "Hotbar (first 4 slots) is always visible at bottom during gameplay",
+    "Pickup notifications appear in top-right corner when items are picked up",
+    "TypeScript compiles with no errors"
+  ],
+  "verification": [
+    "Run `npx tsc --noEmit` in the project directory and confirm zero errors"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes compile cleanly with npx tsc --noEmit. ItemDef type union expanded to include 'ammo'. InventoryItem type union expanded to include 'ammo'. addItem method accepts both the new InventoryItem and the old-style loose objects (backward compatible). RARITY_COLORS exported from ItemDefs. New public methods on PlaytestMode: inventoryDropItem, inventorySwapSlots, inventorySetCategory. Notifications auto-remove after 3s via setTimeout."
+}
