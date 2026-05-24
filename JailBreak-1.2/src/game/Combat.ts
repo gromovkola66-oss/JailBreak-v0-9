@@ -663,7 +663,7 @@ export class Combat {
       }
       const bobTime = (performance.now() / 1000) * 2;
       const baseY = obj.userData.groundedY ?? obj.position.y;
-      if (!obj.userData.groundedY) obj.userData.groundedY = obj.position.y;
+      if (obj.userData.groundedY === undefined) obj.userData.groundedY = obj.position.y;
       obj.position.y = baseY + Math.sin(bobTime + obj.userData.bobPhase) * 0.03;
       return;
     }

@@ -221,6 +221,7 @@ export class InventorySystem {
     } else if (this.hotbarIndex === to) {
       this.hotbarIndex = from;
     }
+    this.hotbarIndex = Math.min(this.hotbarIndex, 3);
     this.notifyStateChange();
   }
 
