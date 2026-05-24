@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Add map resize functionality to the editor allowing terrain sizes of 200, 400, 600, 800, 1000 with proportional resolution scaling",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. In src/game/TerrainSystem.ts, add a `resize(newSize: number, newResolution: number)` method that: disposes current geometry/mesh, recreates PlaneGeometry with new dimensions, reinitializes heightData/materialMap arrays (filling with zeros/grass), re-adds mesh to scene. Also add a static helper `getResolutionForSize(size: number): number` that maps sizes to resolutions (200->64, 400->96, 600->128, 800->160, 1000->192). Add getters `getSize()` and `getResolution()` to expose current values.",
     "2. In src/editor/MapEditor.ts, add a public method `resizeTerrain(size: number)` that: (a) calculates resolution via TerrainSystem.getResolutionForSize, (b) calls terrainSystem.resize(size, resolution), (c) removes old gridHelper, creates a new GridHelper matching the new size, adds to scene. Add a callback `onTerrainResized?: (size: number) => void` to notify UI. Also add a `getTerrainSize(): number` getter.",
@@ -22,5 +22,5 @@
     "Run `npx tsc --noEmit` in the project directory and confirm zero errors"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All changes compile cleanly with npx tsc --noEmit. No issues encountered."
 }
