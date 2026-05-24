@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Add map resize functionality to the editor allowing terrain sizes of 200, 400, 600, 800, 1000 with proportional resolution scaling",
+  "status": "in_progress",
+  "steps": [
+    "1. In src/game/TerrainSystem.ts, add a `resize(newSize: number, newResolution: number)` method that: disposes current geometry/mesh, recreates PlaneGeometry with new dimensions, reinitializes heightData/materialMap arrays (filling with zeros/grass), re-adds mesh to scene. Also add a static helper `getResolutionForSize(size: number): number` that maps sizes to resolutions (200->64, 400->96, 600->128, 800->160, 1000->192). Add getters `getSize()` and `getResolution()` to expose current values.",
+    "2. In src/editor/MapEditor.ts, add a public method `resizeTerrain(size: number)` that: (a) calculates resolution via TerrainSystem.getResolutionForSize, (b) calls terrainSystem.resize(size, resolution), (c) removes old gridHelper, creates a new GridHelper matching the new size, adds to scene. Add a callback `onTerrainResized?: (size: number) => void` to notify UI. Also add a `getTerrainSize(): number` getter.",
+    "3. In src/components/EditorUI.tsx, in the terrain section (where terrain brush controls are rendered), add a 'Map Size' dropdown/button group ABOVE the terrain brush toggle. Show buttons for sizes: 200, 400, 600, 800, 1000. Highlight the currently selected size. Add props: `terrainSize: number` and `onTerrainResize: (size: number) => void`. Style consistently with existing terrain controls.",
+    "4. In src/EditorApp.tsx, add state `const [terrainSize, setTerrainSize] = useState(200)`. Wire up the `onTerrainResized` callback from editor to update this state. Create handler `handleTerrainResize` that calls `editorRef.current?.resizeTerrain(size)`. Pass `terrainSize` and `onTerrainResize={handleTerrainResize}` to EditorUI component."
+  ],
+  "acceptance_criteria": [
+    "TerrainSystem has a working resize() method that recreates geometry at new dimensions",
+    "MapEditor.resizeTerrain() updates both terrain and grid helper",
+    "EditorUI shows terrain size selector in the terrain category panel",
+    "Selecting a size in the UI resizes the terrain in the 3D scene",
+    "Exported map data contains the new size and resolution",
+    "PlaytestMode already handles variable sizes via mapData.terrain.size (no changes needed there)",
+    "TypeScript compiles with no errors"
+  ],
+  "verification": [
+    "Run `npx tsc --noEmit` in the project directory and confirm zero errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
