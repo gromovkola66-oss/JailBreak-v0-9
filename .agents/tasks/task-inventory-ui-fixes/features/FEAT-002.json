@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Modernize inventory UI with glassmorphism, animations, and visual effects",
+  "status": "in_progress",
+  "steps": [
+    "STEP 1 - Add CSS animations to index.css: Add keyframes for: inventorySlideIn (translate + opacity), inventorySlideOut, slotHoverGlow (box-shadow pulse), tooltipFadeIn (opacity + translateY), notificationSlideIn (from right), borderPulse (border-color cycling for active slot), bobFloat (subtle up/down). These will be used by class names in the React components.",
+    "STEP 2 - Redesign the full inventory panel (Tab) in EditorApp.tsx: Replace the current inventory panel with a modern glassmorphism design: (a) Outer container: backdrop-blur-xl, bg-black/40, border border-white/10, rounded-2xl. (b) Add smooth open animation using the inventorySlideIn keyframe. (c) Slot grid: 4 columns for quick slots (row 1: 0-3) and 4 columns for storage (row 2: 4-7). Mark row 1 as 'Quick Slots' with a header label and row 2 as 'Storage' with a header label. (d) Each slot: rounded-xl, bg-gradient from gray-800/60 to gray-900/80, border with rarity-colored glow on hover (box-shadow using RARITY_COLORS), scale-105 on hover transition, smooth 200ms transitions.",
+    "STEP 3 - Add drag-and-drop visual feedback in inventory: (a) When dragging, the source slot should dim (opacity-30, scale-95). (b) Target slot on dragOver should highlight with a bright border glow and slight scale-up. (c) Add a ghost item that follows cursor during drag (use onDrag event + absolute positioned element or just style the drag image). (d) Prevent drag of slot 0 (fists) - it's already in the draggable guard but reinforce visually.",
+    "STEP 4 - Modernize item tooltips: Replace the current simple tooltip with a modern card: backdrop-blur-md, bg-gray-900/95, border border-white/10, rounded-xl, p-4. Add a colored left-side accent bar matching the rarity color. Show item icon large at top, name in bold, description in gray, rarity badge with colored background pill, and type tag. Apply tooltipFadeIn animation with a 150ms delay.",
+    "STEP 5 - Modernize the hotbar (bottom of screen): (a) Quick slots container: backdrop-blur-md, bg-black/30, rounded-2xl, p-2, border border-white/5. (b) Each slot: rounded-xl with subtle inner glow. (c) Active slot: animated pulsing border (use borderPulse animation), slight scale-110, colored shadow matching item rarity. (d) Item icons should be slightly larger (text-xl). (e) Slot numbers rendered in top-left corner with modern font (text-[10px] font-medium text-white/60).",
+    "STEP 6 - Modernize pickup notifications: Change from current simple appearance to: slide-in from right with backdrop-blur-sm, bg-black/70 with left border colored by rarity, rounded-xl, include item icon + name + 'Picked up' text. Add exit animation (fade-out + slide-right). Use a 3-second display with smooth opacity transition.",
+    "STEP 7 - Modernize HP/Armor bars in HUD: (a) HP bar: gradient fill from red-600 to rose-500, add subtle inner glow, smooth width transition (transition-all duration-500). (b) Armor bar: gradient from cyan-500 to blue-500 with similar treatment. (c) Container: backdrop-blur-sm bg-black/40 rounded-xl with subtle border. (d) Add smooth number transitions.",
+    "STEP 8 - Character model panel improvements: Add a subtle vignette border effect (box-shadow inset) to the character model container. Add a faint radial gradient overlay at edges. Smooth the panel border to be more modern (rounded-2xl, border-white/10)."
+  ],
+  "acceptance_criteria": [
+    "Full inventory panel (Tab) opens with a smooth slide/fade animation and has glassmorphism (blur) background",
+    "Inventory slots have rarity-colored glow on hover and smooth scale transitions",
+    "Active hotbar slot has an animated pulsing border/glow",
+    "Hotbar at bottom of screen has a frosted glass appearance",
+    "Item tooltips appear with fade-in animation and modern card design with rarity accent color",
+    "Pickup notifications slide in from right and fade out smoothly",
+    "HP and Armor bars have gradient fills and smooth width transitions",
+    "TypeScript compiles without errors (npx tsc --noEmit)",
+    "Vite build succeeds"
+  ],
+  "verification": [
+    "cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npx tsc --noEmit",
+    "cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npx vite build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
