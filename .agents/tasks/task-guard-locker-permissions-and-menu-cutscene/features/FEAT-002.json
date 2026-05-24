@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Replace the current MenuScene in MainMenu.tsx with a new cinematic prison yard cutscene featuring a high-quality prisoner character, detailed environment, cinematic camera, and rich animations.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. In src/components/MainMenu.tsx, completely replace the MenuScene component with a new implementation. Keep the same component interface (returns a div with ref, same className).",
     "2. SCENE SETUP: Create a Three.js scene with a dusk sky gradient (warm orange at horizon fading to dark blue at top). Use a large background plane/sphere or scene.background with a vertical gradient via ShaderMaterial or a Canvas texture.",
@@ -37,5 +37,5 @@
     "Run `npx tsc --noEmit` in JailBreak-1.2/ and confirm no errors"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Reduced fence from 7 posts to 4 posts (x: -3 to 3, step 2) with fewer wires per gap (4 vertical, 2 horizontal, 3 barbs) to keep total mesh count under 100. TypeScript compiles cleanly. The vignette overlay is implemented as an inner div with position absolute inside the containerRef div."
 }
