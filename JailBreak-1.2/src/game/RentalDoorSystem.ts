@@ -164,10 +164,6 @@ export class RentalDoorSystem {
     };
   }
 
-  isDoorOwnedByPlayer(cellLabel: string): boolean {
-    return this.doors.some(d => d.cellLabel === cellLabel && d.ownerId === 'player');
-  }
-
   isDoorOwnedByPlayerByGroupId(groupId: number): boolean {
     return this.doors.some(d => d.groupId === groupId && d.ownerId === 'player');
   }
