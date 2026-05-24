@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Event Log app (Журнал событий) and Personal Files app (Личные дела) for the terminal",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create a new shared event log store. Add state in EditorApp.tsx: useState<Array<{time: string, action: string, actor: string}>> for the event log. Create a helper function addEventLog(action: string, actor: string) that pushes a new entry with current time formatted as HH:MM.",
     "Hook the event log into existing actions: when cells are opened/closed, log it (e.g. '12:05 - Клетки открыты (Охранник)'); when garage doors are locked/unlocked, log it; when a rental door is rented, log it (e.g. '12:10 - Игрок арендовал Камеру 1'). Add calls to addEventLog at each relevant action point in EditorApp.tsx.",
@@ -25,5 +25,5 @@
     "Run 'cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npm run build' and confirm it succeeds"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Implementation complete. Added eventLog state with addEventLog helper (useCallback with empty deps). Added personalFiles state with list/create views. Hooked addEventLog into: cells open/close buttons, handleLockGarageDoors, handleUnlockGarageDoors, handleTempLockGarageDoors, and both rental door success paths (keyboard and click). Added 'eventlog' and 'personalfiles' to terminalApp union type and handleStartMenuApp type. Added Win95-style windows for both apps. Added desktop icons and start menu entries. Build passes cleanly."
 }
