@@ -620,8 +620,19 @@ export class PlaytestMode {
     if (pickedUp) {
       const def = ITEM_DEFS[pickedUp.itemType];
       if (def) {
-        this.inventory.addItem(def);
-        this.inventory.addNotification({ id: def.id, name: def.name, icon: def.icon, type: def.type, quantity: 1, rarity: def.rarity, category: def.category });
+        // Safeguard: if picking up a vest and one is already equipped, consume the pickup but don't add to inventory
+        if (pickedUp.itemType === 'item_vest' && this.inventory.getVestEquipped()) {
+          // Vest already equipped - consume pickup (world item already removed by combat) but don't duplicate
+        } else {
+          this.inventory.addItem(def);
+          this.inventory.addNotification({ id: def.id, name: def.name, icon: def.icon, type: def.type, quantity: 1, rarity: def.rarity, category: def.category });
+        }
+      }
+      // Clean stale entries from droppedItems whose mesh is no longer in the scene
+      for (let i = this.droppedItems.length - 1; i >= 0; i--) {
+        if (this.droppedItems[i].mesh.parent === null) {
+          this.droppedItems.splice(i, 1);
+        }
       }
       return true;
     }
@@ -1050,60 +1061,6 @@ export class PlaytestMode {
       this.scene.add(light);
     }
 
-    // Spawn armor vest near prisoner spawn
-    if (spawnPoint) {
-      const vestDef = getObjectById('item_vest');
-      if (vestDef) {
-        const vestPos = new THREE.Vector3(spawnPoint.x + 3, spawnPoint.y, spawnPoint.z + 2);
-        // Check if vest position intersects any colliders and try alternate offsets
-        const vestOffsets = [
-          new THREE.Vector3(3, 0, 2),
-          new THREE.Vector3(-3, 0, 2),
-          new THREE.Vector3(3, 0, -2),
-          new THREE.Vector3(-3, 0, -2),
-          new THREE.Vector3(2, 0, 0),
-          new THREE.Vector3(-2, 0, 0),
-        ];
-        let validPos = vestPos.clone();
-        for (const offset of vestOffsets) {
-          const testPos = new THREE.Vector3(spawnPoint.x + offset.x, spawnPoint.y + offset.y, spawnPoint.z + offset.z);
-          const testBox = new THREE.Box3(
-            new THREE.Vector3(testPos.x - 0.2, testPos.y - 0.2, testPos.z - 0.2),
-            new THREE.Vector3(testPos.x + 0.2, testPos.y + 0.2, testPos.z + 0.2)
-          );
-          let intersects = false;
-          for (const collider of this.colliders) {
-            if (testBox.intersectsBox(collider)) {
-              intersects = true;
-              break;
-            }
-          }
-          if (!intersects) {
-            validPos = testPos;
-            break;
-          }
-        }
-        // Adjust Y to sit on top of the nearest floor collider below
-        let bestFloorY = 0;
-        for (const collider of this.colliders) {
-          if (validPos.x + 0.2 > collider.min.x &&
-              validPos.x - 0.2 < collider.max.x &&
-              validPos.z + 0.2 > collider.min.z &&
-              validPos.z - 0.2 < collider.max.z &&
-              collider.max.y <= validPos.y &&
-              collider.max.y > bestFloorY) {
-            bestFloorY = collider.max.y;
-          }
-        }
-        validPos.y = bestFloorY + 0.1;
-        const vestObj = vestDef.create();
-        vestObj.position.copy(validPos);
-        vestObj.userData.__interactive = true;
-        this.scene.add(vestObj);
-        this.droppedItems.push({ mesh: vestObj, itemType: 'item_vest', position: validPos.clone() });
-      }
-    }
-
     // Спавн
     if (spawnPoint) {
       this.spawnPoint = spawnPoint.clone();
@@ -1444,8 +1401,6 @@ export class PlaytestMode {
         lastDropped.userData.velocityX = throwDir.x * 2;
         lastDropped.userData.velocityZ = throwDir.z * 2;
         lastDropped.userData.grounded = false;
-        // Also register in our droppedItems for pickup
-        this.droppedItems.push({ mesh: lastDropped, itemType: item.id, position: dropPos.clone() });
       }
     }
   }

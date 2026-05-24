@@ -131,6 +131,12 @@ export class InventorySystem {
   }
 
   addItem(item: InventoryItem | { id: string; name: string; icon: string; type: string }): boolean {
+    // Prevent vest duplication: reject if vest already equipped or in inventory
+    if (item.id === 'item_vest') {
+      if (this.vestEquipped) return false;
+      if (this.slots.some(s => s?.id === 'item_vest')) return false;
+    }
+
     const invItem: InventoryItem = {
       id: item.id,
       name: item.name,
