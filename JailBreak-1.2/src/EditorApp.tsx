@@ -266,6 +266,13 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     }
   }, [ptGarageLockState.state]);
 
+  // Close locker panel when player dies
+  useEffect(() => {
+    if (ptDeathState?.isDead && ptLockerState) {
+      playtestRef.current?.lockerClose();
+    }
+  }, [ptDeathState?.isDead]);
+
   // CharacterModel for inventory panel - show/hide and render when inventory opens
   useEffect(() => {
     if (!ptInventory?.isOpen) {
@@ -885,7 +892,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                             onDragEnter={() => setDragOverSlot(index)}
                             onDragLeave={() => { if (dragOverSlot === index) setDragOverSlot(null); }}
                             onDragOver={(e) => { e.preventDefault(); }}
-                            onDrop={(e) => { e.preventDefault(); setDragOverSlot(null); const fromIdx = e.dataTransfer.getData('text/plain'); if (fromIdx !== '') { playtestRef.current?.inventorySwapSlots(parseInt(fromIdx, 10), index); } }}
+                            onDrop={(e) => { e.preventDefault(); setDragOverSlot(null); const fromIdx = e.dataTransfer.getData('text/plain'); if (fromIdx !== '') { if (fromIdx.startsWith('locker:')) { const lockerSlot = parseInt(fromIdx.split(':')[1], 10); playtestRef.current?.lockerWithdraw(lockerSlot); } else { playtestRef.current?.inventorySwapSlots(parseInt(fromIdx, 10), index); } } }}
                           >
                             <span className="absolute top-1 left-1.5 text-[10px] font-medium text-white/50">{index + 1}</span>
                             {item ? (
@@ -943,7 +950,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                             onDragEnter={() => setDragOverSlot(index)}
                             onDragLeave={() => { if (dragOverSlot === index) setDragOverSlot(null); }}
                             onDragOver={(e) => { e.preventDefault(); }}
-                            onDrop={(e) => { e.preventDefault(); setDragOverSlot(null); const fromIdx = e.dataTransfer.getData('text/plain'); if (fromIdx !== '') { playtestRef.current?.inventorySwapSlots(parseInt(fromIdx, 10), index); } }}
+                            onDrop={(e) => { e.preventDefault(); setDragOverSlot(null); const fromIdx = e.dataTransfer.getData('text/plain'); if (fromIdx !== '') { if (fromIdx.startsWith('locker:')) { const lockerSlot = parseInt(fromIdx.split(':')[1], 10); playtestRef.current?.lockerWithdraw(lockerSlot); } else { playtestRef.current?.inventorySwapSlots(parseInt(fromIdx, 10), index); } } }}
                           >
                             <span className="absolute top-1 left-1.5 text-[10px] font-medium text-white/50">{index + 1}</span>
                             {item ? (
@@ -1557,7 +1564,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-sm rounded transition-colors cursor-pointer"
                       onClick={() => {
                         const amount = parseInt(lockerMoneyInput, 10);
-                        if (amount > 0) {
+                        if (!isNaN(amount) && amount > 0) {
                           playtestRef.current?.lockerDepositMoney(amount);
                           setLockerMoneyInput('');
                         }
@@ -1569,7 +1576,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       className="px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white text-sm rounded transition-colors cursor-pointer"
                       onClick={() => {
                         const amount = parseInt(lockerMoneyInput, 10);
-                        if (amount > 0) {
+                        if (!isNaN(amount) && amount > 0) {
                           playtestRef.current?.lockerWithdrawMoney(amount);
                           setLockerMoneyInput('');
                         }
@@ -1593,6 +1600,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                           border: `2px solid ${item ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'}`,
                           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)'
                         }}
+                        draggable={!!item}
+                        onDragStart={(e) => { if (item) { e.dataTransfer.setData('text/plain', `locker:${index}`); } }}
                         onClick={() => {
                           if (item) {
                             playtestRef.current?.lockerWithdraw(index);
@@ -1602,7 +1611,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                         onDrop={(e) => {
                           e.preventDefault();
                           const fromIdx = e.dataTransfer.getData('text/plain');
-                          if (fromIdx !== '') {
+                          if (fromIdx !== '' && !fromIdx.startsWith('locker:')) {
                             playtestRef.current?.lockerDeposit(parseInt(fromIdx, 10));
                           }
                         }}

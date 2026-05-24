@@ -80,6 +80,8 @@ export class LockerSystem {
     }
 
     // Заключенные - проверяем, арендована ли камера с таким label
+    // Пустой label означает ненастроенный шкаф - запрещаем доступ
+    if (!locker.cellLabel) return false;
     if (!rentalDoorSystem.isDoorOwnedByPlayer(locker.cellLabel)) return false;
 
     this.open(lockerId);

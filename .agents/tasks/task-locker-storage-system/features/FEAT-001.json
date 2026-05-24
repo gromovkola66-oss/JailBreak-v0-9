@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Remove money carry limit, create LockerSystem, add storage locker to editor, wire up interaction and UI in PlaytestMode and EditorApp",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. In src/game/economy/EconomyConfig.ts: change MAX_CARRY_DEFAULT from 1000 to Infinity.",
     "2. In src/game/economy/WalletSystem.ts: remove the cap logic in addMoney(). Currently it returns false if balance >= maxCarry and caps the addition with Math.min. Instead, always add the full amount with no ceiling. Keep the maxCarry property for UI display but set it to Infinity. Update getState() to reflect this.",
@@ -28,5 +28,5 @@
     "Run `cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npm run build` and confirm exit code 0 with no errors"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Build passes clean. Used isDoorOwnedByPlayer() public method on RentalDoorSystem instead of accessing private doors array. Wallet HUD simplified to just show balance without /max. Review fixes applied: empty-label access bypass guard, locker close on death, bidirectional drag-and-drop, NaN deposit validation."
 }

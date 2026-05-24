@@ -320,6 +320,11 @@ export class PlaytestMode {
       this.isDead = true;
       this.deathTimer = this.RESPAWN_DELAY;
 
+      // Close locker if open
+      if (this.lockerSystem.isOpen()) {
+        this.lockerSystem.close();
+      }
+
       // Unequip vest on death
       if (this.inventory.getVestEquipped()) {
         this.inventory.unequipVest();
