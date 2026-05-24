@@ -258,9 +258,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   // CharacterModel for inventory panel - show/hide and render when inventory opens
   useEffect(() => {
     if (!ptInventory?.isOpen) {
-      // Hide canvas when inventory closes
+      // Hide canvas and stop animation when inventory closes
       const container = document.getElementById('character-model-container');
       if (container && characterModelRef.current) {
+        characterModelRef.current.stopAnimation();
         const canvas = characterModelRef.current.getCanvas();
         if (canvas.parentElement === container) {
           canvas.style.display = 'none';
@@ -271,7 +272,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
     // Create CharacterModel if it doesn't exist yet (first open during this playtest)
     if (!characterModelRef.current) {
-      characterModelRef.current = new CharacterModel();
+      characterModelRef.current = new CharacterModel(ptTeam);
     }
 
     const model = characterModelRef.current;
@@ -288,6 +289,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         container.appendChild(canvas);
       }
       model.render();
+      model.startAnimation();
     }
 
     // Mouse drag rotation
@@ -299,7 +301,6 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       const deltaX = e.clientX - lastX;
       lastX = e.clientX;
       model.rotate(deltaX);
-      model.render();
     };
     const onMouseUp = () => { isDragging = false; };
 
