@@ -13,6 +13,9 @@ interface MinesweeperProps {
   onClose: () => void;
   onWin: () => void;
   onLose: () => void;
+  onMinimize?: () => void;
+  onTitleBarMouseDown?: (e: React.MouseEvent) => void;
+  style?: React.CSSProperties;
 }
 
 const ROWS = 9;
@@ -107,7 +110,7 @@ function checkWin(grid: MineCell[][]): boolean {
   return true;
 }
 
-export const Minesweeper = ({ onClose, onWin, onLose }: MinesweeperProps) => {
+export const Minesweeper = ({ onClose, onWin, onLose, onMinimize, onTitleBarMouseDown, style }: MinesweeperProps) => {
   const [grid, setGrid] = useState<MineCell[][]>(initGrid);
   const [gameState, setGameState] = useState<GameState>('playing');
   const [flagCount, setFlagCount] = useState(0);
@@ -197,15 +200,23 @@ export const Minesweeper = ({ onClose, onWin, onLose }: MinesweeperProps) => {
   };
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={style}>
       <div className="border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
         {/* Title bar */}
-        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={onTitleBarMouseDown}>
           <span className="text-xs">{'\u{1F4A3}'} {'\u0421\u0430\u043F\u0451\u0440'}</span>
-          <button
-            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
-            onClick={onClose}
-          >X</button>
+          <div className="flex gap-0.5">
+            {onMinimize && (
+              <button
+                className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                onClick={(e) => { e.stopPropagation(); onMinimize(); }}
+              >_</button>
+            )}
+            <button
+              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+              onClick={onClose}
+            >X</button>
+          </div>
         </div>
 
         {/* Content area */}

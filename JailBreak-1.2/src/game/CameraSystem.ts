@@ -49,6 +49,9 @@ export class CameraSystem {
 
   private screenshotInterval: ReturnType<typeof setInterval> | null = null;
 
+  // Shutdown timeout handle
+  private _shutdownTimeout: ReturnType<typeof setTimeout> | null = null;
+
   // PTZ state
   private _ptzPan = 0;
   private _ptzTilt = 0;
@@ -230,6 +233,7 @@ export class CameraSystem {
   }
 
   exitTerminalMode() {
+    this.cancelShutdown();
     this._inTerminalMode = false;
     this._selectedCameraIndex = null;
     this._activeCameras = [];
@@ -253,9 +257,17 @@ export class CameraSystem {
   startShutdown() {
     this._terminalView = 'shutting_down';
     this.emitState();
-    setTimeout(() => {
+    this._shutdownTimeout = setTimeout(() => {
+      this._shutdownTimeout = null;
       this.exitTerminalMode();
     }, 500);
+  }
+
+  cancelShutdown() {
+    if (this._shutdownTimeout !== null) {
+      clearTimeout(this._shutdownTimeout);
+      this._shutdownTimeout = null;
+    }
   }
 
   openCamerasApp() {
@@ -323,6 +335,7 @@ export class CameraSystem {
   // === PTZ Methods ===
   ptzPan(deltaX: number, deltaY: number) {
     this._ptzPan += deltaX * 0.003;
+    this._ptzPan = Math.max(-Math.PI, Math.min(Math.PI, this._ptzPan));
     this._ptzTilt += deltaY * 0.003;
     this._ptzTilt = Math.max(-0.5, Math.min(0.5, this._ptzTilt));
     this.emitState();
@@ -480,6 +493,7 @@ export class CameraSystem {
   }
 
   dispose() {
+    this.cancelShutdown();
     if (this.screenshotInterval !== null) {
       clearInterval(this.screenshotInterval);
       this.screenshotInterval = null;

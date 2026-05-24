@@ -152,6 +152,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
   // PTZ mouse drag state
   const [ptzMouseDown, setPtzMouseDown] = useState(false);
+  // Camera PTZ view ref for wheel listener
+  const ptzViewRef = useRef<HTMLDivElement>(null);
   // Cell timer state
   const [cellTimerActive, setCellTimerActive] = useState(false);
   const [cellTimerAction, setCellTimerAction] = useState<'открытие' | 'закрытие'>('открытие');
@@ -514,10 +516,28 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     return () => clearInterval(interval);
   }, [rewindPlaying]);
 
+  // PTZ zoom: non-passive wheel listener to properly preventDefault
+  useEffect(() => {
+    const el = ptzViewRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      playtestRef.current?.ptzZoom(e.deltaY);
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+    };
+  });
+
   const addEventLog = useCallback((action: string, actor: string) => {
     const now = new Date();
     const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    setEventLog(prev => [...prev, { time, action, actor }]);
+    setEventLog(prev => {
+      const updated = [...prev, { time, action, actor }];
+      if (updated.length > 200) updated.shift();
+      return updated;
+    });
   }, []);
 
   const handleLockGarageDoors = useCallback(() => {
@@ -1766,7 +1786,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                                 <button
                                   className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
                                   onClick={() => {
-                                    if (!pfName.trim()) return;
+                                    if (!pfName.trim()) {
+                                      playtestRef.current?.getSoundSystem()?.playTerminalError();
+                                      return;
+                                    }
                                     const now = new Date();
                                     const createdAt = now.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
                                     setPersonalFiles(prev => [...prev, { id: crypto.randomUUID(), name: pfName.trim(), description: pfDescription.trim(), createdAt }]);
@@ -1833,6 +1856,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       onClose={() => handleCloseTerminalApp()}
                       onWin={() => addEventLog('\u0421\u0430\u043F\u0451\u0440: \u041F\u043E\u0431\u0435\u0434\u0430!', '\u041E\u0445\u0440\u0430\u043D\u043D\u0438\u043A')}
                       onLose={() => addEventLog('\u0421\u0430\u043F\u0451\u0440: \u041F\u0440\u043E\u0438\u0433\u0440\u044B\u0448', '\u041E\u0445\u0440\u0430\u043D\u043D\u0438\u043A')}
+                      onMinimize={() => handleMinimizeApp('minesweeper')}
+                      onTitleBarMouseDown={(e) => handleWindowDragStart('minesweeper', e)}
+                      style={{ transform: `translate(${(windowPositions['minesweeper']?.x || 0)}px, ${(windowPositions['minesweeper']?.y || 0)}px)` }}
                     />
                   )}
 
@@ -2024,12 +2050,12 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   </div>
                   {/* Middle - transparent area where 3D camera view shows through - PTZ interactive */}
                   <div
+                    ref={ptzViewRef}
                     className="flex-1 relative pointer-events-auto cursor-crosshair"
                     onMouseDown={() => setPtzMouseDown(true)}
                     onMouseUp={() => setPtzMouseDown(false)}
                     onMouseLeave={() => setPtzMouseDown(false)}
                     onMouseMove={(e) => { if (ptzMouseDown) playtestRef.current?.ptzPan(e.movementX, e.movementY); }}
-                    onWheel={(e) => { e.preventDefault(); playtestRef.current?.ptzZoom(e.deltaY); }}
                   >
                     <div className="absolute inset-0 pointer-events-none" style={{ background: ptCameraState.nightVision ? 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.05) 2px, rgba(0,255,0,0.05) 4px)' : 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.015) 2px, rgba(0,255,0,0.015) 4px)' }}></div>
                     <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 80px rgba(0,0,0,0.4)' }}></div>
@@ -2088,7 +2114,11 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                         onClick={() => {
                           const idx = ptCameraState.selectedCameraIndex;
                           if (idx !== null && ptCameraState.screenshots[idx]) {
-                            setSavedScreenshots(prev => [...prev, ptCameraState.screenshots[idx]]);
+                            setSavedScreenshots(prev => {
+                              const updated = [...prev, ptCameraState.screenshots[idx]];
+                              if (updated.length > 20) updated.shift();
+                              return updated;
+                            });
                           }
                         }}
                       >
@@ -2099,9 +2129,13 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                         className="text-gray-300 text-xs cursor-pointer hover:text-white pointer-events-auto border border-gray-600 px-1.5 py-0.5"
                         onClick={() => {
                           const buf = playtestRef.current?.getRewindBuffer() || [];
+                          if (buf.length === 0) {
+                            playtestRef.current?.getSoundSystem()?.playTerminalError();
+                            return;
+                          }
                           rewindBufferRef.current = buf;
                           setRewindFrame(0);
-                          setRewindPlaying(buf.length > 0);
+                          setRewindPlaying(true);
                         }}
                       >
                         {'\u23EA'} Rewind
