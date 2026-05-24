@@ -119,7 +119,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   // Terminal wallpaper & start menu state
   const [terminalWallpaperIdx, setTerminalWallpaperIdx] = useState(() => Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
   const [startMenuOpen, setStartMenuOpen] = useState(false);
-  const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | null>(null);
+  const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | 'cells' | null>(null);
+
+  // Cell timer state
+  const [cellTimerActive, setCellTimerActive] = useState(false);
+  const [cellTimerAction, setCellTimerAction] = useState<'открытие' | 'закрытие'>('открытие');
+  const [cellTimerRemaining, setCellTimerRemaining] = useState<string | null>(null);
+  const cellTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const cellTimerEndRef = useRef<number | null>(null);
 
   // === Keep rental menu ref in sync ===
   useEffect(() => { ptRentalMenuRef.current = ptRentalMenu; }, [ptRentalMenu]);
@@ -504,6 +511,13 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setPtGuardMenuOpen(false);
     setPtIsWarden(false);
     setPtCellsOpen(false);
+    if (cellTimerRef.current) {
+      clearInterval(cellTimerRef.current);
+      cellTimerRef.current = null;
+    }
+    cellTimerEndRef.current = null;
+    setCellTimerActive(false);
+    setCellTimerRemaining(null);
     setPtGarageLockState({ state: 'unlocked', remainingSeconds: null });
     setPtShowTempLockOptions(false);
     setPtDoorLockedToast(false);
@@ -535,7 +549,61 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setStartMenuOpen(prev => !prev);
   }, []);
 
-  const handleStartMenuApp = useCallback((app: 'cameras' | 'doors' | 'info' | 'map' | 'settings' | 'exit') => {
+  const cancelCellTimer = useCallback(() => {
+    if (cellTimerRef.current) {
+      clearInterval(cellTimerRef.current);
+      cellTimerRef.current = null;
+    }
+    cellTimerEndRef.current = null;
+    setCellTimerActive(false);
+    setCellTimerRemaining(null);
+  }, []);
+
+  const startOpenTimer = useCallback(() => {
+    cancelCellTimer();
+    setCellTimerActive(true);
+    setCellTimerAction('открытие');
+    cellTimerEndRef.current = Date.now() + 10 * 60 * 1000;
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, (cellTimerEndRef.current! - Date.now()) / 1000);
+      if (remaining <= 0) {
+        clearInterval(interval);
+        playtestRef.current?.openAllDoors();
+        setCellTimerActive(false);
+        setCellTimerRemaining(null);
+        cellTimerRef.current = null;
+      } else {
+        const m = Math.floor(remaining / 60);
+        const s = Math.floor(remaining % 60);
+        setCellTimerRemaining(`${m}:${s.toString().padStart(2, '0')}`);
+      }
+    }, 1000);
+    cellTimerRef.current = interval;
+  }, [cancelCellTimer]);
+
+  const startCloseTimer = useCallback(() => {
+    cancelCellTimer();
+    setCellTimerActive(true);
+    setCellTimerAction('закрытие');
+    cellTimerEndRef.current = Date.now() + 10 * 60 * 1000;
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, (cellTimerEndRef.current! - Date.now()) / 1000);
+      if (remaining <= 0) {
+        clearInterval(interval);
+        playtestRef.current?.closeAllDoors();
+        setCellTimerActive(false);
+        setCellTimerRemaining(null);
+        cellTimerRef.current = null;
+      } else {
+        const m = Math.floor(remaining / 60);
+        const s = Math.floor(remaining % 60);
+        setCellTimerRemaining(`${m}:${s.toString().padStart(2, '0')}`);
+      }
+    }, 1000);
+    cellTimerRef.current = interval;
+  }, [cancelCellTimer]);
+
+  const handleStartMenuApp = useCallback((app: 'cameras' | 'doors' | 'info' | 'map' | 'settings' | 'cells' | 'exit') => {
     setStartMenuOpen(false);
     if (app === 'cameras' || app === 'doors') {
       handleOpenTerminalApp(app);
@@ -1214,6 +1282,80 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     </div>
                   )}
 
+                  {/* Cells app window */}
+                  {terminalApp === 'cells' && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                      <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                          <span className="text-xs">🔒 Клетки</span>
+                          <button
+                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                            onClick={() => setTerminalApp(null)}
+                          >X</button>
+                        </div>
+                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
+                          <div className="space-y-4">
+                            {/* Status */}
+                            <div className="p-3 border border-gray-600 bg-white">
+                              <div className="text-xs text-gray-600 mb-1">Текущий статус:</div>
+                              <div className="text-sm font-bold">
+                                {ptCellsOpen ? '🟢 ОТКРЫТЫ' : '🔴 ЗАКРЫТЫ'}
+                              </div>
+                              {cellTimerRemaining && (
+                                <div className="text-xs text-yellow-700 mt-1">
+                                  ⏱ Авто-{cellTimerAction} через {cellTimerRemaining}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Instant actions */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                onClick={() => { playtestRef.current?.openAllDoors(); }}
+                              >
+                                🔓 Открыть клетки
+                              </button>
+                              <button
+                                className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                onClick={() => { playtestRef.current?.closeAllDoors(); }}
+                              >
+                                🔒 Закрыть клетки
+                              </button>
+                            </div>
+
+                            {/* Timer actions */}
+                            <div className="pt-3 border-t border-gray-400">
+                              <div className="text-xs text-gray-600 mb-2">Таймер (10 минут):</div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <button
+                                  className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                  onClick={startOpenTimer}
+                                >
+                                  ⏱ Открыть через 10 мин
+                                </button>
+                                <button
+                                  className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                  onClick={startCloseTimer}
+                                >
+                                  ⏱ Закрыть через 10 мин
+                                </button>
+                              </div>
+                              {cellTimerActive && (
+                                <button
+                                  className="mt-2 w-full px-3 py-1.5 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold text-red-700"
+                                  onClick={cancelCellTimer}
+                                >
+                                  ✕ Отменить таймер
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Start Menu */}
                   {startMenuOpen && (
                     <div className="absolute bottom-[30px] left-0 z-30 w-[200px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg" onClick={(e) => e.stopPropagation()}>
@@ -1252,6 +1394,12 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                             onClick={() => handleStartMenuApp('settings')}
                           >
                             <span>⚙️</span><span className="text-xs">Настройки</span>
+                          </button>
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            onClick={() => handleStartMenuApp('cells')}
+                          >
+                            <span>🔒</span><span className="text-xs">Клетки</span>
                           </button>
                           <div className="border-t border-gray-400 my-1"></div>
                           <button
