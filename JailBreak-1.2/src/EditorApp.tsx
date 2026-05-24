@@ -1519,7 +1519,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
           {ptLockerState && ptLockerState.isOpen && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto z-40">
               <div
-                className="w-[900px] max-h-[85vh] rounded-2xl border border-white/10 overflow-hidden flex flex-col"
+                className="w-[900px] max-w-[95vw] max-h-[85vh] rounded-2xl border border-white/10 overflow-hidden flex flex-col"
                 style={{
                   animation: 'inventorySlideIn 0.3s ease forwards',
                   background: 'rgba(15, 15, 25, 0.9)',
@@ -1604,6 +1604,11 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                           }}
                           draggable={!!item}
                           onDragStart={(e) => { if (item) { e.dataTransfer.setData('text/plain', String(index)); } }}
+                          onClick={() => {
+                            if (item) {
+                              playtestRef.current?.lockerDeposit(index);
+                            }
+                          }}
                           onDragOver={(e) => { e.preventDefault(); }}
                           onDrop={(e) => {
                             e.preventDefault();

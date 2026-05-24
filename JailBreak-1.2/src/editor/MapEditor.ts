@@ -332,6 +332,9 @@ export class MapEditor {
     if (!pos) return;
     if (this.ghostObject) {
       this.ghostObject.position.copy(pos);
+      if (this.selectedObjectType && this.selectedObjectType.id.startsWith('floor')) {
+        this.ghostObject.position.y = 0.15;
+      }
       this.ghostObject.rotation.y = THREE.MathUtils.degToRad(this.currentRotation);
     }
     if (this.isMovingSelected && this.selectedObject) {
