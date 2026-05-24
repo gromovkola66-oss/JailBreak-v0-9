@@ -119,8 +119,17 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   // Terminal wallpaper & start menu state
   const [terminalWallpaperIdx, setTerminalWallpaperIdx] = useState(() => Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
   const [startMenuOpen, setStartMenuOpen] = useState(false);
-  const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | 'cells' | null>(null);
+  const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | null>(null);
   const [glitchActive, setGlitchActive] = useState(false);
+
+  // Event log state
+  const [eventLog, setEventLog] = useState<Array<{time: string; action: string; actor: string}>>([]);
+
+  // Personal files state
+  const [personalFiles, setPersonalFiles] = useState<Array<{id: string; name: string; description: string; createdAt: string}>>([]);
+  const [pfView, setPfView] = useState<'list' | 'create'>('list');
+  const [pfName, setPfName] = useState('');
+  const [pfDescription, setPfDescription] = useState('');
 
   // Cell timer state
   const [cellTimerActive, setCellTimerActive] = useState(false);
@@ -229,6 +238,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       if (optId) {
         const success = playtestRef.current?.rentDoor(ptRentalMenu.doorId, optId);
         if (success) {
+          addEventLog(`Игрок арендовал ${ptRentalMenu.cellLabel}`, 'Игрок');
           setPtRentalMenu(null);
           setPtRentalError(null);
           playtestRef.current?.closeRentalMenu();
@@ -379,17 +389,26 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     return () => clearInterval(interval);
   }, [ptCameraState?.inTerminalMode, ptCameraState?.terminalView]);
 
+  const addEventLog = useCallback((action: string, actor: string) => {
+    const now = new Date();
+    const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    setEventLog(prev => [...prev, { time, action, actor }]);
+  }, []);
+
   const handleLockGarageDoors = useCallback(() => {
     playtestRef.current?.lockGarageDoors();
     setPtShowTempLockOptions(false);
-  }, []);
+    addEventLog('Двери заблокированы', 'Охранник');
+  }, [addEventLog]);
   const handleUnlockGarageDoors = useCallback(() => {
     playtestRef.current?.unlockGarageDoors();
     setPtShowTempLockOptions(false);
-  }, []);
+    addEventLog('Двери разблокированы', 'Охранник');
+  }, [addEventLog]);
   const handleTempLockGarageDoors = useCallback((minutes: number) => {
     playtestRef.current?.tempLockGarageDoors(minutes);
-  }, []);
+    addEventLog('Двери временно заблокированы', 'Охранник');
+  }, [addEventLog]);
 
   const openTeamSelect = useCallback(() => {
     if (!editorRef.current) return;
@@ -626,7 +645,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     cellTimerRef.current = interval;
   }, [cancelCellTimer]);
 
-  const handleStartMenuApp = useCallback((app: 'cameras' | 'doors' | 'info' | 'map' | 'settings' | 'cells' | 'exit') => {
+  const handleStartMenuApp = useCallback((app: 'cameras' | 'doors' | 'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'exit') => {
     setStartMenuOpen(false);
     if (app === 'cameras' || app === 'doors') {
       handleOpenTerminalApp(app);
@@ -1235,6 +1254,26 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       <span className="text-6xl">🔒</span>
                       <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Клетки</span>
                     </div>
+                    <div
+                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      style={{ transition: 'transform 0.1s' }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
+                      onClick={(e) => { e.stopPropagation(); setTerminalApp('eventlog'); }}
+                    >
+                      <span className="text-6xl">📋</span>
+                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Журнал событий</span>
+                    </div>
+                    <div
+                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      style={{ transition: 'transform 0.1s' }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
+                      onClick={(e) => { e.stopPropagation(); setTerminalApp('personalfiles'); }}
+                    >
+                      <span className="text-6xl">📁</span>
+                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Личные дела</span>
+                    </div>
                   </div>
 
                   {/* Info app window */}
@@ -1378,13 +1417,13 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                             <div className="grid grid-cols-2 gap-2">
                               <button
                                 className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
-                                onClick={() => { playtestRef.current?.openAllDoors(); }}
+                                onClick={() => { playtestRef.current?.openAllDoors(); addEventLog('Клетки открыты', 'Охранник'); }}
                               >
                                 🔓 Открыть клетки
                               </button>
                               <button
                                 className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
-                                onClick={() => { playtestRef.current?.closeAllDoors(); }}
+                                onClick={() => { playtestRef.current?.closeAllDoors(); addEventLog('Клетки закрыты', 'Охранник'); }}
                               >
                                 🔒 Закрыть клетки
                               </button>
@@ -1417,6 +1456,126 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                               )}
                             </div>
                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Event Log app window */}
+                  {terminalApp === 'eventlog' && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                      <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                          <span className="text-xs">📋 Журнал событий</span>
+                          <button
+                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                            onClick={() => setTerminalApp(null)}
+                          >X</button>
+                        </div>
+                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white text-xs max-h-[300px] overflow-y-auto">
+                          {eventLog.length === 0 ? (
+                            <div className="text-gray-500 text-center py-4">Нет записей</div>
+                          ) : (
+                            <div className="space-y-1">
+                              {eventLog.map((entry, idx) => (
+                                <div key={idx} className="text-xs">
+                                  {entry.time} - {entry.action} ({entry.actor})
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Personal Files app window */}
+                  {terminalApp === 'personalfiles' && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                      <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                          <span className="text-xs">📁 Личные дела</span>
+                          <button
+                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                            onClick={() => { setTerminalApp(null); setPfView('list'); }}
+                          >X</button>
+                        </div>
+                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white text-xs max-h-[350px] overflow-y-auto">
+                          {pfView === 'list' ? (
+                            <div>
+                              {personalFiles.length === 0 ? (
+                                <div className="text-gray-500 text-center py-4">Нет документов</div>
+                              ) : (
+                                <div className="space-y-2 mb-3">
+                                  {personalFiles.map((doc) => (
+                                    <div key={doc.id} className="flex items-center justify-between p-2 border border-gray-300 bg-gray-50">
+                                      <div>
+                                        <div className="font-bold text-xs">{doc.name}</div>
+                                        <div className="text-[10px] text-gray-500">{doc.createdAt}</div>
+                                      </div>
+                                      <button
+                                        className="w-5 h-5 bg-red-100 border border-red-400 text-red-600 text-xs flex items-center justify-center leading-none font-bold hover:bg-red-200"
+                                        onClick={() => {
+                                          const docName = doc.name;
+                                          setPersonalFiles(prev => prev.filter(d => d.id !== doc.id));
+                                          addEventLog(`Удалён документ: ${docName}`, 'Охранник');
+                                        }}
+                                      >X</button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <button
+                                className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                onClick={() => setPfView('create')}
+                              >
+                                + Создать документ
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-bold mb-1">Имя</label>
+                                <input
+                                  type="text"
+                                  className="w-full border border-gray-600 px-2 py-1 text-xs bg-white"
+                                  value={pfName}
+                                  onChange={(e) => setPfName(e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold mb-1">Описание</label>
+                                <textarea
+                                  className="w-full border border-gray-600 px-2 py-1 text-xs bg-white h-20 resize-none"
+                                  value={pfDescription}
+                                  onChange={(e) => setPfDescription(e.target.value)}
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                  onClick={() => {
+                                    if (!pfName.trim()) return;
+                                    const now = new Date();
+                                    const createdAt = now.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                    setPersonalFiles(prev => [...prev, { id: crypto.randomUUID(), name: pfName.trim(), description: pfDescription.trim(), createdAt }]);
+                                    addEventLog(`Создан документ: ${pfName.trim()}`, 'Охранник');
+                                    setPfName('');
+                                    setPfDescription('');
+                                    setPfView('list');
+                                  }}
+                                >
+                                  Создать
+                                </button>
+                                <button
+                                  className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                  onClick={() => { setPfView('list'); setPfName(''); setPfDescription(''); }}
+                                >
+                                  Назад
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1466,6 +1625,18 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                             onClick={() => handleStartMenuApp('cells')}
                           >
                             <span>🔒</span><span className="text-xs">Клетки</span>
+                          </button>
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            onClick={() => handleStartMenuApp('eventlog')}
+                          >
+                            <span>📋</span><span className="text-xs">Журнал событий</span>
+                          </button>
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            onClick={() => handleStartMenuApp('personalfiles')}
+                          >
+                            <span>📁</span><span className="text-xs">Личные дела</span>
                           </button>
                           <div className="border-t border-gray-400 my-1"></div>
                           <button
@@ -1961,6 +2132,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       onClick={() => {
                         const success = playtestRef.current?.rentDoor(ptRentalMenu.doorId, opt.id);
                         if (success) {
+                          addEventLog(`Игрок арендовал ${ptRentalMenu.cellLabel}`, 'Игрок');
                           setPtRentalMenu(null);
                           setPtRentalError(null);
                           playtestRef.current?.closeRentalMenu();
