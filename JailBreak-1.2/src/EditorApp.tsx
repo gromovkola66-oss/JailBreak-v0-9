@@ -1534,7 +1534,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     <span className="text-2xl">{'\uD83D\uDDC4'}</span>
                     <div>
                       <div className="text-white font-bold">{'\u0428\u043a\u0430\u0444 \u0445\u0440\u0430\u043d\u0435\u043d\u0438\u044f'}</div>
-                      <div className="text-gray-400 text-xs">{ptLockerState.linkedCellLabel || '\u041e\u0431\u0449\u0438\u0439'}</div>
+                      <div className="text-gray-400 text-xs">{ptLockerState.linkedGroupId > 0 ? `ID: ${ptLockerState.linkedGroupId}` : '\u041e\u0431\u0449\u0438\u0439'}</div>
                     </div>
                   </div>
                   <button

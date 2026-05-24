@@ -78,7 +78,7 @@ export class MapEditor {
   private highlightedObjects: Set<string> = new Set();
 
   // Y height
-  private placementY = 0;
+  private placementY = 0.1;
 
   // Terrain mode
   private terrainSystem: TerrainSystem;

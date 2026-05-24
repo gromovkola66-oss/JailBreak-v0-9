@@ -30,7 +30,7 @@ export class DayNightCycle {
   private skyUniforms: { uTime: THREE.IUniform<number>; uSunPosition: THREE.IUniform<THREE.Vector3>; uElapsedSeconds: THREE.IUniform<number> };
   private fog: THREE.Fog | null;
 
-  private elapsedTime = 0;
+  private elapsedTime = 90;
   public timeOfDay = 0; // 0-1 normalized
   public phase: DayPhase = 'dawn';
 

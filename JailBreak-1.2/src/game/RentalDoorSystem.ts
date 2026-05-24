@@ -12,6 +12,7 @@ export interface RentalOption {
 export interface RentalDoor {
   id: string;
   cellLabel: string;
+  groupId: number;
   mesh: THREE.Object3D;
   isOpen: boolean;
   openPosition: THREE.Vector3;
@@ -35,7 +36,7 @@ export class RentalDoorSystem {
   public onShowRentalMenu?: (door: RentalDoor) => void;
   public onRentalExpired?: (door: RentalDoor) => void;
 
-  registerDoor(id: string, cellLabel: string, mesh: THREE.Object3D, position: THREE.Vector3, rotationY: number): RentalDoor {
+  registerDoor(id: string, cellLabel: string, mesh: THREE.Object3D, position: THREE.Vector3, rotationY: number, groupId: number = 0): RentalDoor {
     const doorWidth = 1.2;
 
     const slideX = Math.cos(rotationY) * (doorWidth + 0.3);
@@ -49,6 +50,7 @@ export class RentalDoorSystem {
     const door: RentalDoor = {
       id,
       cellLabel,
+      groupId,
       mesh,
       isOpen: false,
       openPosition: openPos,
@@ -164,5 +166,9 @@ export class RentalDoorSystem {
 
   isDoorOwnedByPlayer(cellLabel: string): boolean {
     return this.doors.some(d => d.cellLabel === cellLabel && d.ownerId === 'player');
+  }
+
+  isDoorOwnedByPlayerByGroupId(groupId: number): boolean {
+    return this.doors.some(d => d.groupId === groupId && d.ownerId === 'player');
   }
 }

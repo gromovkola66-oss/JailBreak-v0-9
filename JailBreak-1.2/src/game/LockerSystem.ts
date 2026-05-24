@@ -18,13 +18,13 @@ export interface LockerState {
   isOpen: boolean;
   slots: (InventoryItem | null)[];
   storedMoney: number;
-  linkedCellLabel: string;
+  linkedGroupId: number;
   lockerObjectId: string;
 }
 
 interface LockerData {
   id: string;
-  cellLabel: string;
+  groupId: number;
   position: THREE.Vector3;
   slots: (InventoryItem | null)[];
   storedMoney: number;
@@ -37,11 +37,11 @@ export class LockerSystem {
 
   public onStateChange?: (state: LockerState | null) => void;
 
-  registerLocker(id: string, cellLabel: string, position: THREE.Vector3): void {
+  registerLocker(id: string, groupId: number, position: THREE.Vector3): void {
     const slots: (InventoryItem | null)[] = new Array(30).fill(null);
     this.lockers.set(id, {
       id,
-      cellLabel,
+      groupId,
       position: position.clone(),
       slots,
       storedMoney: 0,
@@ -79,10 +79,10 @@ export class LockerSystem {
       return true;
     }
 
-    // Заключенные - проверяем, арендована ли камера с таким label
-    // Пустой label означает ненастроенный шкаф - запрещаем доступ
-    if (!locker.cellLabel) return false;
-    if (!rentalDoorSystem.isDoorOwnedByPlayer(locker.cellLabel)) return false;
+    // Заключенные - проверяем, арендована ли камера с таким groupId
+    // groupId <= 0 означает ненастроенный шкаф - запрещаем доступ
+    if (locker.groupId <= 0) return false;
+    if (!rentalDoorSystem.isDoorOwnedByPlayerByGroupId(locker.groupId)) return false;
 
     this.open(lockerId);
     return true;
@@ -183,7 +183,7 @@ export class LockerSystem {
       isOpen: true,
       slots: [...locker.slots],
       storedMoney: locker.storedMoney,
-      linkedCellLabel: locker.cellLabel,
+      linkedGroupId: locker.groupId,
       lockerObjectId: locker.id,
     });
   }

@@ -857,7 +857,7 @@ export class PlaytestMode {
         this.addColliders(obj);
         const lockerPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
         const lockerId = `locker_${objData.id}`;
-        this.lockerSystem.registerLocker(lockerId, objData.label || '', lockerPos);
+        this.lockerSystem.registerLocker(lockerId, objData.groupId || 0, lockerPos);
         continue;
       }
 
@@ -877,7 +877,7 @@ export class PlaytestMode {
         const rotRad = THREE.MathUtils.degToRad(objData.rotation);
         const doorPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
         const rentalDoorId = `rental_door_${objData.id}`;
-        const rDoor = this.rentalDoorSystem.registerDoor(rentalDoorId, objData.label || '\u041a\u0430\u043c\u0435\u0440\u0430', obj, doorPos, rotRad);
+        const rDoor = this.rentalDoorSystem.registerDoor(rentalDoorId, objData.label || '\u041a\u0430\u043c\u0435\u0440\u0430', obj, doorPos, rotRad, objData.groupId || 0);
         this.rentalDoorColliders.set(rDoor.id, doorBoxes);
         continue;
       }

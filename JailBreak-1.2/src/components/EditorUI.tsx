@@ -240,11 +240,11 @@ export const EditorUI = ({
               <button onClick={onDuplicate} className="py-2 bg-violet-600/80 hover:bg-violet-500 text-white rounded-lg text-xs transition-all hover:scale-105 active:scale-95" title="Дублировать (Ctrl+D)">📋</button>
               <button onClick={onDelete} className="py-2 bg-red-600/80 hover:bg-red-500 text-white rounded-lg text-xs transition-all hover:scale-105 active:scale-95" title="Удалить (Del)">🗑️</button>
             </div>
-            {(selectedObject.type === 'terminal' || selectedObject.type === 'camera' || selectedObject.type === 'bars_door_rental') && (
+            {(selectedObject.type === 'terminal' || selectedObject.type === 'camera' || selectedObject.type === 'bars_door_rental' || selectedObject.type === 'storage_locker') && (
               <div className="mt-3 space-y-2 bg-black/20 rounded-lg p-3">
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400 text-sm">ID Терминала</span>
+                    <span className="text-gray-400 text-sm">{selectedObject.type === 'storage_locker' ? 'ID' : 'ID Терминала'}</span>
                     <input
                       type="number"
                       value={selectedObject.groupId ?? 1}
@@ -257,6 +257,8 @@ export const EditorUI = ({
                       ? 'Камеры с таким же ID будут подключены'
                       : selectedObject.type === 'bars_door_rental'
                       ? 'Группа аренды (можно игнорировать)'
+                      : selectedObject.type === 'storage_locker'
+                      ? 'Совпадает с ID решётки для привязки'
                       : 'К какому терминалу подключить (можно несколько камер с одним ID)'}
                   </p>
                 </div>
