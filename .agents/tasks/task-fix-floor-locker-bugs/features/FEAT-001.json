@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Fix three bugs: (1) Floor objects must always be placed at Y=0.15 in the editor, (2) Locker E-key interaction is blocked by rental door priority and pointer lock check preventing close, locker UI must show player inventory alongside for drag-and-drop, (3) Locker click sometimes triggers rental door menu instead",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "BUG 1 - Floor placement at Y=0.15: In JailBreak-1.2/src/editor/MapEditor.ts, modify the placeObject() method (around line ~292). After the ghost position is copied to obj.position, check if `this.selectedObjectType.id` starts with 'floor' (the floor IDs are: 'floor', 'floor_worn', 'floor_linoleum', 'floor_wood', 'floor_tile'). If so, override `obj.position.y = 0.15`. Also update the `data.position.y` to match. This ensures floor objects always sit at Y=0.15 regardless of current placementY setting.",
     "BUG 2 - Fix locker interaction priority in PlaytestMode.ts: In the onKeyDown handler (around line ~322), the 'KeyE' block processes interactions sequentially. Currently order is: terminal exit -> pointer lock check -> terminal enter -> item pickup -> door -> garage door -> rental door -> locker. PROBLEM: (a) The locker close needs to happen BEFORE the pointer lock check (like terminal exit), because when locker is open pointer lock is released. (b) The locker open check must come BEFORE the rental door check, because lockers are placed inside cells that have rental doors, so both pass proximity checks simultaneously. FIX: After the `if (this.inTerminalMode)` block and BEFORE the `if (document.pointerLockElement === null) return;` line, add: `if (this.lockerSystem.isOpen()) { this.lockerSystem.close(); document.body.requestPointerLock(); return; }`. Then move the existing locker interaction block (the `{ const { canInteract: canLocker... }` block) to be ABOVE the rental door interaction block.",
@@ -23,5 +23,5 @@
     "cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npx vite build"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All three bugs fixed in a single commit. TypeScript compilation and Vite build both pass cleanly."
 }
