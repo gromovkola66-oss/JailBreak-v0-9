@@ -13,6 +13,7 @@ import { InventoryState } from './game/InventorySystem';
 import { WalletState } from './game/economy/WalletSystem';
 import { RentalDoor, RENTAL_OPTIONS } from './game/RentalDoorSystem';
 import { RARITY_COLORS } from './game/ItemDefs';
+import { CharacterModel } from './game/CharacterModel';
 
 // 10 prison-themed CSS wallpapers (simple reliable gradients)
 const TERMINAL_WALLPAPERS: { background: string }[] = [
@@ -50,6 +51,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const editorRef = useRef<MapEditor | null>(null);
   const playtestRef = useRef<PlaytestMode | null>(null);
   const savedMapRef = useRef<MapData | null>(null);
+  const characterModelRef = useRef<CharacterModel | null>(null);
 
   const [mode, setMode] = useState<EditorMode>('editing');
   const [objectTypes, setObjectTypes] = useState<EditorObjectType[]>([]);
@@ -250,6 +252,60 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     }
   }, [ptGarageLockState.state]);
 
+  // CharacterModel for inventory panel
+  useEffect(() => {
+    if (!ptInventory?.isOpen) {
+      if (characterModelRef.current) {
+        characterModelRef.current.dispose();
+        characterModelRef.current = null;
+      }
+      return;
+    }
+
+    const model = new CharacterModel();
+    characterModelRef.current = model;
+    model.setVestVisible(ptInventory.vestEquipped);
+
+    // Mount canvas
+    const container = document.getElementById('character-model-container');
+    if (container) {
+      const canvas = model.getCanvas();
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      container.appendChild(canvas);
+      model.render();
+    }
+
+    // Mouse drag rotation
+    let isDragging = false;
+    let lastX = 0;
+    const onMouseDown = (e: MouseEvent) => { isDragging = true; lastX = e.clientX; };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const deltaX = e.clientX - lastX;
+      lastX = e.clientX;
+      model.rotate(deltaX);
+      model.render();
+    };
+    const onMouseUp = () => { isDragging = false; };
+
+    container?.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    return () => {
+      container?.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      if (characterModelRef.current) {
+        const canvas = characterModelRef.current.getCanvas();
+        canvas.parentElement?.removeChild(canvas);
+        characterModelRef.current.dispose();
+        characterModelRef.current = null;
+      }
+    };
+  }, [ptInventory?.isOpen, ptInventory?.vestEquipped]);
+
   // Randomize wallpaper each time terminal mode is entered; close start menu
   useEffect(() => {
     if (ptCameraState?.inTerminalMode) {
@@ -308,7 +364,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       ammo: team === 'guard' ? 30 : 0,
       maxAmmo: team === 'guard' ? 30 : 0,
       isDead: false,
-      isReloading: false
+      isReloading: false,
+      armorHp: 0,
+      maxArmorHp: 50,
+      armorEquipped: false,
     });
     setMode('playtesting');
 
@@ -665,129 +724,195 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
             </div>
           )}
 
-          {/* Inventory Grid */}
+          {/* Inventory Grid - Variant B */}
           {ptInventory?.isOpen && (
-            <div className="fixed inset-0 bg-black/60 pointer-events-auto" onClick={() => playtestRef.current?.inventoryEquipSlot(ptInventory.equippedSlot)}>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px]" onClick={(e) => e.stopPropagation()}>
-                {/* Category tabs */}
-                <div className="flex gap-1 mb-3 justify-center">
-                  {[
-                    { key: null, label: '\u0412\u0441\u0435' },
-                    { key: 'melee', label: '\u041e\u0440\u0443\u0436\u0438\u0435' },
-                    { key: 'tool', label: '\u0418\u043d\u0441\u0442\u0440\u0443\u043c\u0435\u043d\u0442\u044b' },
-                    { key: 'consumable', label: '\u0420\u0430\u0441\u0445\u043e\u0434\u043d\u0438\u043a\u0438' },
-                    { key: 'ammo', label: '\u0411\u043e\u0435\u043f\u0440\u0438\u043f\u0430\u0441\u044b' },
-                  ].map((tab) => (
-                    <button
-                      key={tab.key || 'all'}
-                      className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                        ptInventory.activeCategory === tab.key
-                          ? 'bg-yellow-500 text-black'
-                          : 'bg-gray-700/80 text-gray-300 hover:bg-gray-600'
-                      }`}
-                      onClick={() => playtestRef.current?.inventorySetCategory(tab.key)}
+            <div className="fixed inset-0 bg-black/70 pointer-events-auto" onClick={() => playtestRef.current?.inventoryEquipSlot(ptInventory.equippedSlot)}>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px]" onClick={(e) => e.stopPropagation()}>
+                <div className="flex gap-4 bg-gray-900/95 border border-gray-600/50 rounded-xl p-5">
+                  {/* Left panel - 3D Character Model */}
+                  <div className="flex flex-col items-center w-[280px]">
+                    <div
+                      className="w-[280px] h-[360px] bg-gray-800/80 rounded-lg border border-gray-600/30 overflow-hidden cursor-grab active:cursor-grabbing relative"
+                      id="character-model-container"
+                      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const slotIdx = e.dataTransfer.getData('text/plain');
+                        if (slotIdx !== '') {
+                          const idx = parseInt(slotIdx, 10);
+                          const item = ptInventory.slots[idx];
+                          if (item && item.id === 'item_vest') {
+                            playtestRef.current?.inventoryEquipVest();
+                          }
+                        }
+                      }}
                     >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* 4x4 Grid */}
-                <div className="grid grid-cols-4 gap-2 bg-gray-900/90 border border-gray-600/50 rounded-xl p-4">
-                  {ptInventory.slots.map((item, index) => {
-                    const isEquipped = ptInventory.equippedSlot === index;
-                    const isDragSource = ptInventory.dragFromSlot === index;
-                    const isHovered = ptInventory.hoveredSlot === index;
-                    const rarityColor = item?.rarity ? RARITY_COLORS[item.rarity] || '#b0b0b0' : '#4a4a4a';
-                    const categoryMatch = !ptInventory.activeCategory || !item || (item.category || item.type) === ptInventory.activeCategory;
-                    const dimmed = ptInventory.activeCategory && item && !categoryMatch;
-
-                    return (
-                      <div
-                        key={index}
-                        className={`relative w-[110px] h-[110px] rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all select-none ${
-                          isEquipped
-                            ? 'ring-2 ring-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.4)]'
-                            : ''
-                        } ${isDragSource ? 'opacity-40 scale-95' : ''} ${dimmed ? 'opacity-30' : ''}`}
-                        style={{ border: `2px solid ${item ? rarityColor : '#3a3a3a'}`, background: 'linear-gradient(180deg, rgba(55,55,70,0.9) 0%, rgba(30,30,40,0.95) 100%)' }}
-                        onClick={() => { if (item) playtestRef.current?.inventoryEquipSlot(index); }}
-                        onMouseEnter={() => playtestRef.current?.inventorySetHovered(index)}
-                        onMouseLeave={() => playtestRef.current?.inventorySetHovered(null)}
-                        onMouseDown={(e) => { if (e.button === 0 && item) playtestRef.current?.inventorySwapSlots(ptInventory.dragFromSlot ?? -1, -1); }}
-                        onContextMenu={(e) => { e.preventDefault(); if (item && item.id !== 'fists') playtestRef.current?.inventoryDropItem(index); }}
-                        draggable={!!item && item.id !== 'fists'}
-                        onDragStart={() => { if (item) playtestRef.current?.inventorySwapSlots(-1, -1); }}
-                      >
-                        {item ? (
-                          <>
-                            <span className="text-3xl">{item.icon}</span>
-                            <span className="text-[10px] text-gray-300 mt-1 text-center leading-tight max-w-[90px] truncate">{item.name}</span>
-                            {item.quantity > 1 && (
-                              <span className="absolute top-1 right-1 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                                {item.quantity}
-                              </span>
-                            )}
-                            {isEquipped && (
-                              <span className="absolute top-1 left-1 text-yellow-400 text-[10px]">E</span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-xs text-gray-600">{'\u041f\u0443\u0441\u0442\u043e'}</span>
-                        )}
-
-                        {/* Tooltip */}
-                        {isHovered && item && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 border border-gray-600 rounded-lg p-3 w-48 z-50 pointer-events-none text-left">
-                            <div className="text-white font-bold text-sm">{item.icon} {item.name}</div>
-                            {item.description && <div className="text-gray-400 text-xs mt-1">{item.description}</div>}
-                            {item.rarity && (
-                              <div className="text-xs mt-1" style={{ color: RARITY_COLORS[item.rarity] || '#b0b0b0' }}>
-                                {item.rarity === 'common' ? '\u041e\u0431\u044b\u0447\u043d\u044b\u0439' : item.rarity === 'uncommon' ? '\u041d\u0435\u043e\u0431\u044b\u0447\u043d\u044b\u0439' : item.rarity === 'rare' ? '\u0420\u0435\u0434\u043a\u0438\u0439' : '\u042d\u043f\u0438\u0447\u0435\u0441\u043a\u0438\u0439'}
-                              </div>
-                            )}
-                            <div className="text-gray-500 text-xs mt-1">{item.type}</div>
+                      <canvas id="character-model-canvas" className="w-full h-full" />
+                      {ptInventory.vestEquipped && (
+                        <div className="absolute top-2 right-2 bg-green-600/80 text-white text-[10px] px-2 py-0.5 rounded">
+                          {'\u{1F9BA}'} Vest
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-2 text-center">
+                      <div className="text-white font-bold text-sm">{ptTeam === 'guard' ? '\u041e\u0445\u0440\u0430\u043d\u043d\u0438\u043a' : '\u0417\u0430\u043a\u043b\u044e\u0447\u0435\u043d\u043d\u044b\u0439'}</div>
+                      <div className={`text-xs mt-0.5 ${ptTeam === 'guard' ? 'text-blue-400' : 'text-orange-400'}`}>
+                        {ptTeam === 'guard' ? '\u{1F46E} \u041e\u0445\u0440\u0430\u043d\u0430' : '\u{1F464} \u0417\u0435\u043a'}
+                      </div>
+                    </div>
+                    {/* HP Bar */}
+                    {ptCombat && (
+                      <div className="w-full mt-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-red-400">{'\u2764\uFE0F'}</span>
+                          <div className="flex-1 h-3 bg-gray-700 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all" style={{ width: `${(ptCombat.hp / ptCombat.maxHp) * 100}%` }} />
+                          </div>
+                          <span className="text-[10px] text-gray-400">{ptCombat.hp}/{ptCombat.maxHp}</span>
+                        </div>
+                        {/* Armor Bar */}
+                        {ptCombat.armorEquipped && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-cyan-400">{'\u{1F6E1}\uFE0F'}</span>
+                            <div className="flex-1 h-3 bg-gray-700 rounded-full overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-cyan-600 to-blue-400 transition-all" style={{ width: `${(ptCombat.armorHp / ptCombat.maxArmorHp) * 100}%` }} />
+                            </div>
+                            <span className="text-[10px] text-gray-400">{ptCombat.armorHp}/{ptCombat.maxArmorHp}</span>
                           </div>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
+                    )}
+                  </div>
 
-                <div className="text-center mt-3 text-gray-400 text-sm">
-                  Q - \u0417\u0430\u043a\u0440\u044b\u0442\u044c | \u041b\u041a\u041c - \u042d\u043a\u0438\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c | \u041f\u041a\u041c - \u0411\u0440\u043e\u0441\u0438\u0442\u044c
+                  {/* Right panel - 4x2 Grid */}
+                  <div className="flex-1 flex flex-col">
+                    <div className="grid grid-cols-4 gap-2">
+                      {ptInventory.slots.map((item, index) => {
+                        const isEquipped = ptInventory.hotbarIndex === index;
+                        const isDragSource = ptInventory.dragFromSlot === index;
+                        const isHovered = ptInventory.hoveredSlot === index;
+                        const rarityColor = item?.rarity ? RARITY_COLORS[item.rarity] || '#b0b0b0' : '#4a4a4a';
+
+                        return (
+                          <div
+                            key={index}
+                            className={`relative w-[90px] h-[90px] rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all select-none ${
+                              isEquipped
+                                ? 'ring-2 ring-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.4)]'
+                                : ''
+                            } ${isDragSource ? 'opacity-40 scale-95' : ''}`}
+                            style={{ border: `2px solid ${item ? rarityColor : '#3a3a3a'}`, background: 'linear-gradient(180deg, rgba(55,55,70,0.9) 0%, rgba(30,30,40,0.95) 100%)' }}
+                            onClick={() => { if (item) playtestRef.current?.inventoryEquipSlot(index); }}
+                            onMouseEnter={() => playtestRef.current?.inventorySetHovered(index)}
+                            onMouseLeave={() => playtestRef.current?.inventorySetHovered(null)}
+                            onContextMenu={(e) => { e.preventDefault(); if (item && item.id !== 'fists') playtestRef.current?.inventoryDropItem(index); }}
+                            draggable={!!item && item.id !== 'fists'}
+                            onDragStart={(e) => {
+                              if (item) {
+                                e.dataTransfer.setData('text/plain', String(index));
+                                playtestRef.current?.inventoryStartDrag(index);
+                              }
+                            }}
+                            onDragOver={(e) => { e.preventDefault(); }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const fromIdx = e.dataTransfer.getData('text/plain');
+                              if (fromIdx !== '') {
+                                playtestRef.current?.inventorySwapSlots(parseInt(fromIdx, 10), index);
+                              }
+                            }}
+                          >
+                            {/* Slot number */}
+                            <span className="absolute top-1 left-1 text-[10px] text-gray-500">{index + 1}</span>
+                            {item ? (
+                              <>
+                                <span className="text-2xl">{item.icon}</span>
+                                <span className="text-[9px] text-gray-300 mt-0.5 text-center leading-tight max-w-[80px] truncate">{item.name}</span>
+                                {item.quantity > 1 && (
+                                  <span className="absolute bottom-1 right-1 bg-black/80 text-white text-[9px] font-bold px-1 py-0.5 rounded-full min-w-[16px] text-center">
+                                    {item.quantity}
+                                  </span>
+                                )}
+                                {isEquipped && (
+                                  <span className="absolute top-1 right-1 text-yellow-400 text-[10px]">E</span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-xs text-gray-600">{'\u041f\u0443\u0441\u0442\u043e'}</span>
+                            )}
+
+                            {/* Tooltip */}
+                            {isHovered && item && (
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 border border-gray-600 rounded-lg p-3 w-48 z-50 pointer-events-none text-left">
+                                <div className="text-white font-bold text-sm">{item.icon} {item.name}</div>
+                                {item.description && <div className="text-gray-400 text-xs mt-1">{item.description}</div>}
+                                {item.rarity && (
+                                  <div className="text-xs mt-1" style={{ color: RARITY_COLORS[item.rarity] || '#b0b0b0' }}>
+                                    {item.rarity === 'common' ? '\u041e\u0431\u044b\u0447\u043d\u044b\u0439' : item.rarity === 'uncommon' ? '\u041d\u0435\u043e\u0431\u044b\u0447\u043d\u044b\u0439' : item.rarity === 'rare' ? '\u0420\u0435\u0434\u043a\u0438\u0439' : '\u042d\u043f\u0438\u0447\u0435\u0441\u043a\u0438\u0439'}
+                                  </div>
+                                )}
+                                <div className="text-gray-500 text-xs mt-1">{item.type}</div>
+                                {item.id === 'item_vest' && (
+                                  <div className="text-cyan-400 text-xs mt-1">{'\u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u043d\u0430 \u043c\u043e\u0434\u0435\u043b\u044c \u0447\u0442\u043e\u0431\u044b \u043d\u0430\u0434\u0435\u0442\u044c'}</div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="text-center mt-4 text-gray-400 text-sm">
+                      Tab - {'\u0417\u0430\u043a\u0440\u044b\u0442\u044c'} | {'\u041b\u041a\u041c'} - {'\u042d\u043a\u0438\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c'} | {'\u041f\u041a\u041c'} - {'\u0411\u0440\u043e\u0441\u0438\u0442\u044c'}
+                    </div>
+                    <div className="text-center mt-1 text-gray-500 text-xs">
+                      {'\u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0431\u0440\u043e\u043d\u0435\u0436\u0438\u043b\u0435\u0442 \u043d\u0430 \u043c\u043e\u0434\u0435\u043b\u044c \u0441\u043b\u0435\u0432\u0430 \u0447\u0442\u043e\u0431\u044b \u043d\u0430\u0434\u0435\u0442\u044c'}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Hotbar (first 4 slots) - visible when inventory is CLOSED and pointer is locked */}
+          {/* Hotbar (8 slots) - visible when inventory is CLOSED and pointer is locked */}
           {!ptInventory?.isOpen && ptLocked && ptInventory && (
-            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2">
-              {ptInventory.slots.slice(0, 4).map((item, index) => {
-                const isEquipped = ptInventory.equippedSlot === index;
+            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {ptInventory.slots.map((item, index) => {
+                const isActive = ptInventory.hotbarIndex === index;
                 const rarityColor = item?.rarity ? RARITY_COLORS[item.rarity] || '#b0b0b0' : '#3a3a3a';
                 return (
                   <div
                     key={index}
-                    className={`w-14 h-14 rounded-lg flex flex-col items-center justify-center transition-all ${
-                      isEquipped ? 'ring-2 ring-yellow-400 scale-110' : ''
+                    className={`relative w-12 h-12 rounded-lg flex flex-col items-center justify-center transition-all ${
+                      isActive ? 'ring-2 ring-yellow-400 scale-110' : ''
                     }`}
-                    style={{ border: `2px solid ${item ? rarityColor : '#3a3a3a'}`, background: 'rgba(20,20,30,0.8)' }}
+                    style={{ border: `2px solid ${item ? rarityColor : '#3a3a3a'}`, background: 'rgba(20,20,30,0.85)' }}
                   >
+                    {/* Slot number */}
+                    <span className="absolute top-0.5 left-1 text-[8px] text-gray-500">{index + 1}</span>
                     {item ? (
                       <>
-                        <span className="text-xl">{item.icon}</span>
+                        <span className="text-lg">{item.icon}</span>
                         {item.quantity > 1 && (
-                          <span className="text-[9px] text-white font-bold">{item.quantity}</span>
+                          <span className="absolute bottom-0.5 right-1 text-[8px] text-white font-bold">{item.quantity}</span>
                         )}
                       </>
-                    ) : (
-                      <span className="text-[9px] text-gray-600">{index + 1}</span>
-                    )}
+                    ) : null}
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Armor HP Bar in HUD */}
+          {ptLocked && ptCombat && ptCombat.armorEquipped && (
+            <div className="absolute bottom-4 left-4 mt-2" style={{ marginBottom: '52px' }}>
+              <div className="flex items-center gap-3 bg-black/60 p-3 rounded-lg">
+                <span className="text-2xl">{'\u{1F6E1}\uFE0F'}</span>
+                <div className="w-48 h-4 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-cyan-600 to-blue-400 transition-all" style={{ width: `${(ptCombat.armorHp / ptCombat.maxArmorHp) * 100}%` }} />
+                </div>
+                <span className="text-white font-bold">{ptCombat.armorHp}/{ptCombat.maxArmorHp}</span>
+              </div>
             </div>
           )}
 

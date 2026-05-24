@@ -117,4 +117,15 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     rarity: 'common',
     category: 'consumable',
   },
+  'item_vest': {
+    id: 'item_vest',
+    name: '\u0411\u0440\u043e\u043d\u0435\u0436\u0438\u043b\u0435\u0442',
+    icon: '\u{1F9BA}',
+    type: 'tool',
+    description: '\u0417\u0430\u0449\u0438\u0442\u043d\u044b\u0439 \u0431\u0440\u043e\u043d\u0435\u0436\u0438\u043b\u0435\u0442. \u041f\u043e\u0433\u043b\u043e\u0449\u0430\u0435\u0442 \u0443\u0440\u043e\u043d \u0441\u043e\u0437\u0434\u0430\u0432\u0430\u044f \u0449\u0438\u0442 \u0431\u0440\u043e\u043d\u0438.',
+    stackable: false,
+    maxStack: 1,
+    rarity: 'rare',
+    category: 'tool',
+  },
 };

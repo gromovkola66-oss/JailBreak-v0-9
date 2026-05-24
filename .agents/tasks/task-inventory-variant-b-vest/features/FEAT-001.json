@@ -1,0 +1,37 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Redesign inventory system from 16 slots to 8 slots, add always-visible hotbar with keys 1-8 and mouse wheel switching, add Tab key to open full inventory, and add 3D character model panel with armor vest equip support",
+  "status": "in_progress",
+  "steps": [
+    "Step 1: Modify InventorySystem.ts - reduce slots from 16 to 8. Change the initial slots array to [FISTS_ITEM, null, null, null, null, null, null, null]. Update reset() method similarly. Add hotbarIndex property (0-7) separate from equippedSlot. Add methods: setHotbarIndex(index), cycleHotbar(direction: 1|-1). Add vestEquipped boolean and onVestEquip callback. Add equipVest() method that removes vest item from slot and sets vestEquipped=true. Add unequipVest() method. Update InventoryState interface to include hotbarIndex and vestEquipped. Add handleWheel and number key handling.",
+    "Step 2: Modify ItemDefs.ts - add new item 'item_vest' (Bronzhilet/Armor Vest): id='item_vest', name='Bronzhilet', icon=shield emoji, type='tool', description='Protects from damage with armor layer', stackable=false, maxStack=1, rarity='rare', category='tool'. Also add a new 'armor' type possibility or use existing 'tool' type with category 'things'.",
+    "Step 3: Modify PlaytestMode.ts - change inventory toggle key from Q to Tab (event.code === 'Tab'). Add wheel event listener for hotbar cycling. Add number key listeners (1-8) for hotbar slot selection. Register item_vest in the item pickup list (alongside item_shiv, item_baton, etc.). Add vest mesh creation in createDroppedItemMesh in Combat.ts. Wire up vest equip to Combat armor system.",
+    "Step 4: Modify Combat.ts - add armor system: armorHp property (default 0), maxArmorHp (50), armorEquipped boolean. Modify takeDamage() to absorb damage with armor first (armor takes damage before HP). Add CombatState fields: armorHp, maxArmorHp, armorEquipped. Add equipArmor()/unequipArmor() methods. Update notifyStateChange and getState.",
+    "Step 5: Create new file JailBreak-1.2/src/game/CharacterModel.ts - a class that creates a mini Three.js scene with a blocky character (capsule body, box limbs, sphere head) using primitive geometries. Has methods: createScene(), render(renderer), setRotation(y), setVestEquipped(visible). Uses a separate PerspectiveCamera looking at the model. Supports mouse drag rotation (tracks deltaX from mouse movement). Returns a canvas/texture that can be displayed in the UI.",
+    "Step 6: Rewrite the inventory UI section in EditorApp.tsx - Replace the existing 4x4 grid inventory with the new Variant B design: LEFT column shows 3D character model (rendered to a canvas via CharacterModel class, rotatable by mouse drag on the canvas element), player nickname, team badge, HP bar, and armor bar (if equipped). RIGHT column shows 4x2 grid of 8 slots with drag-drop. Full inventory opens with Tab. Category tabs removed (only 8 slots). Tooltip on hover still shows item info. LMB on slot = equip to hotbar active, RMB = drop. Drag item onto 3D model area = equip vest if item is vest.",
+    "Step 7: Rewrite the hotbar UI in EditorApp.tsx - Always visible at bottom center when pointer is locked. Shows all 8 slots (not just 4). Active slot (hotbarIndex) has bright yellow border and scale-110. Each slot shows item icon and stack count in bottom-right. Number keys 1-8 shown subtly. Mouse wheel cycles through slots.",
+    "Step 8: Wire up armor bar in HUD - In the playtest UI section of EditorApp.tsx, add a second HP bar (blue/cyan color) below or above the existing HP bar when armorEquipped is true. Shows armorHp/maxArmorHp.",
+    "Step 9: Wire up vest item interactions - In PlaytestMode.ts, connect inventory.onVestEquip callback to combat.equipArmor(). When vest is dragged onto character model in UI, call inventory.equipVest(). When player dies, unequip vest (armorHp resets to 0). Add vest to the pickup item list in loadMap and tryPickupItem."
+  ],
+  "acceptance_criteria": [
+    "TypeScript compiles without errors (npx tsc --noEmit passes)",
+    "Vite build succeeds (npx vite build passes)",
+    "Inventory has exactly 8 slots displayed in a 4x2 grid when opened",
+    "Hotbar shows all 8 slots at bottom when pointer is locked",
+    "Tab key opens/closes inventory (not Q)",
+    "Keys 1-8 select hotbar slots",
+    "Mouse wheel cycles hotbar selection",
+    "Full inventory has left panel with 3D character model area and right panel with slots",
+    "item_vest exists in ItemDefs with rarity rare",
+    "Combat.takeDamage absorbs damage with armor first when equipped",
+    "Armor HP bar appears in HUD when vest is equipped",
+    "3D character model in inventory can be rotated by mouse drag"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npx tsc --noEmit",
+    "Run: cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npx vite build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

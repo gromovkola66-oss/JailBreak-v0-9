@@ -61,6 +61,7 @@ export class PlaytestMode {
 
   private raycaster = new THREE.Raycaster();
   private boundOnResize = this.onResize.bind(this);
+  private boundOnWheel: ((event: WheelEvent) => void) | null = null;
   private boundAnimate = this.animate.bind(this);
   private lastNearbyRentalDoorId: string | null = null;
   private lastNearbyRentalOwnerId: string | null = null;
@@ -315,6 +316,11 @@ export class PlaytestMode {
       this.isDead = true;
       this.deathTimer = this.RESPAWN_DELAY;
 
+      // Unequip vest on death
+      if (this.inventory.getVestEquipped()) {
+        this.inventory.unequipVest();
+      }
+
       // Drop money
       const droppedMoney = this.wallet.dropOnDeath();
       if (droppedMoney > 0) {
@@ -390,6 +396,19 @@ export class PlaytestMode {
         this.combat.unequipItem();
       }
     };
+
+    // Vest equip wiring
+    this.inventory.onVestEquip = () => {
+      this.combat.equipArmor();
+    };
+
+    // Mouse wheel for hotbar cycling
+    this.boundOnWheel = (event: WheelEvent) => {
+      if (document.pointerLockElement === null) return;
+      if (this.inventory.getIsOpen()) return;
+      this.inventory.cycleHotbar(event.deltaY > 0 ? 1 : -1);
+    };
+    document.addEventListener('wheel', this.boundOnWheel);
 
     // Wallet system
     this.wallet = new WalletSystem();
@@ -518,11 +537,20 @@ export class PlaytestMode {
   }
 
   private onKeyDown = (event: KeyboardEvent) => {
-    if (event.code === 'KeyQ') {
+    if (event.code === 'Tab') {
+      event.preventDefault();
       if (document.pointerLockElement !== null || this.inventory.getIsOpen()) {
         this.inventory.toggle();
       }
       return;
+    }
+    // Number keys 1-8 for hotbar selection
+    if (event.code.startsWith('Digit') && !this.inventory.getIsOpen()) {
+      const digit = parseInt(event.code.charAt(5), 10);
+      if (digit >= 1 && digit <= 8) {
+        this.inventory.setHotbarIndex(digit - 1);
+        return;
+      }
     }
     if (event.code === 'KeyE') {
       // Terminal exit does NOT require pointer lock (pointer lock is released while in terminal mode)
@@ -690,7 +718,8 @@ export class PlaytestMode {
       // Item pickups (melee, tools, consumables)
       if (objData.type === 'item_shiv' || objData.type === 'item_baton' ||
           objData.type === 'item_shield' || objData.type === 'item_flashlight' ||
-          objData.type === 'item_medkit' || objData.type === 'item_bandage') {
+          objData.type === 'item_medkit' || objData.type === 'item_bandage' ||
+          objData.type === 'item_vest') {
         const itemPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
         const obj = objType.create();
         obj.position.copy(itemPos);
@@ -1374,6 +1403,14 @@ export class PlaytestMode {
     this.inventory.setActiveCategory(cat);
   }
 
+  inventoryEquipVest(): boolean {
+    return this.inventory.equipVest();
+  }
+
+  inventoryStartDrag(slot: number) {
+    this.inventory.startDrag(slot);
+  }
+
   openAllDoors() {
     this.doorSystem.openAllDoors();
   }
@@ -1439,6 +1476,9 @@ export class PlaytestMode {
     this.rentalDoorSystem.onDoorStateChange = undefined;
     this.rentalDoorSystem.onRentalExpired = undefined;
     document.removeEventListener('keydown', this.onKeyDown);
+    if (this.boundOnWheel) {
+      document.removeEventListener('wheel', this.boundOnWheel);
+    }
     window.removeEventListener('resize', this.boundOnResize);
   }
 }

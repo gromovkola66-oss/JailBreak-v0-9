@@ -1,0 +1,7 @@
+{
+  "task_id": "task-inventory-variant-b-vest",
+  "task_description": "Redesign inventory to Variant B: 8 slots, always-visible hotbar (1-8 + mouse wheel), Tab to open full inventory with 3D character model (rotatable by mouse) on left and 4x2 slot grid on right. Add armor vest item that creates a second HP bar (armor) when equipped by dragging onto character model. Armor absorbs damage first.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null
+}

@@ -20,6 +20,8 @@ export interface InventoryState {
   isOpen: boolean;
   slots: (InventoryItem | null)[];
   equippedSlot: number;
+  hotbarIndex: number;
+  vestEquipped: boolean;
   hoveredSlot: number | null;
   dragFromSlot: number | null;
   activeCategory: string | null;
@@ -38,11 +40,11 @@ export class InventorySystem {
   private slots: (InventoryItem | null)[] = [
     FISTS_ITEM, null, null, null,
     null, null, null, null,
-    null, null, null, null,
-    null, null, null, null,
   ];
   private isOpen = false;
   private equippedSlot = 0;
+  private hotbarIndex = 0;
+  private vestEquipped = false;
   private hoveredSlot: number | null = null;
   private dragFromSlot: number | null = null;
   private activeCategory: string | null = null;
@@ -52,6 +54,7 @@ export class InventorySystem {
   public onOpen?: () => void;
   public onClose?: () => void;
   public onEquip?: (item: InventoryItem | null, slotIndex: number) => void;
+  public onVestEquip?: () => void;
 
   toggle() {
     if (this.isOpen) {
@@ -72,6 +75,41 @@ export class InventorySystem {
     this.hoveredSlot = null;
     this.dragFromSlot = null;
     this.onClose?.();
+    this.notifyStateChange();
+  }
+
+  setHotbarIndex(index: number) {
+    if (index < 0 || index >= this.slots.length) return;
+    this.hotbarIndex = index;
+    this.equippedSlot = index;
+    this.onEquip?.(this.slots[index], index);
+    this.notifyStateChange();
+  }
+
+  cycleHotbar(direction: number) {
+    let newIndex = this.hotbarIndex + (direction > 0 ? 1 : -1);
+    if (newIndex < 0) newIndex = this.slots.length - 1;
+    if (newIndex >= this.slots.length) newIndex = 0;
+    this.setHotbarIndex(newIndex);
+  }
+
+  equipVest(): boolean {
+    const vestIndex = this.slots.findIndex(s => s?.id === 'item_vest');
+    if (vestIndex < 0) return false;
+    this.slots[vestIndex] = null;
+    this.vestEquipped = true;
+    if (this.equippedSlot === vestIndex) {
+      this.equippedSlot = 0;
+      this.hotbarIndex = 0;
+      this.onEquip?.(this.slots[0], 0);
+    }
+    this.onVestEquip?.();
+    this.notifyStateChange();
+    return true;
+  }
+
+  unequipVest() {
+    this.vestEquipped = false;
     this.notifyStateChange();
   }
 
@@ -121,6 +159,7 @@ export class InventorySystem {
         this.slots[i] = null;
         if (this.equippedSlot === i) {
           this.equippedSlot = 0;
+          this.hotbarIndex = 0;
           this.onEquip?.(this.slots[0], 0);
         }
         this.notifyStateChange();
@@ -132,6 +171,7 @@ export class InventorySystem {
   equipSlot(index: number) {
     if (index < 0 || index >= this.slots.length) return;
     this.equippedSlot = index;
+    this.hotbarIndex = index;
     this.onEquip?.(this.slots[index], index);
     this.notifyStateChange();
     if (this.isOpen) {
@@ -187,6 +227,7 @@ export class InventorySystem {
     this.slots[slotIndex] = null;
     if (this.equippedSlot === slotIndex) {
       this.equippedSlot = 0;
+      this.hotbarIndex = 0;
       this.onEquip?.(this.slots[0], 0);
     }
     this.notifyStateChange();
@@ -211,6 +252,8 @@ export class InventorySystem {
       isOpen: this.isOpen,
       slots: [...this.slots],
       equippedSlot: this.equippedSlot,
+      hotbarIndex: this.hotbarIndex,
+      vestEquipped: this.vestEquipped,
       hoveredSlot: this.hoveredSlot,
       dragFromSlot: this.dragFromSlot,
       activeCategory: this.activeCategory,
@@ -220,6 +263,10 @@ export class InventorySystem {
 
   getIsOpen(): boolean {
     return this.isOpen;
+  }
+
+  getVestEquipped(): boolean {
+    return this.vestEquipped;
   }
 
   dropAllItems(): InventoryItem[] {
@@ -233,6 +280,7 @@ export class InventorySystem {
     }
     this.slots[0] = FISTS_ITEM;
     this.equippedSlot = 0;
+    this.hotbarIndex = 0;
     this.notifyStateChange();
     return dropped;
   }
@@ -241,10 +289,10 @@ export class InventorySystem {
     this.slots = [
       FISTS_ITEM, null, null, null,
       null, null, null, null,
-      null, null, null, null,
-      null, null, null, null,
     ];
     this.equippedSlot = 0;
+    this.hotbarIndex = 0;
+    this.vestEquipped = false;
     this.dragFromSlot = null;
     this.activeCategory = null;
     this.notifications = [];

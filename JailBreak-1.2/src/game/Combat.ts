@@ -11,6 +11,9 @@ export interface CombatState {
   maxAmmo: number;
   isDead: boolean;
   isReloading: boolean;
+  armorHp: number;
+  maxArmorHp: number;
+  armorEquipped: boolean;
 }
 
 export type CombatTeam = 'guard' | 'prisoner';
@@ -34,6 +37,11 @@ export class Combat {
   private hp = 100;
   private maxHp = 100;
   private isDead = false;
+
+  // Armor system
+  private armorHp = 0;
+  private maxArmorHp = 50;
+  private armorEquipped = false;
   
   // Состояние атаки
   private isPunching = false;
@@ -555,6 +563,19 @@ export class Combat {
         itemGroup.add(roll);
         break;
       }
+      case 'item_vest': {
+        const vestMat = new THREE.MeshStandardMaterial({ color: 0x556b2f, roughness: 0.8 });
+        const strapMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.9 });
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.2, 0.08), vestMat);
+        itemGroup.add(body);
+        const strapL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.28, 0.02), strapMat);
+        strapL.position.set(-0.08, 0.04, 0);
+        itemGroup.add(strapL);
+        const strapR = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.28, 0.02), strapMat);
+        strapR.position.set(0.08, 0.04, 0);
+        itemGroup.add(strapR);
+        break;
+      }
     }
 
     itemGroup.position.copy(position);
@@ -775,8 +796,25 @@ export class Combat {
       soundSystem.playShieldBlock();
       return;
     }
-    
-    this.hp = Math.max(0, this.hp - damage);
+
+    // Armor absorbs damage first
+    if (this.armorEquipped && this.armorHp > 0) {
+      if (damage <= this.armorHp) {
+        this.armorHp -= damage;
+        damage = 0;
+      } else {
+        damage -= this.armorHp;
+        this.armorHp = 0;
+      }
+      if (this.armorHp <= 0) {
+        this.armorEquipped = false;
+        this.armorHp = 0;
+      }
+    }
+
+    if (damage > 0) {
+      this.hp = Math.max(0, this.hp - damage);
+    }
     
     if (this.onHit) this.onHit(damage);
     
@@ -806,11 +844,25 @@ export class Combat {
     this.notifyStateChange();
   }
 
+  equipArmor() {
+    this.armorEquipped = true;
+    this.armorHp = this.maxArmorHp;
+    this.notifyStateChange();
+  }
+
+  unequipArmor() {
+    this.armorEquipped = false;
+    this.armorHp = 0;
+    this.notifyStateChange();
+  }
+
   respawn() {
     this.hp = this.maxHp;
     this.isDead = false;
     this.heldItemType = 'none';
     this.shieldEquipped = false;
+    this.armorEquipped = false;
+    this.armorHp = 0;
     this.bandageRegenActive = false;
     this.bandageHealAccumulator = 0;
     this.isUsingConsumable = false;
@@ -831,7 +883,10 @@ export class Combat {
       ammo: this.weapon?.stats.currentAmmo ?? 0,
       maxAmmo: this.weapon?.stats.maxAmmo ?? 0,
       isDead: this.isDead,
-      isReloading: this.weapon?.isCurrentlyReloading() ?? false
+      isReloading: this.weapon?.isCurrentlyReloading() ?? false,
+      armorHp: this.armorHp,
+      maxArmorHp: this.maxArmorHp,
+      armorEquipped: this.armorEquipped,
     };
   }
 
