@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix three bugs: (1) Floor objects must always be placed at Y=0.15 in the editor, (2) Locker E-key interaction is blocked by rental door priority and pointer lock check preventing close, locker UI must show player inventory alongside for drag-and-drop, (3) Locker click sometimes triggers rental door menu instead",
+  "status": "in_progress",
+  "steps": [
+    "BUG 1 - Floor placement at Y=0.15: In JailBreak-1.2/src/editor/MapEditor.ts, modify the placeObject() method (around line ~292). After the ghost position is copied to obj.position, check if `this.selectedObjectType.id` starts with 'floor' (the floor IDs are: 'floor', 'floor_worn', 'floor_linoleum', 'floor_wood', 'floor_tile'). If so, override `obj.position.y = 0.15`. Also update the `data.position.y` to match. This ensures floor objects always sit at Y=0.15 regardless of current placementY setting.",
+    "BUG 2 - Fix locker interaction priority in PlaytestMode.ts: In the onKeyDown handler (around line ~322), the 'KeyE' block processes interactions sequentially. Currently order is: terminal exit -> pointer lock check -> terminal enter -> item pickup -> door -> garage door -> rental door -> locker. PROBLEM: (a) The locker close needs to happen BEFORE the pointer lock check (like terminal exit), because when locker is open pointer lock is released. (b) The locker open check must come BEFORE the rental door check, because lockers are placed inside cells that have rental doors, so both pass proximity checks simultaneously. FIX: After the `if (this.inTerminalMode)` block and BEFORE the `if (document.pointerLockElement === null) return;` line, add: `if (this.lockerSystem.isOpen()) { this.lockerSystem.close(); document.body.requestPointerLock(); return; }`. Then move the existing locker interaction block (the `{ const { canInteract: canLocker... }` block) to be ABOVE the rental door interaction block.",
+    "BUG 3 - Locker UI must show player inventory alongside: In JailBreak-1.2/src/EditorApp.tsx, modify the locker UI section (line 1519+). Currently the locker panel is a single 600px wide panel. Change it to a split layout: left side shows player's inventory (8 slots in a 4x2 grid, draggable to deposit into locker), right side shows the locker's 30 slots. The player inventory slots should use the same drag/drop pattern as the existing inventory UI but with drop handling that calls playtestRef.current?.lockerDeposit(slotIndex). The locker slots should support dragging OUT (already implemented with 'locker:N' data transfer). Add a header 'Инвентарь' for the left panel. The overall container width should be ~900px to fit both panels side by side. Keep the existing money section and footer.",
+    "BUG 3 continued - Ensure locker can be closed with E key: The existing Escape handler in the useEffect at line ~185 already handles closing via Escape. Add 'KeyE' to also close the locker in the same handler: `if ((e.code === 'Escape' || e.code === 'KeyE') && playtestRef.current && ptLockerState) { playtestRef.current.lockerClose(); return; }`"
+  ],
+  "acceptance_criteria": [
+    "Floor objects (IDs starting with 'floor') are always placed at Y=0.15 in the editor regardless of current placementY setting",
+    "Pressing E while locker is open closes it and re-locks pointer (works even without pointer lock)",
+    "Pressing E near a locker that is inside a rented cell opens the locker, not the rental door menu",
+    "Locker UI displays player inventory on the left side with drag-and-drop support to/from locker",
+    "The locker UI is centered on screen and does not overflow",
+    "TypeScript compilation passes (npx tsc --noEmit)",
+    "Vite build succeeds (npx vite build)"
+  ],
+  "verification": [
+    "cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npx tsc --noEmit",
+    "cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npx vite build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

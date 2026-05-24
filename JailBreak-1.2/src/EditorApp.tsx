@@ -181,8 +181,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       if (e.code === 'KeyM' && ptTeam === 'guard') {
         setPtGuardMenuOpen(prev => !prev);
       }
-      // Close locker with Escape
-      if (e.code === 'Escape' && playtestRef.current && ptLockerState) {
+      // Close locker with Escape or E
+      if ((e.code === 'Escape' || e.code === 'KeyE') && playtestRef.current && ptLockerState) {
         playtestRef.current.lockerClose();
         return;
       }
@@ -1519,7 +1519,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
           {ptLockerState && ptLockerState.isOpen && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto z-40">
               <div
-                className="w-[600px] max-h-[85vh] rounded-2xl border border-white/10 overflow-hidden flex flex-col"
+                className="w-[900px] max-h-[85vh] rounded-2xl border border-white/10 overflow-hidden flex flex-col"
                 style={{
                   animation: 'inventorySlideIn 0.3s ease forwards',
                   background: 'rgba(15, 15, 25, 0.9)',
@@ -1587,54 +1587,97 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   </div>
                 </div>
 
-                {/* Slots grid (30 slots in 6x5) */}
-                <div className="p-4 overflow-y-auto flex-1">
-                  <div className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">{'\u041f\u0440\u0435\u0434\u043c\u0435\u0442\u044b'} ({ptLockerState.slots.filter(s => s !== null).length}/30)</div>
-                  <div className="grid grid-cols-6 gap-2">
-                    {ptLockerState.slots.map((item, index) => (
-                      <div
-                        key={index}
-                        className="relative w-[75px] h-[75px] rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105"
-                        style={{
-                          background: 'linear-gradient(180deg, rgba(40,40,55,0.8) 0%, rgba(20,20,30,0.9) 100%)',
-                          border: `2px solid ${item ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'}`,
-                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)'
-                        }}
-                        draggable={!!item}
-                        onDragStart={(e) => { if (item) { e.dataTransfer.setData('text/plain', `locker:${index}`); } }}
-                        onClick={() => {
-                          if (item) {
-                            playtestRef.current?.lockerWithdraw(index);
-                          }
-                        }}
-                        onDragOver={(e) => { e.preventDefault(); }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          const fromIdx = e.dataTransfer.getData('text/plain');
-                          if (fromIdx !== '' && !fromIdx.startsWith('locker:')) {
-                            playtestRef.current?.lockerDeposit(parseInt(fromIdx, 10));
-                          }
-                        }}
-                      >
-                        {item ? (
-                          <>
-                            <span className="text-xl">{item.icon}</span>
-                            <span className="text-[8px] text-gray-300 mt-0.5 text-center leading-tight max-w-[70px] truncate">{item.name}</span>
-                            {item.quantity > 1 && (
-                              <span className="absolute bottom-0.5 right-1 bg-black/80 text-white text-[8px] font-bold px-1 rounded-full">{item.quantity}</span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-[9px] text-gray-600">{'\u041f\u0443\u0441\u0442\u043e'}</span>
-                        )}
-                      </div>
-                    ))}
+                {/* Split layout: Player inventory + Locker slots */}
+                <div className="p-4 overflow-y-auto flex-1 flex gap-4">
+                  {/* Player inventory (left side) */}
+                  <div className="flex-shrink-0">
+                    <div className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">{'\u0418\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044c'}</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {(ptInventory?.slots ?? Array(8).fill(null)).slice(0, 8).map((item, index) => (
+                        <div
+                          key={`inv-${index}`}
+                          className="relative w-[75px] h-[75px] rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105"
+                          style={{
+                            background: 'linear-gradient(180deg, rgba(40,40,55,0.8) 0%, rgba(20,20,30,0.9) 100%)',
+                            border: `2px solid ${item ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'}`,
+                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)'
+                          }}
+                          draggable={!!item}
+                          onDragStart={(e) => { if (item) { e.dataTransfer.setData('text/plain', String(index)); } }}
+                          onDragOver={(e) => { e.preventDefault(); }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const fromIdx = e.dataTransfer.getData('text/plain');
+                            if (fromIdx.startsWith('locker:')) {
+                              playtestRef.current?.lockerWithdraw(parseInt(fromIdx.split(':')[1], 10));
+                            }
+                          }}
+                        >
+                          {item ? (
+                            <>
+                              <span className="text-xl">{item.icon}</span>
+                              <span className="text-[8px] text-gray-300 mt-0.5 text-center leading-tight max-w-[70px] truncate">{item.name}</span>
+                              {item.quantity > 1 && (
+                                <span className="absolute bottom-0.5 right-1 bg-black/80 text-white text-[8px] font-bold px-1 rounded-full">{item.quantity}</span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-[9px] text-gray-600">{'\u041f\u0443\u0441\u0442\u043e'}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Locker slots (right side) */}
+                  <div className="flex-1">
+                    <div className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">{'\u041f\u0440\u0435\u0434\u043c\u0435\u0442\u044b'} ({ptLockerState.slots.filter(s => s !== null).length}/30)</div>
+                    <div className="grid grid-cols-6 gap-2">
+                      {ptLockerState.slots.map((item, index) => (
+                        <div
+                          key={index}
+                          className="relative w-[75px] h-[75px] rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105"
+                          style={{
+                            background: 'linear-gradient(180deg, rgba(40,40,55,0.8) 0%, rgba(20,20,30,0.9) 100%)',
+                            border: `2px solid ${item ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'}`,
+                            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)'
+                          }}
+                          draggable={!!item}
+                          onDragStart={(e) => { if (item) { e.dataTransfer.setData('text/plain', `locker:${index}`); } }}
+                          onClick={() => {
+                            if (item) {
+                              playtestRef.current?.lockerWithdraw(index);
+                            }
+                          }}
+                          onDragOver={(e) => { e.preventDefault(); }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const fromIdx = e.dataTransfer.getData('text/plain');
+                            if (fromIdx !== '' && !fromIdx.startsWith('locker:')) {
+                              playtestRef.current?.lockerDeposit(parseInt(fromIdx, 10));
+                            }
+                          }}
+                        >
+                          {item ? (
+                            <>
+                              <span className="text-xl">{item.icon}</span>
+                              <span className="text-[8px] text-gray-300 mt-0.5 text-center leading-tight max-w-[70px] truncate">{item.name}</span>
+                              {item.quantity > 1 && (
+                                <span className="absolute bottom-0.5 right-1 bg-black/80 text-white text-[8px] font-bold px-1 rounded-full">{item.quantity}</span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-[9px] text-gray-600">{'\u041f\u0443\u0441\u0442\u043e'}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 {/* Footer hints */}
                 <div className="p-3 border-t border-white/10 text-center text-gray-500 text-xs">
-                  {'\u041b\u041a\u041c'} - {'\u0437\u0430\u0431\u0440\u0430\u0442\u044c'} | {'\u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0438\u0437 \u0438\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044f'} | Esc - {'\u0437\u0430\u043a\u0440\u044b\u0442\u044c'}
+                  {'\u041b\u041a\u041c'} - {'\u0437\u0430\u0431\u0440\u0430\u0442\u044c'} | {'\u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0438\u0437 \u0438\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044f'} | Esc/E - {'\u0437\u0430\u043a\u0440\u044b\u0442\u044c'}
                 </div>
               </div>
             </div>

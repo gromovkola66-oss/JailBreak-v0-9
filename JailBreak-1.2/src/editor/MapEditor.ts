@@ -357,6 +357,10 @@ export class MapEditor {
     const obj = this.selectedObjectType.create();
     pruneShadowCasters(obj);
     obj.position.copy(this.ghostObject.position);
+    // Floor objects always at Y=0.15
+    if (this.selectedObjectType.id.startsWith('floor')) {
+      obj.position.y = 0.15;
+    }
     obj.rotation.y = THREE.MathUtils.degToRad(this.currentRotation);
     obj.userData.editorId = id;
     obj.userData.objectType = this.selectedObjectType.id;

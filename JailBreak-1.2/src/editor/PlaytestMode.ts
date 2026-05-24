@@ -573,6 +573,12 @@ export class PlaytestMode {
         this.cameraSystem.exitTerminalMode();
         return;
       }
+      // Close locker (no pointer lock required, similar to terminal exit)
+      if (this.lockerSystem.isOpen()) {
+        this.lockerSystem.close();
+        document.body.requestPointerLock();
+        return;
+      }
       // All other E interactions require pointer lock
       if (document.pointerLockElement === null) return;
       if (this.cameraSystem.terminalHighlighted) {
@@ -604,6 +610,19 @@ export class PlaytestMode {
           }
         }
       }
+      // Locker interaction (before rental door so locker takes priority when both are nearby)
+      {
+        const { canInteract: canLocker, lockerId } = this.lockerSystem.canInteract(this.controller.camera.position);
+        if (canLocker && lockerId) {
+          const opened = this.lockerSystem.tryOpen(lockerId, this.team, this.rentalDoorSystem);
+          if (!opened) {
+            this.onLockerAccessDenied?.();
+          } else {
+            document.exitPointerLock();
+          }
+          return;
+        }
+      }
       // Rental door interaction (use cached result from animate loop)
       {
         const canRental = this.cachedRentalInteractResult.canInteract;
@@ -617,24 +636,6 @@ export class PlaytestMode {
               this.rentalDoorSystem.toggleDoor(rentalDoor.id, 'prisoner');
             } else if (result.type === 'menu') {
               this.onShowRentalMenu?.(rentalDoor);
-              document.exitPointerLock();
-            }
-          }
-          return;
-        }
-      }
-      // Locker interaction
-      {
-        const { canInteract: canLocker, lockerId } = this.lockerSystem.canInteract(this.controller.camera.position);
-        if (canLocker && lockerId) {
-          if (this.lockerSystem.isOpen()) {
-            this.lockerSystem.close();
-            document.body.requestPointerLock();
-          } else {
-            const opened = this.lockerSystem.tryOpen(lockerId, this.team, this.rentalDoorSystem);
-            if (!opened) {
-              this.onLockerAccessDenied?.();
-            } else {
               document.exitPointerLock();
             }
           }
