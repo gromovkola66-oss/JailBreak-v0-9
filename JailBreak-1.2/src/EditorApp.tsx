@@ -1553,6 +1553,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                 </div>
 
                 {/* Money section */}
+                {ptTeam !== 'guard' && (
                 <div className="p-4 border-b border-white/10">
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-sm text-gray-300">{'\u0414\u0435\u043d\u044c\u0433\u0438 \u0432 \u0448\u043a\u0430\u0444\u0443'}:</div>
@@ -1593,12 +1594,16 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     </button>
                   </div>
                 </div>
+                )}
 
                 {/* Split layout: Player inventory + Locker slots */}
                 <div className="p-4 overflow-y-auto flex-1 flex gap-4">
                   {/* Player inventory (left side) */}
                   <div className="flex-shrink-0">
                     <div className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">{'\u0418\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044c'}</div>
+                    {ptTeam === 'guard' && (
+                      <div className="text-xs text-yellow-400 mb-2">{'\u041a\u043e\u043d\u0444\u0438\u0441\u043a\u0430\u0446\u0438\u044f \u043f\u0440\u0435\u0434\u043c\u0435\u0442\u043e\u0432'}</div>
+                    )}
                     <div className="grid grid-cols-4 gap-2">
                       {(ptInventory?.slots ?? Array(8).fill(null)).slice(0, 8).map((item, index) => (
                         <div
@@ -1609,10 +1614,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                             border: `2px solid ${item ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'}`,
                             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)'
                           }}
-                          draggable={!!item}
+                          draggable={!!item && ptTeam !== 'guard'}
                           onDragStart={(e) => { if (item) { e.dataTransfer.setData('text/plain', String(index)); } }}
                           onClick={() => {
-                            if (item) {
+                            if (item && ptTeam !== 'guard') {
                               playtestRef.current?.lockerDeposit(index);
                             }
                           }}
@@ -1665,7 +1670,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                           onDrop={(e) => {
                             e.preventDefault();
                             const fromIdx = e.dataTransfer.getData('text/plain');
-                            if (fromIdx !== '' && !fromIdx.startsWith('locker:')) {
+                            if (fromIdx !== '' && !fromIdx.startsWith('locker:') && ptTeam !== 'guard') {
                               playtestRef.current?.lockerDeposit(parseInt(fromIdx, 10));
                             }
                           }}

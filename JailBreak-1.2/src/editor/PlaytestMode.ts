@@ -1525,7 +1525,7 @@ export class PlaytestMode {
   lockerDeposit(slotIndex: number): void {
     const lockerId = this.lockerSystem.getOpenLockerId();
     if (!lockerId) return;
-    this.lockerSystem.depositItem(lockerId, slotIndex, this.inventory);
+    this.lockerSystem.depositItem(lockerId, slotIndex, this.inventory, this.team);
   }
 
   lockerWithdraw(lockerSlotIndex: number): void {
@@ -1537,13 +1537,13 @@ export class PlaytestMode {
   lockerDepositMoney(amount: number): void {
     const lockerId = this.lockerSystem.getOpenLockerId();
     if (!lockerId) return;
-    this.lockerSystem.depositMoney(lockerId, amount, this.wallet);
+    this.lockerSystem.depositMoney(lockerId, amount, this.wallet, this.team);
   }
 
   lockerWithdrawMoney(amount: number): void {
     const lockerId = this.lockerSystem.getOpenLockerId();
     if (!lockerId) return;
-    this.lockerSystem.withdrawMoney(lockerId, amount, this.wallet);
+    this.lockerSystem.withdrawMoney(lockerId, amount, this.wallet, this.team);
   }
 
   lockerClose(): void {

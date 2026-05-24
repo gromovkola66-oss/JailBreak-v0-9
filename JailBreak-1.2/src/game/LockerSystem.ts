@@ -104,7 +104,8 @@ export class LockerSystem {
     return this.openLockerId;
   }
 
-  depositMoney(lockerId: string, amount: number, walletSystem: WalletSystem): boolean {
+  depositMoney(lockerId: string, amount: number, walletSystem: WalletSystem, team: 'guard' | 'prisoner'): boolean {
+    if (team === 'guard') return false;
     const locker = this.lockers.get(lockerId);
     if (!locker) return false;
     if (amount <= 0) return false;
@@ -116,7 +117,8 @@ export class LockerSystem {
     return true;
   }
 
-  withdrawMoney(lockerId: string, amount: number, walletSystem: WalletSystem): boolean {
+  withdrawMoney(lockerId: string, amount: number, walletSystem: WalletSystem, team: 'guard' | 'prisoner'): boolean {
+    if (team === 'guard') return false;
     const locker = this.lockers.get(lockerId);
     if (!locker) return false;
     if (amount <= 0) return false;
@@ -128,7 +130,8 @@ export class LockerSystem {
     return true;
   }
 
-  depositItem(lockerId: string, inventorySlotIndex: number, inventorySystem: InventorySystem): boolean {
+  depositItem(lockerId: string, inventorySlotIndex: number, inventorySystem: InventorySystem, team: 'guard' | 'prisoner'): boolean {
+    if (team === 'guard') return false;
     const locker = this.lockers.get(lockerId);
     if (!locker) return false;
 
