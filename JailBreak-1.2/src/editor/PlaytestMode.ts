@@ -1407,6 +1407,14 @@ export class PlaytestMode {
     return this.inventory.equipVest();
   }
 
+  inventoryUnequipVest(): boolean {
+    const result = this.inventory.unequipVest();
+    if (result) {
+      this.combat.unequipArmor();
+    }
+    return result;
+  }
+
   inventoryStartDrag(slot: number) {
     this.inventory.startDrag(slot);
   }

@@ -644,6 +644,49 @@ export class SoundSystem {
     noise.stop(now + 0.5);
   }
 
+  // === РАЗРУШЕНИЕ БРОНИ ===
+  playArmorBreak() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Cracking/crumbling noise
+    const bufferSize = Math.floor(ctx.sampleRate * 0.3);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 8) * 0.7;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1500;
+    filter.Q.value = 1.5;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(this.masterVolume * 0.8, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+    // Low thud for impact
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+    osc.type = 'sine';
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(this.masterVolume * 0.6, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    osc.connect(oscGain).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.3);
+    osc.start(now);
+    osc.stop(now + 0.2);
+  }
+
   // === РАЗБИТИЕ СТЕКЛА ===
   playGlassBreak() {
     const ctx = this.getContext();

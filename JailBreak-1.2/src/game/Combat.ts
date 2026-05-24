@@ -809,6 +809,7 @@ export class Combat {
       if (this.armorHp <= 0) {
         this.armorEquipped = false;
         this.armorHp = 0;
+        soundSystem.playArmorBreak();
       }
     }
 

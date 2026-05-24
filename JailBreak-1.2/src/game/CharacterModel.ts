@@ -11,12 +11,13 @@ export class CharacterModel {
   constructor() {
     this.scene = new THREE.Scene();
 
-    this.camera = new THREE.PerspectiveCamera(40, 280 / 400, 0.1, 100);
+    this.camera = new THREE.PerspectiveCamera(40, 280 / 360, 0.1, 100);
     this.camera.position.set(0, 0.2, 3.5);
     this.camera.lookAt(0, 0.2, 0);
 
     this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    this.renderer.setSize(280, 400);
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(280, 360);
     this.renderer.setClearColor(0x000000, 0);
 
     // Lighting

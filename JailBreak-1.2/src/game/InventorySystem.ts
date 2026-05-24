@@ -108,9 +108,26 @@ export class InventorySystem {
     return true;
   }
 
-  unequipVest() {
+  unequipVest(): boolean {
+    if (!this.vestEquipped) return false;
+    // Find an empty slot to return the vest item
+    const emptyIndex = this.slots.findIndex(s => s === null);
+    if (emptyIndex < 0) return false; // No empty slot, keep vest equipped
+    this.slots[emptyIndex] = {
+      id: 'item_vest',
+      name: '\u0411\u0440\u043e\u043d\u0435\u0436\u0438\u043b\u0435\u0442',
+      icon: '\u{1F9BA}',
+      type: 'tool',
+      quantity: 1,
+      stackable: false,
+      maxStack: 1,
+      description: '\u0417\u0430\u0449\u0438\u0442\u043d\u044b\u0439 \u0431\u0440\u043e\u043d\u0435\u0436\u0438\u043b\u0435\u0442. \u041f\u043e\u0433\u043b\u043e\u0449\u0430\u0435\u0442 \u0443\u0440\u043e\u043d \u0441\u043e\u0437\u0434\u0430\u0432\u0430\u044f \u0449\u0438\u0442 \u0431\u0440\u043e\u043d\u0438.',
+      rarity: 'rare',
+      category: 'tool',
+    };
     this.vestEquipped = false;
     this.notifyStateChange();
+    return true;
   }
 
   addItem(item: InventoryItem | { id: string; name: string; icon: string; type: string }): boolean {
@@ -196,6 +213,12 @@ export class InventorySystem {
       this.equippedSlot = to;
     } else if (this.equippedSlot === to) {
       this.equippedSlot = from;
+    }
+    // Update hotbarIndex if it was swapped
+    if (this.hotbarIndex === from) {
+      this.hotbarIndex = to;
+    } else if (this.hotbarIndex === to) {
+      this.hotbarIndex = from;
     }
     this.notifyStateChange();
   }

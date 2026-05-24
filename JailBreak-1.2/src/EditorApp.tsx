@@ -252,27 +252,38 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     }
   }, [ptGarageLockState.state]);
 
-  // CharacterModel for inventory panel
+  // CharacterModel for inventory panel - show/hide and render when inventory opens
   useEffect(() => {
     if (!ptInventory?.isOpen) {
-      if (characterModelRef.current) {
-        characterModelRef.current.dispose();
-        characterModelRef.current = null;
+      // Hide canvas when inventory closes
+      const container = document.getElementById('character-model-container');
+      if (container && characterModelRef.current) {
+        const canvas = characterModelRef.current.getCanvas();
+        if (canvas.parentElement === container) {
+          canvas.style.display = 'none';
+        }
       }
       return;
     }
 
-    const model = new CharacterModel();
-    characterModelRef.current = model;
+    // Create CharacterModel if it doesn't exist yet (first open during this playtest)
+    if (!characterModelRef.current) {
+      characterModelRef.current = new CharacterModel();
+    }
+
+    const model = characterModelRef.current;
     model.setVestVisible(ptInventory.vestEquipped);
 
-    // Mount canvas
+    // Mount or show canvas
     const container = document.getElementById('character-model-container');
     if (container) {
       const canvas = model.getCanvas();
       canvas.style.width = '100%';
       canvas.style.height = '100%';
-      container.appendChild(canvas);
+      canvas.style.display = '';
+      if (canvas.parentElement !== container) {
+        container.appendChild(canvas);
+      }
       model.render();
     }
 
@@ -297,12 +308,6 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       container?.removeEventListener('mousedown', onMouseDown);
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
-      if (characterModelRef.current) {
-        const canvas = characterModelRef.current.getCanvas();
-        canvas.parentElement?.removeChild(canvas);
-        characterModelRef.current.dispose();
-        characterModelRef.current = null;
-      }
     };
   }, [ptInventory?.isOpen, ptInventory?.vestEquipped]);
 
@@ -444,6 +449,12 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     if (playtestRef.current) {
       playtestRef.current.dispose();
       playtestRef.current = null;
+    }
+    if (characterModelRef.current) {
+      const canvas = characterModelRef.current.getCanvas();
+      canvas.parentElement?.removeChild(canvas);
+      characterModelRef.current.dispose();
+      characterModelRef.current = null;
     }
     if (document.pointerLockElement) {
       document.exitPointerLock();
@@ -749,8 +760,15 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     >
                       <canvas id="character-model-canvas" className="w-full h-full" />
                       {ptInventory.vestEquipped && (
-                        <div className="absolute top-2 right-2 bg-green-600/80 text-white text-[10px] px-2 py-0.5 rounded">
-                          {'\u{1F9BA}'} Vest
+                        <div
+                          className="absolute top-2 right-2 bg-green-600/80 text-white text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-red-600/80 transition-colors pointer-events-auto"
+                          title="Click to unequip vest"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playtestRef.current?.inventoryUnequipVest();
+                          }}
+                        >
+                          {'\u{1F9BA}'} Vest &times;
                         </div>
                       )}
                     </div>
