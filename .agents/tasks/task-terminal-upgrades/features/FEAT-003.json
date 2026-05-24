@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Minesweeper mini-game (Сапёр) in Win95 style within the terminal",
+  "status": "in_progress",
+  "steps": [
+    "Add 'minesweeper' to the terminalApp state union type in EditorApp.tsx.",
+    "Implement a Minesweeper game component inline in EditorApp.tsx (or as a separate component imported into it). Classic Win95 style: 9x9 grid with 10 mines. State: grid cells (revealed/hidden/flagged), mine positions, numbers. Left click reveals, right click flags. Game over on mine click. Win on all non-mine cells revealed.",
+    "Style the Minesweeper with Win95 aesthetics: sunken cells (border-t-gray-700 border-l-gray-700 border-b-white border-r-white for revealed), raised cells for unrevealed, number colors (1=blue, 2=green, 3=red, 4=darkblue, 5=darkred, 6=teal, 7=black, 8=gray), mine emoji on game over, flag emoji for flagged cells.",
+    "Add a header bar above the grid with: mine counter (remaining mines minus flags), a smiley face button (resets game), and a timer counting seconds since first click.",
+    "Wrap in a Win95 window with title bar 'Сапёр' and close button. Add desktop icon (bomb emoji) and start menu entry.",
+    "Add event log entry when game is won: 'Сапёр: Победа! (Охранник)' and when lost: 'Сапёр: Проигрыш (Охранник)'."
+  ],
+  "acceptance_criteria": [
+    "Minesweeper opens from desktop icon or start menu in a Win95 window",
+    "9x9 grid with 10 mines, cells can be revealed by click and flagged by right-click",
+    "Numbers show correctly indicating adjacent mines with proper colors",
+    "Game over when clicking a mine (all mines revealed)",
+    "Win condition when all non-mine cells are revealed",
+    "Smiley button resets the game",
+    "Mine counter and timer work",
+    "npm run build succeeds with no TypeScript errors"
+  ],
+  "verification": [
+    "Run 'cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npm run build' and confirm it succeeds"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

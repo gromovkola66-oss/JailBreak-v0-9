@@ -6,6 +6,7 @@ import { PlaytestMode } from './editor/PlaytestMode';
 
 import { EditorUI } from './components/EditorUI';
 import { GuardMenu } from './components/GuardMenu';
+import { Minesweeper } from './components/Minesweeper';
 import { EditorObjectType } from './editor/EditorObjects';
 import { CombatState } from './game/Combat';
 import { CameraSystemState } from './game/CameraSystem';
@@ -119,7 +120,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   // Terminal wallpaper & start menu state
   const [terminalWallpaperIdx, setTerminalWallpaperIdx] = useState(() => Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
   const [startMenuOpen, setStartMenuOpen] = useState(false);
-  const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | null>(null);
+  const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'minesweeper' | null>(null);
   const [glitchActive, setGlitchActive] = useState(false);
 
   // Event log state
@@ -645,7 +646,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     cellTimerRef.current = interval;
   }, [cancelCellTimer]);
 
-  const handleStartMenuApp = useCallback((app: 'cameras' | 'doors' | 'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'exit') => {
+  const handleStartMenuApp = useCallback((app: 'cameras' | 'doors' | 'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'minesweeper' | 'exit') => {
     setStartMenuOpen(false);
     if (app === 'cameras' || app === 'doors') {
       handleOpenTerminalApp(app);
@@ -1274,6 +1275,16 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       <span className="text-6xl">📁</span>
                       <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Личные дела</span>
                     </div>
+                    <div
+                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      style={{ transition: 'transform 0.1s' }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
+                      onClick={(e) => { e.stopPropagation(); setTerminalApp('minesweeper'); }}
+                    >
+                      <span className="text-6xl">{'\u{1F4A3}'}</span>
+                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{'\u0421\u0430\u043F\u0451\u0440'}</span>
+                    </div>
                   </div>
 
                   {/* Info app window */}
@@ -1581,6 +1592,15 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     </div>
                   )}
 
+                  {/* Minesweeper app window */}
+                  {terminalApp === 'minesweeper' && (
+                    <Minesweeper
+                      onClose={() => setTerminalApp(null)}
+                      onWin={() => addEventLog('\u0421\u0430\u043F\u0451\u0440: \u041F\u043E\u0431\u0435\u0434\u0430!', '\u041E\u0445\u0440\u0430\u043D\u043D\u0438\u043A')}
+                      onLose={() => addEventLog('\u0421\u0430\u043F\u0451\u0440: \u041F\u0440\u043E\u0438\u0433\u0440\u044B\u0448', '\u041E\u0445\u0440\u0430\u043D\u043D\u0438\u043A')}
+                    />
+                  )}
+
                   {/* Start Menu */}
                   {startMenuOpen && (
                     <div className="absolute bottom-[30px] left-0 z-30 w-[200px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg" onClick={(e) => e.stopPropagation()}>
@@ -1637,6 +1657,12 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                             onClick={() => handleStartMenuApp('personalfiles')}
                           >
                             <span>📁</span><span className="text-xs">Личные дела</span>
+                          </button>
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            onClick={() => handleStartMenuApp('minesweeper')}
+                          >
+                            <span>{'\u{1F4A3}'}</span><span className="text-xs">{'\u0421\u0430\u043F\u0451\u0440'}</span>
                           </button>
                           <div className="border-t border-gray-400 my-1"></div>
                           <button
