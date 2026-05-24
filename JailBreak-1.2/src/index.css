@@ -80,3 +80,43 @@
   0%, 100% { box-shadow: 0 0 8px var(--glow-color, rgba(255,255,255,0.1)); }
   50% { box-shadow: 0 0 16px var(--glow-color, rgba(255,255,255,0.3)); }
 }
+
+@keyframes bootProgress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+@keyframes shutdownH {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(0.01); }
+}
+
+@keyframes shutdownDot {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(0); opacity: 0; }
+}
+
+@keyframes crtFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.97; }
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes iconWobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+
+@keyframes glitchJitter {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 1px); }
+  40% { transform: translate(2px, -1px); }
+  60% { transform: translate(-1px, 2px); }
+  80% { transform: translate(1px, -1px); }
+  100% { transform: translate(0); }
+}

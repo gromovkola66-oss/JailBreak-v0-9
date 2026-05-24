@@ -570,7 +570,7 @@ export class PlaytestMode {
     if (event.code === 'KeyE') {
       // Terminal exit does NOT require pointer lock (pointer lock is released while in terminal mode)
       if (this.inTerminalMode) {
-        this.cameraSystem.exitTerminalMode();
+        this.cameraSystem.startShutdown();
         return;
       }
       // If locker is open, don't process E here - React handles close
@@ -1410,8 +1410,12 @@ export class PlaytestMode {
 
   exitTerminal() {
     if (this.inTerminalMode) {
-      this.cameraSystem.exitTerminalMode();
+      this.cameraSystem.startShutdown();
     }
+  }
+
+  terminalBootComplete() {
+    this.cameraSystem.transitionToDesktop();
   }
 
   inventoryEquipSlot(index: number) {

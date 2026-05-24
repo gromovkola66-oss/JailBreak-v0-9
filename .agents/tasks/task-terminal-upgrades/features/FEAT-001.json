@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Boot screen animation, CRT monitor effects, and living desktop enhancements for the terminal",
+  "status": "in_progress",
+  "steps": [
+    "Add a 'booting' state to the terminal mode in CameraSystem.ts - add a new terminal view state 'booting' that transitions to 'desktop' after ~1.5 seconds. Update CameraSystemState interface to include 'booting' in the terminalView union type.",
+    "In EditorApp.tsx, add a boot screen UI that renders when ptCameraState.terminalView === 'booting': black background, 'Jail Break OS Loading...' text centered, and a progress bar that fills over 1.5 seconds. After animation completes, transition to desktop automatically.",
+    "Add CRT monitor CSS effects to src/index.css: (a) scanlines overlay using repeating-linear-gradient (horizontal lines every 2px with rgba(0,0,0,0.1)), (b) subtle barrel distortion via CSS (slight perspective transform or border-radius trick), (c) brightness flicker keyframe animation (subtle opacity oscillation between 0.97 and 1.0 every ~3s), (d) greenish text tint filter on the terminal container.",
+    "Apply the CRT overlay to the terminal mode container div in EditorApp.tsx: wrap the terminal content in a div with the CRT class that applies scanlines, flicker, and vignette.",
+    "Add shutdown animation: when exiting terminal (exitTerminal is called), show a brief CSS animation where the screen content collapses vertically to a horizontal line, then to a dot, then disappears (~0.5s total). Add a 'shutting_down' state to the terminal view to trigger this.",
+    "Add living desktop effects: (a) blinking cursor character in the taskbar (use a span with CSS animation that toggles visibility), (b) desktop icons wobble on hover (CSS transform animation on hover), (c) glitch effect every 30 seconds (a brief screen jitter/displacement animation triggered by a setInterval in a useEffect, applying a CSS class momentarily that does translateX jitter and slight color separation).",
+    "Add boot screen and shutdown CSS keyframes to index.css: @keyframes bootProgress (width 0% to 100%), @keyframes shutdownCollapse (scale transform), @keyframes cursorBlink (opacity toggle), @keyframes iconWobble (slight rotation on hover), @keyframes glitchJitter (brief translateX displacement with color channel offset)."
+  ],
+  "acceptance_criteria": [
+    "When entering terminal mode, a boot screen shows 'Jail Break OS Loading...' with animated progress bar for ~1.5s before showing desktop",
+    "Terminal has visible scanlines (horizontal stripes), slight vignette/distortion, and subtle brightness flicker",
+    "Text in terminal has a greenish tint",
+    "When exiting terminal, screen collapses to line then dot animation plays",
+    "Taskbar has a blinking cursor character",
+    "Desktop icons wobble slightly on hover",
+    "Every 30 seconds a brief glitch/jitter effect flashes on screen",
+    "npm run build succeeds with no TypeScript errors"
+  ],
+  "verification": [
+    "Run 'cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npm run build' and confirm it succeeds"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

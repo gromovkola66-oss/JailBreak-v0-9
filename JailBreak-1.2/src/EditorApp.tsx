@@ -120,6 +120,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [terminalWallpaperIdx, setTerminalWallpaperIdx] = useState(() => Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | 'cells' | null>(null);
+  const [glitchActive, setGlitchActive] = useState(false);
 
   // Cell timer state
   const [cellTimerActive, setCellTimerActive] = useState(false);
@@ -355,6 +356,28 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       setTerminalApp(null);
     }
   }, [ptCameraState?.inTerminalMode]);
+
+  // Boot screen auto-transition to desktop after 1.5s
+  useEffect(() => {
+    if (ptCameraState?.terminalView === 'booting') {
+      const timer = setTimeout(() => {
+        playtestRef.current?.terminalBootComplete();
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [ptCameraState?.terminalView]);
+
+  // Glitch effect every 30 seconds while in terminal mode
+  useEffect(() => {
+    if (!ptCameraState?.inTerminalMode || ptCameraState.terminalView === 'booting' || ptCameraState.terminalView === 'shutting_down') {
+      return;
+    }
+    const interval = setInterval(() => {
+      setGlitchActive(true);
+      setTimeout(() => setGlitchActive(false), 200);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [ptCameraState?.inTerminalMode, ptCameraState?.terminalView]);
 
   const handleLockGarageDoors = useCallback(() => {
     playtestRef.current?.lockGarageDoors();
@@ -1142,7 +1165,34 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
           {/* Terminal mode overlay */}
           {ptCameraState?.inTerminalMode && (
-            <div className="absolute inset-0 pointer-events-auto cursor-default">
+            <div className="absolute inset-0 pointer-events-auto cursor-default" style={{ borderRadius: '4px', overflow: 'hidden', filter: 'hue-rotate(-5deg) saturate(1.1) brightness(0.98)', animation: glitchActive ? 'glitchJitter 0.2s linear' : undefined }}>
+              {/* CRT effects overlay */}
+              <div className="absolute inset-0 pointer-events-none z-50" style={{
+                background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.08) 0px, rgba(0,0,0,0.08) 1px, transparent 1px, transparent 2px)',
+                boxShadow: 'inset 0 0 80px rgba(0,0,0,0.4)',
+                animation: 'crtFlicker 3s ease-in-out infinite',
+              }} />
+
+              {/* Boot screen */}
+              {ptCameraState.terminalView === 'booting' && (
+                <div className="absolute inset-0 bg-black flex flex-col items-center justify-center z-40">
+                  <div className="text-green-400 text-xl font-mono mb-8" style={{ textShadow: '0 0 8px rgba(0,255,0,0.5)' }}>Jail Break OS Loading...</div>
+                  <div className="w-64 h-4 border border-green-400/60 rounded-sm overflow-hidden">
+                    <div className="h-full bg-green-400" style={{ animation: 'bootProgress 1.5s ease-out forwards' }} />
+                  </div>
+                </div>
+              )}
+
+              {/* Shutdown animation */}
+              {ptCameraState.terminalView === 'shutting_down' && (
+                <div className="absolute inset-0 bg-black flex items-center justify-center z-40">
+                  <div className="w-full h-full bg-white" style={{ animation: 'shutdownH 0.3s ease-in forwards' }}>
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full" style={{ animation: 'shutdownDot 0.2s ease-in 0.3s forwards' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Desktop view */}
               {ptCameraState.terminalView === 'desktop' && (
                 <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none" onClick={() => startMenuOpen && setStartMenuOpen(false)}>
@@ -1157,6 +1207,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   <div className="flex-1 p-4 flex flex-col gap-4 z-10">
                     <div
                       className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      style={{ transition: 'transform 0.1s' }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
                       onClick={(e) => { e.stopPropagation(); handleOpenTerminalApp('cameras'); }}
                     >
                       <span className="text-6xl">📹</span>
@@ -1164,6 +1217,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     </div>
                     <div
                       className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      style={{ transition: 'transform 0.1s' }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
                       onClick={(e) => { e.stopPropagation(); handleOpenTerminalApp('doors'); }}
                     >
                       <span className="text-6xl">🚪</span>
@@ -1171,6 +1227,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     </div>
                     <div
                       className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      style={{ transition: 'transform 0.1s' }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('cells'); }}
                     >
                       <span className="text-6xl">🔒</span>
@@ -1429,6 +1488,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       <span className="w-3 h-3 bg-green-600 inline-block"></span>
                       <span className="font-bold text-xs">Пуск</span>
                     </button>
+                    <span className="text-xs text-green-700 font-mono" style={{ animation: 'cursorBlink 1s step-end infinite' }}>_</span>
                     <div className="flex-1"></div>
                     <div className="text-xs text-gray-700 mr-2">
                       E - Выйти

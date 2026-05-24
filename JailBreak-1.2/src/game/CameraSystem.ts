@@ -21,7 +21,7 @@ export interface CameraSystemState {
   cameras: SecurityCamera[];
   selectedCameraIndex: number | null;
   screenshots: string[];
-  terminalView: 'desktop' | 'cameras' | 'doors';
+  terminalView: 'desktop' | 'cameras' | 'doors' | 'booting' | 'shutting_down';
 }
 
 export class CameraSystem {
@@ -35,7 +35,7 @@ export class CameraSystem {
   private _selectedCameraIndex: number | null = null;
   private _activeCameras: SecurityCamera[] = [];
   private _screenshots: string[] = [];
-  private _terminalView: 'desktop' | 'cameras' | 'doors' = 'desktop';
+  private _terminalView: 'desktop' | 'cameras' | 'doors' | 'booting' | 'shutting_down' = 'desktop';
 
   private highlightedMeshes: { mesh: THREE.Mesh; originalMaterial: THREE.Material }[] = [];
 
@@ -206,7 +206,7 @@ export class CameraSystem {
 
     this._inTerminalMode = true;
     this._selectedCameraIndex = null;
-    this._terminalView = 'desktop';
+    this._terminalView = 'booting';
 
     document.exitPointerLock();
     this.emitState();
@@ -227,6 +227,19 @@ export class CameraSystem {
     }
     document.body.requestPointerLock();
     this.emitState();
+  }
+
+  transitionToDesktop() {
+    this._terminalView = 'desktop';
+    this.emitState();
+  }
+
+  startShutdown() {
+    this._terminalView = 'shutting_down';
+    this.emitState();
+    setTimeout(() => {
+      this.exitTerminalMode();
+    }, 500);
   }
 
   openCamerasApp() {
