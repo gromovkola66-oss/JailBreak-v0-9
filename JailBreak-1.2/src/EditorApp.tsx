@@ -308,7 +308,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       const canvas = model.getCanvas();
       canvas.style.width = '100%';
       canvas.style.height = '100%';
-      canvas.style.display = '';
+      canvas.style.display = 'block';
+      canvas.style.objectFit = 'contain';
       if (canvas.parentElement !== container) {
         container.appendChild(canvas);
       }
@@ -823,7 +824,6 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                         }
                       }}
                     >
-                      <canvas id="character-model-canvas" className="w-full h-full" />
                       {ptInventory.vestEquipped && (
                         <div
                           className="absolute top-2 right-2 bg-green-600/80 text-white text-[10px] px-2 py-0.5 rounded cursor-pointer hover:bg-red-600/80 transition-colors pointer-events-auto"
