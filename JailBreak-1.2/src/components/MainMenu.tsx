@@ -335,10 +335,13 @@ const MenuScene = () => {
     // === ANIMATION ===
     let time = 0;
     let animId = 0;
+    let lastTime = performance.now();
 
-    const animate = () => {
+    const animate = (now: number) => {
       animId = requestAnimationFrame(animate);
-      time += 0.016;
+      const delta = Math.min((now - lastTime) / 1000, 0.05); // cap at 50ms to avoid jumps
+      lastTime = now;
+      time += delta;
 
       // Breathing
       const breathe = Math.sin(time * 2) * 0.004;
@@ -392,7 +395,7 @@ const MenuScene = () => {
       renderer.render(scene, camera);
       if (!containerRef.current) cancelAnimationFrame(animId);
     };
-    animate();
+    animId = requestAnimationFrame(animate);
 
     const onResize = () => {
       if (!containerRef.current) return;
@@ -407,6 +410,17 @@ const MenuScene = () => {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', onResize);
       renderer.domElement.parentElement?.removeChild(renderer.domElement);
+      scene.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry.dispose();
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(m => m.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        }
+      });
+      skyTex.dispose();
       renderer.dispose();
     };
   }, []);
