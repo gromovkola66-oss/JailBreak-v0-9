@@ -22,6 +22,10 @@ export interface CameraSystemState {
   selectedCameraIndex: number | null;
   screenshots: string[];
   terminalView: 'desktop' | 'cameras' | 'doors' | 'booting' | 'shutting_down';
+  ptzPan: number;
+  ptzTilt: number;
+  ptzZoom: number;
+  nightVision: boolean;
 }
 
 export class CameraSystem {
@@ -44,6 +48,18 @@ export class CameraSystem {
   private securityCamera: THREE.PerspectiveCamera;
 
   private screenshotInterval: ReturnType<typeof setInterval> | null = null;
+
+  // PTZ state
+  private _ptzPan = 0;
+  private _ptzTilt = 0;
+  private _ptzZoom = 70;
+  private _ptzPresets: Array<{pan: number; tilt: number; zoom: number} | null> = [null, null, null];
+
+  // Night vision
+  private _nightVision = false;
+
+  // Rewind buffer (last 30 screenshots for selected camera)
+  private _rewindBuffer: string[] = [];
 
   private terminalScreenTarget: THREE.WebGLRenderTarget;
   private terminalScreenElapsed = 0;
@@ -272,6 +288,10 @@ export class CameraSystem {
     } else {
       this._selectedCameraIndex = null;
     }
+    // Reset PTZ when switching cameras
+    this._ptzPan = 0;
+    this._ptzTilt = 0;
+    this._ptzZoom = 70;
     this.emitState();
   }
 
@@ -289,11 +309,60 @@ export class CameraSystem {
     // Position the security camera
     this.securityCamera.position.copy(cam.position);
     this.securityCamera.rotation.copy(cam.rotation);
+    // Apply PTZ offsets
+    this.securityCamera.rotation.y += this._ptzPan;
+    this.securityCamera.rotation.x += this._ptzTilt;
+    this.securityCamera.fov = this._ptzZoom;
     this.securityCamera.aspect = mainCamera.aspect;
     this.securityCamera.updateProjectionMatrix();
 
     // Render from security camera perspective
     this.renderer.render(this.scene, this.securityCamera);
+  }
+
+  // === PTZ Methods ===
+  ptzPan(deltaX: number, deltaY: number) {
+    this._ptzPan += deltaX * 0.003;
+    this._ptzTilt += deltaY * 0.003;
+    this._ptzTilt = Math.max(-0.5, Math.min(0.5, this._ptzTilt));
+    this.emitState();
+  }
+
+  ptzZoom(delta: number) {
+    this._ptzZoom = Math.max(20, Math.min(100, this._ptzZoom - delta * 0.1));
+    this.emitState();
+  }
+
+  ptzReset() {
+    this._ptzPan = 0;
+    this._ptzTilt = 0;
+    this._ptzZoom = 70;
+    this.emitState();
+  }
+
+  ptzSavePreset(slot: number) {
+    this._ptzPresets[slot] = { pan: this._ptzPan, tilt: this._ptzTilt, zoom: this._ptzZoom };
+  }
+
+  ptzLoadPreset(slot: number) {
+    const p = this._ptzPresets[slot];
+    if (p) {
+      this._ptzPan = p.pan;
+      this._ptzTilt = p.tilt;
+      this._ptzZoom = p.zoom;
+      this.emitState();
+    }
+  }
+
+  // === Night Vision ===
+  toggleNightVision() {
+    this._nightVision = !this._nightVision;
+    this.emitState();
+  }
+
+  // === Rewind Buffer ===
+  getRewindBuffer(): string[] {
+    return [...this._rewindBuffer];
   }
 
   private captureScreenshots() {
@@ -343,6 +412,13 @@ export class CameraSystem {
 
     this.renderer.setRenderTarget(currentRenderTarget);
     this._screenshots = screenshots;
+    // Add the selected camera frame to the rewind buffer
+    if (this._selectedCameraIndex !== null && screenshots[this._selectedCameraIndex]) {
+      this._rewindBuffer.push(screenshots[this._selectedCameraIndex]);
+      if (this._rewindBuffer.length > 30) {
+        this._rewindBuffer.shift();
+      }
+    }
     this.emitState();
   }
 
@@ -424,6 +500,10 @@ export class CameraSystem {
         selectedCameraIndex: this._selectedCameraIndex,
         screenshots: this._screenshots,
         terminalView: this._terminalView,
+        ptzPan: this._ptzPan,
+        ptzTilt: this._ptzTilt,
+        ptzZoom: this._ptzZoom,
+        nightVision: this._nightVision,
       });
     }
   }
@@ -452,6 +532,10 @@ export class CameraSystem {
       selectedCameraIndex: this._selectedCameraIndex,
       screenshots: this._screenshots,
       terminalView: this._terminalView,
+      ptzPan: this._ptzPan,
+      ptzTilt: this._ptzTilt,
+      ptzZoom: this._ptzZoom,
+      nightVision: this._nightVision,
     };
   }
 }

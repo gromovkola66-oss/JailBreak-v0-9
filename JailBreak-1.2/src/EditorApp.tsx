@@ -120,7 +120,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   // Terminal wallpaper & start menu state
   const [terminalWallpaperIdx, setTerminalWallpaperIdx] = useState(() => Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
   const [startMenuOpen, setStartMenuOpen] = useState(false);
-  const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'minesweeper' | null>(null);
+  const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'minesweeper' | 'files' | null>(null);
   const [glitchActive, setGlitchActive] = useState(false);
 
   // Event log state
@@ -132,6 +132,26 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [pfName, setPfName] = useState('');
   const [pfDescription, setPfDescription] = useState('');
 
+  // Window drag state
+  const [windowPositions, setWindowPositions] = useState<Record<string, {x: number, y: number}>>({});
+  const [dragging, setDragging] = useState<{app: string; startX: number; startY: number; origX: number; origY: number} | null>(null);
+
+  // Minimized apps state
+  const [minimizedApps, setMinimizedApps] = useState<string[]>([]);
+
+  // Terminal hum ref
+  const terminalHumStopRef = useRef<(() => void) | null>(null);
+
+  // Camera saved screenshots
+  const [savedScreenshots, setSavedScreenshots] = useState<string[]>([]);
+
+  // Camera rewind state
+  const [rewindPlaying, setRewindPlaying] = useState(false);
+  const [rewindFrame, setRewindFrame] = useState(0);
+  const rewindBufferRef = useRef<string[]>([]);
+
+  // PTZ mouse drag state
+  const [ptzMouseDown, setPtzMouseDown] = useState(false);
   // Cell timer state
   const [cellTimerActive, setCellTimerActive] = useState(false);
   const [cellTimerAction, setCellTimerAction] = useState<'открытие' | 'закрытие'>('открытие');
@@ -371,12 +391,38 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   // Boot screen auto-transition to desktop after 1.5s
   useEffect(() => {
     if (ptCameraState?.terminalView === 'booting') {
+      playtestRef.current?.getSoundSystem()?.playTerminalStartup();
       const timer = setTimeout(() => {
         playtestRef.current?.terminalBootComplete();
       }, 1500);
       return () => clearTimeout(timer);
     }
   }, [ptCameraState?.terminalView]);
+
+  // Terminal hum ambient: start on desktop, stop on exit
+  useEffect(() => {
+    if (ptCameraState?.inTerminalMode && ptCameraState.terminalView === 'desktop') {
+      if (!terminalHumStopRef.current) {
+        const stop = playtestRef.current?.getSoundSystem()?.startTerminalHum();
+        if (stop) terminalHumStopRef.current = stop;
+      }
+    } else {
+      if (terminalHumStopRef.current) {
+        terminalHumStopRef.current();
+        terminalHumStopRef.current = null;
+      }
+    }
+  }, [ptCameraState?.inTerminalMode, ptCameraState?.terminalView]);
+
+  // Cleanup hum on unmount
+  useEffect(() => {
+    return () => {
+      if (terminalHumStopRef.current) {
+        terminalHumStopRef.current();
+        terminalHumStopRef.current = null;
+      }
+    };
+  }, []);
 
   // Glitch effect every 30 seconds while in terminal mode
   useEffect(() => {
@@ -389,6 +435,84 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     }, 30000);
     return () => clearInterval(interval);
   }, [ptCameraState?.inTerminalMode, ptCameraState?.terminalView]);
+
+  // Terminal hotkeys
+  useEffect(() => {
+    if (!ptCameraState?.inTerminalMode || ptCameraState.terminalView !== 'desktop') return;
+    const handleHotkey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === '1') {
+        e.preventDefault();
+        playtestRef.current?.openTerminalApp('cameras');
+        playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen();
+        setStartMenuOpen(false);
+      } else if (e.ctrlKey && e.key === '2') {
+        e.preventDefault();
+        playtestRef.current?.openTerminalApp('doors');
+        playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen();
+        setStartMenuOpen(false);
+      } else if (e.ctrlKey && e.key === '3') {
+        e.preventDefault();
+        setTerminalApp('cells');
+        playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen();
+      } else if (e.key === 'Escape' && terminalApp) {
+        e.preventDefault();
+        playtestRef.current?.getSoundSystem()?.playTerminalWindowClose();
+        setTerminalApp(null);
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        if (minimizedApps.length > 0) {
+          const restored = minimizedApps[0];
+          setMinimizedApps(prev => prev.filter(a => a !== restored));
+          setTerminalApp(restored as typeof terminalApp);
+          playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleHotkey);
+    return () => document.removeEventListener('keydown', handleHotkey);
+  }, [ptCameraState?.inTerminalMode, ptCameraState?.terminalView, terminalApp, minimizedApps]);
+
+  // Window drag effect
+  useEffect(() => {
+    if (!dragging) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const dx = e.clientX - dragging.startX;
+      const dy = e.clientY - dragging.startY;
+      setWindowPositions(prev => ({
+        ...prev,
+        [dragging.app]: { x: dragging.origX + dx, y: dragging.origY + dy }
+      }));
+    };
+    const handleMouseUp = () => {
+      setDragging(null);
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragging]);
+
+  // Rewind playback effect
+  useEffect(() => {
+    if (!rewindPlaying) return;
+    const frames = rewindBufferRef.current;
+    if (frames.length === 0) {
+      setRewindPlaying(false);
+      return;
+    }
+    const interval = setInterval(() => {
+      setRewindFrame(prev => {
+        if (prev >= frames.length - 1) {
+          setRewindPlaying(false);
+          return 0;
+        }
+        return prev + 1;
+      });
+    }, 200);
+    return () => clearInterval(interval);
+  }, [rewindPlaying]);
 
   const addEventLog = useCallback((action: string, actor: string) => {
     const now = new Date();
@@ -570,6 +694,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setPtLockerState(null);
     setPtLockerAccessDenied(false);
     setLockerMoneyInput('');
+    setMinimizedApps([]);
+    setWindowPositions({});
+    setSavedScreenshots([]);
+    setRewindPlaying(false);
     setMode('editing');
   }, []);
 
@@ -579,16 +707,19 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
   const handleOpenTerminalApp = useCallback((app: 'cameras' | 'doors') => {
     playtestRef.current?.openTerminalApp(app);
+    playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen();
     setStartMenuOpen(false);
   }, []);
 
   const handleBackToTerminalDesktop = useCallback(() => {
     playtestRef.current?.backToTerminalDesktop();
+    playtestRef.current?.getSoundSystem()?.playTerminalWindowClose();
     setTerminalApp(null);
     setStartMenuOpen(false);
   }, []);
 
   const handleStartMenuToggle = useCallback(() => {
+    playtestRef.current?.getSoundSystem()?.playTerminalClick();
     setStartMenuOpen(prev => !prev);
   }, []);
 
@@ -600,6 +731,28 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     cellTimerEndRef.current = null;
     setCellTimerActive(false);
     setCellTimerRemaining(null);
+  }, []);
+
+  const handleWindowDragStart = useCallback((app: string, e: React.MouseEvent) => {
+    const pos = windowPositions[app] || { x: 0, y: 0 };
+    setDragging({ app, startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y });
+  }, [windowPositions]);
+
+  const handleMinimizeApp = useCallback((app: string) => {
+    playtestRef.current?.getSoundSystem()?.playTerminalWindowClose();
+    setMinimizedApps(prev => [...prev, app]);
+    setTerminalApp(null);
+  }, []);
+
+  const handleRestoreApp = useCallback((app: string) => {
+    playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen();
+    setMinimizedApps(prev => prev.filter(a => a !== app));
+    setTerminalApp(app as typeof terminalApp);
+  }, []);
+
+  const handleCloseTerminalApp = useCallback(() => {
+    playtestRef.current?.getSoundSystem()?.playTerminalWindowClose();
+    setTerminalApp(null);
   }, []);
 
   const startOpenTimer = useCallback(() => {
@@ -646,13 +799,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     cellTimerRef.current = interval;
   }, [cancelCellTimer]);
 
-  const handleStartMenuApp = useCallback((app: 'cameras' | 'doors' | 'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'minesweeper' | 'exit') => {
+  const handleStartMenuApp = useCallback((app: 'cameras' | 'doors' | 'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'minesweeper' | 'files' | 'exit') => {
     setStartMenuOpen(false);
     if (app === 'cameras' || app === 'doors') {
       handleOpenTerminalApp(app);
     } else if (app === 'exit') {
       playtestRef.current?.exitTerminal();
     } else {
+      playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen();
       setTerminalApp(app);
     }
   }, [handleOpenTerminalApp]);
@@ -1285,18 +1439,34 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       <span className="text-6xl">{'\u{1F4A3}'}</span>
                       <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{'\u0421\u0430\u043F\u0451\u0440'}</span>
                     </div>
+                    <div
+                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      style={{ transition: 'transform 0.1s' }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
+                      onClick={(e) => { e.stopPropagation(); setTerminalApp('files'); playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen(); }}
+                    >
+                      <span className="text-6xl">{'\u{1F4F7}'}</span>
+                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{'\u0424\u0430\u0439\u043B\u044B'}</span>
+                    </div>
                   </div>
 
                   {/* Info app window */}
-                  {terminalApp === 'info' && (
-                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                  {terminalApp === 'info' && !minimizedApps.includes('info') && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['info']?.x || 0)}px, ${(windowPositions['info']?.y || 0)}px)` }}>
                       <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('info', e)}>
                           <span className="text-xs">Информация о тюрьме</span>
-                          <button
-                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
-                            onClick={() => setTerminalApp(null)}
-                          >X</button>
+                          <div className="flex gap-0.5">
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleMinimizeApp('info'); }}
+                            >_</button>
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
+                            >X</button>
+                          </div>
                         </div>
                         <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white text-xs leading-relaxed max-h-[300px] overflow-y-auto">
                           <p className="font-bold text-sm mb-2">Правила учреждения:</p>
@@ -1320,15 +1490,21 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   )}
 
                   {/* Map app window */}
-                  {terminalApp === 'map' && (
-                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                  {terminalApp === 'map' && !minimizedApps.includes('map') && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['map']?.x || 0)}px, ${(windowPositions['map']?.y || 0)}px)` }}>
                       <div className="w-[550px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('map', e)}>
                           <span className="text-xs">Карта территории</span>
-                          <button
-                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
-                            onClick={() => setTerminalApp(null)}
-                          >X</button>
+                          <div className="flex gap-0.5">
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleMinimizeApp('map'); }}
+                            >_</button>
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
+                            >X</button>
+                          </div>
                         </div>
                         <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white">
                           <div className="w-full h-[280px] bg-[#f0f0e0] border border-gray-300 relative flex items-center justify-center">
@@ -1361,15 +1537,21 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   )}
 
                   {/* Settings app window */}
-                  {terminalApp === 'settings' && (
-                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                  {terminalApp === 'settings' && !minimizedApps.includes('settings') && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['settings']?.x || 0)}px, ${(windowPositions['settings']?.y || 0)}px)` }}>
                       <div className="w-[400px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('settings', e)}>
                           <span className="text-xs">Настройки</span>
-                          <button
-                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
-                            onClick={() => setTerminalApp(null)}
-                          >X</button>
+                          <div className="flex gap-0.5">
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleMinimizeApp('settings'); }}
+                            >_</button>
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
+                            >X</button>
+                          </div>
                         </div>
                         <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
                           <div className="space-y-3">
@@ -1399,15 +1581,21 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   )}
 
                   {/* Cells app window */}
-                  {terminalApp === 'cells' && (
-                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                  {terminalApp === 'cells' && !minimizedApps.includes('cells') && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['cells']?.x || 0)}px, ${(windowPositions['cells']?.y || 0)}px)` }}>
                       <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
-                          <span className="text-xs">🔒 Клетки</span>
-                          <button
-                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
-                            onClick={() => setTerminalApp(null)}
-                          >X</button>
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('cells', e)}>
+                          <span className="text-xs">{'\u{1F512}'} Клетки</span>
+                          <div className="flex gap-0.5">
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleMinimizeApp('cells'); }}
+                            >_</button>
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
+                            >X</button>
+                          </div>
                         </div>
                         <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
                           <div className="space-y-4">
@@ -1473,15 +1661,21 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   )}
 
                   {/* Event Log app window */}
-                  {terminalApp === 'eventlog' && (
-                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                  {terminalApp === 'eventlog' && !minimizedApps.includes('eventlog') && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['eventlog']?.x || 0)}px, ${(windowPositions['eventlog']?.y || 0)}px)` }}>
                       <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
-                          <span className="text-xs">📋 Журнал событий</span>
-                          <button
-                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
-                            onClick={() => setTerminalApp(null)}
-                          >X</button>
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('eventlog', e)}>
+                          <span className="text-xs">{'\u{1F4CB}'} Журнал событий</span>
+                          <div className="flex gap-0.5">
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleMinimizeApp('eventlog'); }}
+                            >_</button>
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
+                            >X</button>
+                          </div>
                         </div>
                         <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white text-xs max-h-[300px] overflow-y-auto">
                           {eventLog.length === 0 ? (
@@ -1501,15 +1695,21 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   )}
 
                   {/* Personal Files app window */}
-                  {terminalApp === 'personalfiles' && (
-                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                  {terminalApp === 'personalfiles' && !minimizedApps.includes('personalfiles') && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['personalfiles']?.x || 0)}px, ${(windowPositions['personalfiles']?.y || 0)}px)` }}>
                       <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
-                          <span className="text-xs">📁 Личные дела</span>
-                          <button
-                            className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
-                            onClick={() => { setTerminalApp(null); setPfView('list'); }}
-                          >X</button>
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('personalfiles', e)}>
+                          <span className="text-xs">{'\u{1F4C1}'} Личные дела</span>
+                          <div className="flex gap-0.5">
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleMinimizeApp('personalfiles'); }}
+                            >_</button>
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); setPfView('list'); }}
+                            >X</button>
+                          </div>
                         </div>
                         <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white text-xs max-h-[350px] overflow-y-auto">
                           {pfView === 'list' ? (
@@ -1592,10 +1792,45 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     </div>
                   )}
 
+                  {/* Files (screenshots) app window */}
+                  {terminalApp === 'files' && !minimizedApps.includes('files') && (
+                    <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['files']?.x || 0)}px, ${(windowPositions['files']?.y || 0)}px)` }}>
+                      <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('files', e)}>
+                          <span className="text-xs">{'\u{1F4F7}'} {'\u0424\u0430\u0439\u043B\u044B'}</span>
+                          <div className="flex gap-0.5">
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleMinimizeApp('files'); }}
+                            >_</button>
+                            <button
+                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
+                            >X</button>
+                          </div>
+                        </div>
+                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white text-xs max-h-[350px] overflow-y-auto">
+                          {savedScreenshots.length === 0 ? (
+                            <div className="text-gray-500 text-center py-4">{'\u041D\u0435\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D\u043D\u044B\u0445 \u0441\u043D\u0438\u043C\u043A\u043E\u0432'}</div>
+                          ) : (
+                            <div className="grid grid-cols-3 gap-2">
+                              {savedScreenshots.map((src, idx) => (
+                                <div key={idx} className="border border-gray-400 p-1">
+                                  <img src={src} alt={`Screenshot ${idx + 1}`} className="w-full h-auto" />
+                                  <div className="text-center text-[10px] text-gray-600 mt-0.5">CAM_{idx + 1}.jpg</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Minesweeper app window */}
-                  {terminalApp === 'minesweeper' && (
+                  {terminalApp === 'minesweeper' && !minimizedApps.includes('minesweeper') && (
                     <Minesweeper
-                      onClose={() => setTerminalApp(null)}
+                      onClose={() => handleCloseTerminalApp()}
                       onWin={() => addEventLog('\u0421\u0430\u043F\u0451\u0440: \u041F\u043E\u0431\u0435\u0434\u0430!', '\u041E\u0445\u0440\u0430\u043D\u043D\u0438\u043A')}
                       onLose={() => addEventLog('\u0421\u0430\u043F\u0451\u0440: \u041F\u0440\u043E\u0438\u0433\u0440\u044B\u0448', '\u041E\u0445\u0440\u0430\u043D\u043D\u0438\u043A')}
                     />
@@ -1664,6 +1899,12 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                           >
                             <span>{'\u{1F4A3}'}</span><span className="text-xs">{'\u0421\u0430\u043F\u0451\u0440'}</span>
                           </button>
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            onClick={() => handleStartMenuApp('files')}
+                          >
+                            <span>{'\u{1F4F7}'}</span><span className="text-xs">{'\u0424\u0430\u0439\u043B\u044B'}</span>
+                          </button>
                           <div className="border-t border-gray-400 my-1"></div>
                           <button
                             className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
@@ -1683,8 +1924,17 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       onClick={(e) => { e.stopPropagation(); handleStartMenuToggle(); }}
                     >
                       <span className="w-3 h-3 bg-green-600 inline-block"></span>
-                      <span className="font-bold text-xs">Пуск</span>
+                      <span className="font-bold text-xs">{'\u041F\u0443\u0441\u043A'}</span>
                     </button>
+                    {minimizedApps.map(app => (
+                      <button
+                        key={app}
+                        className="h-[22px] px-2 flex items-center border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#a0a0a0] text-xs font-bold"
+                        onClick={(e) => { e.stopPropagation(); handleRestoreApp(app); }}
+                      >
+                        {app}
+                      </button>
+                    ))}
                     <span className="text-xs text-green-700 font-mono" style={{ animation: 'cursorBlink 1s step-end infinite' }}>_</span>
                     <div className="flex-1"></div>
                     <div className="text-xs text-gray-700 mr-2">
@@ -1764,33 +2014,97 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
               {/* Cameras view - selected camera (transparent so 3D canvas shows through) */}
               {ptCameraState.terminalView === 'cameras' && ptCameraState.selectedCameraIndex !== null && (
-                <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none" style={ptCameraState.nightVision ? { filter: 'brightness(1.5) saturate(0.3) hue-rotate(80deg)' } : undefined}>
                   {/* Top bar */}
                   <div className="bg-black/80 px-4 py-2 flex items-center justify-between shrink-0">
                     <div className="text-green-400 font-mono text-sm">
                       CAM {ptCameraState.selectedCameraIndex + 1} - {ptCameraState.cameras[ptCameraState.selectedCameraIndex]?.label}
                     </div>
-                    <div className="text-red-500 font-mono text-sm animate-pulse">● REC</div>
+                    <div className="text-red-500 font-mono text-sm animate-pulse">{'\u25CF'} REC</div>
                   </div>
-                  {/* Middle - transparent area where 3D camera view shows through */}
-                  <div className="flex-1 relative pointer-events-none">
-                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.015) 2px, rgba(0,255,0,0.015) 4px)' }}></div>
+                  {/* Middle - transparent area where 3D camera view shows through - PTZ interactive */}
+                  <div
+                    className="flex-1 relative pointer-events-auto cursor-crosshair"
+                    onMouseDown={() => setPtzMouseDown(true)}
+                    onMouseUp={() => setPtzMouseDown(false)}
+                    onMouseLeave={() => setPtzMouseDown(false)}
+                    onMouseMove={(e) => { if (ptzMouseDown) playtestRef.current?.ptzPan(e.movementX, e.movementY); }}
+                    onWheel={(e) => { e.preventDefault(); playtestRef.current?.ptzZoom(e.deltaY); }}
+                  >
+                    <div className="absolute inset-0 pointer-events-none" style={{ background: ptCameraState.nightVision ? 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.05) 2px, rgba(0,255,0,0.05) 4px)' : 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.015) 2px, rgba(0,255,0,0.015) 4px)' }}></div>
                     <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: 'inset 0 0 80px rgba(0,0,0,0.4)' }}></div>
+                    {/* Rewind overlay */}
+                    {rewindPlaying && rewindBufferRef.current.length > 0 && (
+                      <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-10">
+                        <img src={rewindBufferRef.current[rewindFrame] || ''} alt="rewind" className="max-w-full max-h-full object-contain" />
+                        <div className="absolute top-2 right-2 text-yellow-400 font-mono text-xs">{'\u23EA'} {rewindFrame + 1}/{rewindBufferRef.current.length}</div>
+                      </div>
+                    )}
                   </div>
                   {/* Bottom bar */}
                   <div className="bg-black/80 px-4 py-2 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <div
                         className="text-gray-300 text-sm cursor-pointer hover:text-white pointer-events-auto"
                         onClick={() => handleSelectCamera(null)}
                       >
-                        ← Назад к сетке
+                        {'\u2190'} Назад
                       </div>
                       <div
                         className="text-gray-300 text-sm cursor-pointer hover:text-white pointer-events-auto"
                         onClick={handleBackToTerminalDesktop}
                       >
-                        ← Рабочий стол
+                        {'\u2190'} Рабочий стол
+                      </div>
+                      <div className="border-l border-gray-600 h-4 mx-1"></div>
+                      {/* PTZ Presets */}
+                      {[0,1,2].map(slot => (
+                        <div
+                          key={slot}
+                          className="text-gray-300 text-xs cursor-pointer hover:text-white pointer-events-auto border border-gray-600 px-1.5 py-0.5"
+                          onClick={(e) => { if (e.shiftKey) playtestRef.current?.ptzSavePreset(slot); else playtestRef.current?.ptzLoadPreset(slot); }}
+                          title="Click load, Shift+click save"
+                        >
+                          {slot + 1}
+                        </div>
+                      ))}
+                      <div
+                        className="text-gray-300 text-xs cursor-pointer hover:text-white pointer-events-auto border border-gray-600 px-1.5 py-0.5"
+                        onClick={() => playtestRef.current?.ptzReset()}
+                      >
+                        Reset
+                      </div>
+                      <div className="border-l border-gray-600 h-4 mx-1"></div>
+                      {/* Night Vision toggle */}
+                      <div
+                        className={`text-xs cursor-pointer pointer-events-auto border px-1.5 py-0.5 ${ptCameraState.nightVision ? 'text-green-400 border-green-400' : 'text-gray-300 border-gray-600 hover:text-white'}`}
+                        onClick={() => playtestRef.current?.toggleNightVision()}
+                      >
+                        NV
+                      </div>
+                      {/* Screenshot button */}
+                      <div
+                        className="text-gray-300 text-xs cursor-pointer hover:text-white pointer-events-auto border border-gray-600 px-1.5 py-0.5"
+                        onClick={() => {
+                          const idx = ptCameraState.selectedCameraIndex;
+                          if (idx !== null && ptCameraState.screenshots[idx]) {
+                            setSavedScreenshots(prev => [...prev, ptCameraState.screenshots[idx]]);
+                          }
+                        }}
+                      >
+                        {'\u{1F4F7}'}
+                      </div>
+                      {/* Rewind button */}
+                      <div
+                        className="text-gray-300 text-xs cursor-pointer hover:text-white pointer-events-auto border border-gray-600 px-1.5 py-0.5"
+                        onClick={() => {
+                          const buf = playtestRef.current?.getRewindBuffer() || [];
+                          rewindBufferRef.current = buf;
+                          setRewindFrame(0);
+                          setRewindPlaying(buf.length > 0);
+                        }}
+                      >
+                        {'\u23EA'} Rewind
                       </div>
                     </div>
                     <div className="text-gray-400 text-sm">

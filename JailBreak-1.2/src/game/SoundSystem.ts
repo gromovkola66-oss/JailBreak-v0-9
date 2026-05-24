@@ -819,6 +819,126 @@ export class SoundSystem {
       osc.stop(now + i * 0.12 + 0.3);
     });
   }
+
+  // === ТЕРМИНАЛ: ЗАГРУЗОЧНЫЙ ЗВУК ===
+  playTerminalStartup() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // 3 ascending tones: C4, E4, G4
+    const notes = [261.63, 329.63, 392.00];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, now + i * 0.2);
+      gain.gain.linearRampToValueAtTime(this.masterVolume * 0.25, now + i * 0.2 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.2 + 0.4);
+
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + i * 0.2);
+      osc.stop(now + i * 0.2 + 0.4);
+    });
+  }
+
+  // === ТЕРМИНАЛ: КЛИК КНОПКИ ===
+  playTerminalClick() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 1200;
+    osc.type = 'sine';
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(this.masterVolume * 0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.03);
+  }
+
+  // === ТЕРМИНАЛ: ОТКРЫТИЕ ОКНА ===
+  playTerminalWindowOpen() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+    osc.type = 'sine';
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(this.masterVolume * 0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.1);
+  }
+
+  // === ТЕРМИНАЛ: ЗАКРЫТИЕ ОКНА ===
+  playTerminalWindowClose() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(600, now);
+    osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+    osc.type = 'sine';
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(this.masterVolume * 0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.1);
+  }
+
+  // === ТЕРМИНАЛ: ОШИБКА ===
+  playTerminalError() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Two harsh low beeps
+    for (let i = 0; i < 2; i++) {
+      const osc = ctx.createOscillator();
+      osc.frequency.value = 200;
+      osc.type = 'square';
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(this.masterVolume * 0.3, now + i * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.08);
+
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + i * 0.15);
+      osc.stop(now + i * 0.15 + 0.08);
+    }
+  }
+
+  // === ТЕРМИНАЛ: ФОНОВЫЙ ГУЛ ===
+  startTerminalHum(): () => void {
+    const ctx = this.getContext();
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 60;
+    osc.type = 'sine';
+
+    const gain = ctx.createGain();
+    gain.gain.value = this.masterVolume * 0.03;
+
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+
+    return () => {
+      gain.gain.setValueAtTime(gain.gain.value, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+      setTimeout(() => { try { osc.stop(); } catch (_) { /* already stopped */ } }, 150);
+    };
+  }
 }
 
 // Синглтон

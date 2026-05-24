@@ -1418,6 +1418,22 @@ export class PlaytestMode {
     this.cameraSystem.transitionToDesktop();
   }
 
+  // === PTZ Passthrough ===
+  ptzPan(dx: number, dy: number) { this.cameraSystem.ptzPan(dx, dy); }
+  ptzZoom(delta: number) { this.cameraSystem.ptzZoom(delta); }
+  ptzReset() { this.cameraSystem.ptzReset(); }
+  ptzSavePreset(slot: number) { this.cameraSystem.ptzSavePreset(slot); }
+  ptzLoadPreset(slot: number) { this.cameraSystem.ptzLoadPreset(slot); }
+
+  // === Night Vision ===
+  toggleNightVision() { this.cameraSystem.toggleNightVision(); }
+
+  // === Rewind Buffer ===
+  getRewindBuffer(): string[] { return this.cameraSystem.getRewindBuffer(); }
+
+  // === Sound System ===
+  getSoundSystem() { return soundSystem; }
+
   inventoryEquipSlot(index: number) {
     this.inventory.equipSlot(index);
   }
