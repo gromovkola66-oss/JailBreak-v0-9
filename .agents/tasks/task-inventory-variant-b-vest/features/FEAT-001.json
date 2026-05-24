@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Redesign inventory system from 16 slots to 8 slots, add always-visible hotbar with keys 1-8 and mouse wheel switching, add Tab key to open full inventory, and add 3D character model panel with armor vest equip support",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Modify InventorySystem.ts - reduce slots from 16 to 8. Change the initial slots array to [FISTS_ITEM, null, null, null, null, null, null, null]. Update reset() method similarly. Add hotbarIndex property (0-7) separate from equippedSlot. Add methods: setHotbarIndex(index), cycleHotbar(direction: 1|-1). Add vestEquipped boolean and onVestEquip callback. Add equipVest() method that removes vest item from slot and sets vestEquipped=true. Add unequipVest() method. Update InventoryState interface to include hotbarIndex and vestEquipped. Add handleWheel and number key handling.",
     "Step 2: Modify ItemDefs.ts - add new item 'item_vest' (Bronzhilet/Armor Vest): id='item_vest', name='Bronzhilet', icon=shield emoji, type='tool', description='Protects from damage with armor layer', stackable=false, maxStack=1, rarity='rare', category='tool'. Also add a new 'armor' type possibility or use existing 'tool' type with category 'things'.",
@@ -33,5 +33,5 @@
     "Run: cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npx vite build"
   ],
   "blocked_reason": null,
-  "findings": "All acceptance criteria met. TypeScript and Vite build pass cleanly. The inventory was reduced to 8 slots with a 4x2 grid layout. Hotbar shows all 8 slots at bottom. Tab key toggles inventory. Keys 1-8 and mouse wheel cycle hotbar. Full inventory has left panel with 3D character model and right panel with slots. item_vest added to ItemDefs. Combat.takeDamage absorbs with armor first. Armor HP bar appears in HUD. Character model supports mouse drag rotation. Vest can be dragged onto model to equip."
+  "findings": "All acceptance criteria met. TypeScript and Vite build pass cleanly. The inventory was reduced to 8 slots with a 4x2 grid layout. Hotbar shows all 8 slots at bottom. Tab key toggles inventory. Keys 1-8 and mouse wheel cycle hotbar. Full inventory has left panel with 3D character model and right panel with slots. item_vest added to ItemDefs. Combat.takeDamage absorbs with armor first. Armor HP bar appears in HUD. Character model supports mouse drag rotation. Vest can be dragged onto model to equip. Code review fixes applied: (1) vest unequip returns item to slot with UI button, (2) CharacterModel uses correct 280x360 sizing with devicePixelRatio, (3) playArmorBreak() sound added for armor destruction, (4) CharacterModel reused across inventory toggles to avoid WebGL context churn, (5) hotbarIndex synced in swapSlots."
 }
