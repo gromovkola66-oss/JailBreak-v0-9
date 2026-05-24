@@ -756,6 +756,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                 className="absolute top-1/2 left-1/2 w-[720px] rounded-2xl border border-white/10 overflow-hidden"
                 style={{ 
                   animation: 'inventorySlideIn 0.3s ease forwards',
+                  transform: 'translate(-50%, -50%)',
                   background: 'rgba(15, 15, 25, 0.85)',
                   backdropFilter: 'blur(20px)',
                   boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)'

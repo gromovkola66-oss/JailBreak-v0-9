@@ -188,7 +188,7 @@ export class InventorySystem {
   equipSlot(index: number) {
     if (index < 0 || index >= this.slots.length) return;
     this.equippedSlot = index;
-    this.hotbarIndex = index;
+    this.hotbarIndex = Math.min(index, 3);
     this.onEquip?.(this.slots[index], index);
     this.notifyStateChange();
     if (this.isOpen) {

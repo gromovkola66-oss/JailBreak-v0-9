@@ -3,6 +3,20 @@ import { Weapon } from './Weapon';
 import { Hands } from './Hands';
 import { soundSystem } from './SoundSystem';
 
+// Cached materials for dropped items to avoid per-drop GPU allocations
+const DROPPED_ITEM_GLOW_MAT = new THREE.MeshStandardMaterial({
+  color: 0x00ff88,
+  emissive: 0x00ff88,
+  emissiveIntensity: 0.6,
+  transparent: true,
+  opacity: 0.7,
+});
+
+const DROPPED_ITEM_DEFAULT_MAT = new THREE.MeshStandardMaterial({
+  color: 0x888888,
+  roughness: 0.6,
+});
+
 export interface CombatState {
   hp: number;
   maxHp: number;
@@ -577,22 +591,14 @@ export class Combat {
         break;
       }
       default: {
-        const defaultMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.6 });
-        const defaultBox = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), defaultMat);
+        const defaultBox = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), DROPPED_ITEM_DEFAULT_MAT);
         itemGroup.add(defaultBox);
         break;
       }
     }
 
     // Add glow beacon for visibility
-    const glowMat = new THREE.MeshStandardMaterial({ 
-      color: 0x00ff88, 
-      emissive: 0x00ff88, 
-      emissiveIntensity: 0.6, 
-      transparent: true, 
-      opacity: 0.7 
-    });
-    const glowRing = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 8, 16), glowMat);
+    const glowRing = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 8, 16), DROPPED_ITEM_GLOW_MAT);
     glowRing.rotation.x = Math.PI / 2;
     glowRing.position.y = -0.05;
     itemGroup.add(glowRing);
@@ -624,6 +630,21 @@ export class Combat {
       const distance = Math.sqrt(dx * dx + dz * dz);
 
       if (distance < pickupRange) {
+        // Dispose geometries and non-shared materials before removing
+        item.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry.dispose();
+            const mat = child.material;
+            // Only dispose materials that are not shared module-level cached ones
+            if (mat && mat !== DROPPED_ITEM_GLOW_MAT && mat !== DROPPED_ITEM_DEFAULT_MAT) {
+              if (Array.isArray(mat)) {
+                for (const m of mat) m.dispose();
+              } else {
+                mat.dispose();
+              }
+            }
+          }
+        });
         this.scene.remove(item);
         this.droppedItems.splice(i, 1);
         soundSystem.playPickup();
@@ -635,12 +656,15 @@ export class Combat {
 
   private updateDroppedObjectPhysics(obj: THREE.Group, delta: number) {
     if (obj.userData.grounded) {
-      // Gentle rotation + bobbing
+      // Gentle rotation + bobbing with per-item phase offset
       obj.rotation.y += delta * 0.5;
+      if (obj.userData.bobPhase === undefined) {
+        obj.userData.bobPhase = Math.random() * Math.PI * 2;
+      }
       const bobTime = (performance.now() / 1000) * 2;
       const baseY = obj.userData.groundedY ?? obj.position.y;
       if (!obj.userData.groundedY) obj.userData.groundedY = obj.position.y;
-      obj.position.y = baseY + Math.sin(bobTime) * 0.03;
+      obj.position.y = baseY + Math.sin(bobTime + obj.userData.bobPhase) * 0.03;
       return;
     }
 

@@ -1055,11 +1055,52 @@ export class PlaytestMode {
       const vestDef = getObjectById('item_vest');
       if (vestDef) {
         const vestPos = new THREE.Vector3(spawnPoint.x + 3, spawnPoint.y, spawnPoint.z + 2);
+        // Check if vest position intersects any colliders and try alternate offsets
+        const vestOffsets = [
+          new THREE.Vector3(3, 0, 2),
+          new THREE.Vector3(-3, 0, 2),
+          new THREE.Vector3(3, 0, -2),
+          new THREE.Vector3(-3, 0, -2),
+          new THREE.Vector3(2, 0, 0),
+          new THREE.Vector3(-2, 0, 0),
+        ];
+        let validPos = vestPos.clone();
+        for (const offset of vestOffsets) {
+          const testPos = new THREE.Vector3(spawnPoint.x + offset.x, spawnPoint.y + offset.y, spawnPoint.z + offset.z);
+          const testBox = new THREE.Box3(
+            new THREE.Vector3(testPos.x - 0.2, testPos.y - 0.2, testPos.z - 0.2),
+            new THREE.Vector3(testPos.x + 0.2, testPos.y + 0.2, testPos.z + 0.2)
+          );
+          let intersects = false;
+          for (const collider of this.colliders) {
+            if (testBox.intersectsBox(collider)) {
+              intersects = true;
+              break;
+            }
+          }
+          if (!intersects) {
+            validPos = testPos;
+            break;
+          }
+        }
+        // Adjust Y to sit on top of the nearest floor collider below
+        let bestFloorY = 0;
+        for (const collider of this.colliders) {
+          if (validPos.x + 0.2 > collider.min.x &&
+              validPos.x - 0.2 < collider.max.x &&
+              validPos.z + 0.2 > collider.min.z &&
+              validPos.z - 0.2 < collider.max.z &&
+              collider.max.y <= validPos.y &&
+              collider.max.y > bestFloorY) {
+            bestFloorY = collider.max.y;
+          }
+        }
+        validPos.y = bestFloorY + 0.1;
         const vestObj = vestDef.create();
-        vestObj.position.copy(vestPos);
+        vestObj.position.copy(validPos);
         vestObj.userData.__interactive = true;
         this.scene.add(vestObj);
-        this.droppedItems.push({ mesh: vestObj, itemType: 'item_vest', position: vestPos.clone() });
+        this.droppedItems.push({ mesh: vestObj, itemType: 'item_vest', position: validPos.clone() });
       }
     }
 
