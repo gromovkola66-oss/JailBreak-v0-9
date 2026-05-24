@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix vest not spawning in game + fix dropped items appearing as floating orange cubes + redesign hotbar to only 4 quick slots",
+  "status": "in_progress",
+  "steps": [
+    "STEP 1 - Add item_vest to EditorObjects.ts: Add a new entry in the 'things' category section (after item_bandage, around line 2457) with id='item_vest', name='Бронежилет', icon='🦺', category='things'. The create() function should build a 3D vest model similar to Combat.ts createDroppedItemMesh 'item_vest' case (olive green body box + black straps). Include the pedestal/stand pattern used by other items (the thin box pickupMat pedestal). Set g.userData.scriptType='item_pickup' and g.userData.itemType='item_vest'. Return mergeGroup(g).",
+    "STEP 2 - Add programmatic vest spawn in PlaytestMode.ts: In the constructor or loadMap method, after all map objects are loaded, add a programmatic spawn of item_vest near an existing item spawn area. Find the spawn_prisoner position and place the vest nearby (offset by 3-5 units). Use the same pattern as combat.createDroppedItemMesh but create the item as a droppedItems entry with proper mesh from getObjectById('item_vest').",
+    "STEP 3 - Fix dropped items in PlaytestMode.ts inventoryDropItem() method: Currently it creates a simple orange BoxGeometry(0.3, 0.3, 0.3). Replace this with a call to this.combat.createDroppedItemMesh(dropPos, item.id) which already has proper 3D models for each item type. After creating, also get a reference to push into this.droppedItems array for pickup.",
+    "STEP 4 - Improve dropped item visuals in Combat.ts: (a) In createDroppedItemMesh(), after creating the group, add a default fallback case that creates a slightly larger box (0.4x0.4x0.4) with item-type-colored material instead of plain orange. (b) Add a PointLight or emissive glow ring mesh to each dropped item for visibility (small colored ring or halo mesh below the item). (c) Add a floating label using a sprite or CSS2DObject pattern - alternatively, add a simple colored beacon/pillar mesh.",
+    "STEP 5 - Make dropped items fall to ground properly: In Combat.ts updateDroppedObjectPhysics(), verify items use terrain height. Currently items land on colliders or y=0.1. Also check that items in PlaytestMode inventoryDropItem use the physics system (give them initial velocityY for throw arc). Fix the grounded rotation to be a gentle bobbing (sinusoidal Y offset) instead of just rotation.",
+    "STEP 6 - Redesign hotbar to 4 quick slots in InventorySystem.ts: (a) Change cycleHotbar() to only cycle through indices 0-3 (wrap from 3->0 and 0->3). (b) Change setHotbarIndex() to only allow indices 0-3 for direct selection (reject 4-7). (c) Slot 0 (Fists) must remain locked - add guard in swapSlots() to prevent moving slot 0.",
+    "STEP 7 - Update key bindings in PlaytestMode.ts: Change the onKeyDown handler for Digit keys from 'digit >= 1 && digit <= 8' to 'digit >= 1 && digit <= 4'. Keep the wheel event bound to cycleHotbar (which now only cycles 0-3).",
+    "STEP 8 - Update hotbar UI in EditorApp.tsx: Change the bottom hotbar display from showing all 8 slots to showing only slots 0-3 (first 4). Keep slot indices correct. Make the active slot have a pulsing glow animation. Add slot number labels 1-4."
+  ],
+  "acceptance_criteria": [
+    "item_vest appears in EditorObjects.ts 'things' category and can be placed on map in editor",
+    "When testing a map, a vest spawns somewhere accessible to the player (near prisoner spawn)",
+    "Dropping items via RMB in inventory creates proper 3D models (not orange cubes) that fall to ground",
+    "Dropped items have a visible glow/beacon effect making them easy to spot",
+    "Only slots 1-4 appear in the bottom hotbar HUD",
+    "Keys 1-4 and mouse wheel only cycle through the first 4 slots",
+    "Slots 5-8 are only accessible through the full inventory panel (Tab)",
+    "Fists slot (index 0) cannot be moved via drag-and-drop",
+    "TypeScript compiles without errors (npx tsc --noEmit)"
+  ],
+  "verification": [
+    "cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npx tsc --noEmit",
+    "cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npx vite build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

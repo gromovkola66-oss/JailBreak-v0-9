@@ -547,7 +547,7 @@ export class PlaytestMode {
     // Number keys 1-8 for hotbar selection
     if (event.code.startsWith('Digit') && !this.inventory.getIsOpen()) {
       const digit = parseInt(event.code.charAt(5), 10);
-      if (digit >= 1 && digit <= 8) {
+      if (digit >= 1 && digit <= 4) {
         this.inventory.setHotbarIndex(digit - 1);
         return;
       }
@@ -1050,6 +1050,19 @@ export class PlaytestMode {
       this.scene.add(light);
     }
 
+    // Spawn armor vest near prisoner spawn
+    if (spawnPoint) {
+      const vestDef = getObjectById('item_vest');
+      if (vestDef) {
+        const vestPos = new THREE.Vector3(spawnPoint.x + 3, spawnPoint.y, spawnPoint.z + 2);
+        const vestObj = vestDef.create();
+        vestObj.position.copy(vestPos);
+        vestObj.userData.__interactive = true;
+        this.scene.add(vestObj);
+        this.droppedItems.push({ mesh: vestObj, itemType: 'item_vest', position: vestPos.clone() });
+      }
+    }
+
     // Спавн
     if (spawnPoint) {
       this.spawnPoint = spawnPoint.clone();
@@ -1373,25 +1386,26 @@ export class PlaytestMode {
       forward.applyQuaternion(this.controller.camera.quaternion);
       forward.y = 0;
       forward.normalize();
-      const dropPos = playerPos.clone().add(forward.multiplyScalar(1.5));
+      const dropPos = playerPos.clone().add(forward.clone().multiplyScalar(1.5));
       dropPos.y -= 0.5;
 
-      // Create a simple colored box mesh for the dropped item
-      const boxGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-      const boxMat = new THREE.MeshStandardMaterial({ color: 0xcc8844 });
-      const mesh = new THREE.Mesh(boxGeo, boxMat);
-      mesh.position.copy(dropPos);
-      mesh.userData.isItem = true;
-      mesh.userData.itemType = item.id;
-      const group = new THREE.Group();
-      group.add(mesh);
-      group.position.copy(dropPos);
-      mesh.position.set(0, 0, 0);
-      group.userData.isItem = true;
-      group.userData.itemType = item.id;
-      group.userData.__interactive = true;
-      this.scene.add(group);
-      this.droppedItems.push({ mesh: group, itemType: item.id, position: dropPos.clone() });
+      // Use Combat system's proper 3D item models
+      this.combat.createDroppedItemMesh(dropPos, item.id);
+      // Get the last added dropped item from combat
+      const lastDropped = this.combat.droppedItems[this.combat.droppedItems.length - 1];
+      if (lastDropped) {
+        // Give it throw velocity forward
+        lastDropped.userData.velocityY = 1.5;
+        const throwDir = new THREE.Vector3(0, 0, -1);
+        throwDir.applyQuaternion(this.controller.camera.quaternion);
+        throwDir.y = 0;
+        throwDir.normalize();
+        lastDropped.userData.velocityX = throwDir.x * 2;
+        lastDropped.userData.velocityZ = throwDir.z * 2;
+        lastDropped.userData.grounded = false;
+        // Also register in our droppedItems for pickup
+        this.droppedItems.push({ mesh: lastDropped, itemType: item.id, position: dropPos.clone() });
+      }
     }
   }
 

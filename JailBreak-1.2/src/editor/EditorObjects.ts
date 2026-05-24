@@ -2458,6 +2458,27 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
   },
 
   {
+    id: 'item_vest', name: 'Бронежилет', icon: '🦺', category: 'things',
+    description: 'Бронежилет. Поглощает урон создавая щит брони. Подбирается по E.',
+    create: () => {
+      const g = new THREE.Group();
+      const vestMat = new THREE.MeshStandardMaterial({ color: 0x556b2f, roughness: 0.8 });
+      const strapMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.9 });
+      // Vest body
+      g.add(pos(box(0.25, 0.2, 0.08, vestMat), 0, 0.85, 0));
+      // Straps
+      g.add(pos(box(0.03, 0.28, 0.02, strapMat), -0.08, 0.89, 0));
+      g.add(pos(box(0.03, 0.28, 0.02, strapMat), 0.08, 0.89, 0));
+      // Pedestal/pickup indicator
+      const pickupMat = new THREE.MeshStandardMaterial({ color: 0x00cc88, emissive: 0x00cc88, emissiveIntensity: 0.3 });
+      g.add(pos(box(0.08, 0.025, 0.025, pickupMat), 0, 0.73, 0));
+      g.userData.scriptType = 'item_pickup';
+      g.userData.itemType = 'item_vest';
+      return mergeGroup(g);
+    }
+  },
+
+  {
     id: 'terminal', name: 'Терминал камер', icon: '🖥️', category: 'scripts',
     create: () => {
       const g = new THREE.Group();

@@ -576,7 +576,26 @@ export class Combat {
         itemGroup.add(strapR);
         break;
       }
+      default: {
+        const defaultMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.6 });
+        const defaultBox = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), defaultMat);
+        itemGroup.add(defaultBox);
+        break;
+      }
     }
+
+    // Add glow beacon for visibility
+    const glowMat = new THREE.MeshStandardMaterial({ 
+      color: 0x00ff88, 
+      emissive: 0x00ff88, 
+      emissiveIntensity: 0.6, 
+      transparent: true, 
+      opacity: 0.7 
+    });
+    const glowRing = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 8, 16), glowMat);
+    glowRing.rotation.x = Math.PI / 2;
+    glowRing.position.y = -0.05;
+    itemGroup.add(glowRing);
 
     itemGroup.position.copy(position);
     itemGroup.rotation.y = Math.random() * Math.PI;
@@ -616,7 +635,12 @@ export class Combat {
 
   private updateDroppedObjectPhysics(obj: THREE.Group, delta: number) {
     if (obj.userData.grounded) {
-      obj.rotation.y += delta * 0.3;
+      // Gentle rotation + bobbing
+      obj.rotation.y += delta * 0.5;
+      const bobTime = (performance.now() / 1000) * 2;
+      const baseY = obj.userData.groundedY ?? obj.position.y;
+      if (!obj.userData.groundedY) obj.userData.groundedY = obj.position.y;
+      obj.position.y = baseY + Math.sin(bobTime) * 0.03;
       return;
     }
 

@@ -79,7 +79,7 @@ export class InventorySystem {
   }
 
   setHotbarIndex(index: number) {
-    if (index < 0 || index >= this.slots.length) return;
+    if (index < 0 || index > 3) return;
     this.hotbarIndex = index;
     this.equippedSlot = index;
     this.onEquip?.(this.slots[index], index);
@@ -88,8 +88,8 @@ export class InventorySystem {
 
   cycleHotbar(direction: number) {
     let newIndex = this.hotbarIndex + (direction > 0 ? 1 : -1);
-    if (newIndex < 0) newIndex = this.slots.length - 1;
-    if (newIndex >= this.slots.length) newIndex = 0;
+    if (newIndex < 0) newIndex = 3;
+    if (newIndex > 3) newIndex = 0;
     this.setHotbarIndex(newIndex);
   }
 
@@ -205,6 +205,7 @@ export class InventorySystem {
     if (from < 0 || from >= this.slots.length) return;
     if (to < 0 || to >= this.slots.length) return;
     if (from === to) return;
+    if (from === 0 || to === 0) return; // Fists locked in slot 0
     const temp = this.slots[from];
     this.slots[from] = this.slots[to];
     this.slots[to] = temp;

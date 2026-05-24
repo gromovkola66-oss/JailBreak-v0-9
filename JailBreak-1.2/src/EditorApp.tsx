@@ -891,10 +891,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
             </div>
           )}
 
-          {/* Hotbar (8 slots) - visible when inventory is CLOSED and pointer is locked */}
+          {/* Hotbar (4 quick slots) - visible when inventory is CLOSED and pointer is locked */}
           {!ptInventory?.isOpen && ptLocked && ptInventory && (
             <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {ptInventory.slots.map((item, index) => {
+              {ptInventory.slots.slice(0, 4).map((item, index) => {
                 const isActive = ptInventory.hotbarIndex === index;
                 const rarityColor = item?.rarity ? RARITY_COLORS[item.rarity] || '#b0b0b0' : '#3a3a3a';
                 return (
