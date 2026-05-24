@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Fix vest not spawning in game + fix dropped items appearing as floating orange cubes + redesign hotbar to only 4 quick slots",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "STEP 1 - Add item_vest to EditorObjects.ts: Add a new entry in the 'things' category section (after item_bandage, around line 2457) with id='item_vest', name='Бронежилет', icon='🦺', category='things'. The create() function should build a 3D vest model similar to Combat.ts createDroppedItemMesh 'item_vest' case (olive green body box + black straps). Include the pedestal/stand pattern used by other items (the thin box pickupMat pedestal). Set g.userData.scriptType='item_pickup' and g.userData.itemType='item_vest'. Return mergeGroup(g).",
     "STEP 2 - Add programmatic vest spawn in PlaytestMode.ts: In the constructor or loadMap method, after all map objects are loaded, add a programmatic spawn of item_vest near an existing item spawn area. Find the spawn_prisoner position and place the vest nearby (offset by 3-5 units). Use the same pattern as combat.createDroppedItemMesh but create the item as a droppedItems entry with proper mesh from getObjectById('item_vest').",
@@ -29,5 +29,5 @@
     "cd /projects/sandbox/JailBreak-v0-9/JailBreak-1.2 && npx vite build"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 8 steps implemented successfully. TypeScript compiles clean, Vite build passes. The vest entry was added after item_bandage in EditorObjects.ts. The hotbar now only cycles/accepts indices 0-3. Dropped items use Combat.createDroppedItemMesh with proper 3D models and glow rings."
 }
