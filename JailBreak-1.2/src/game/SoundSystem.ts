@@ -920,6 +920,48 @@ export class SoundSystem {
     }
   }
 
+  // === ЗВУК ГИЛЬЗЫ ===
+  playShellCasing() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // High-pitched metallic clink oscillator
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(4000, now);
+    osc.type = 'sine';
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(this.masterVolume * 0.15, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+    osc.connect(oscGain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.04);
+
+    // Tiny noise burst through highpass filter
+    const bufferSize = Math.floor(ctx.sampleRate * 0.03);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 40);
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 3000;
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(this.masterVolume * 0.15, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+
+    noise.connect(filter).connect(noiseGain).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.03);
+  }
+
   // === ТЕРМИНАЛ: ФОНОВЫЙ ГУЛ ===
   startTerminalHum(): () => void {
     const ctx = this.getContext();

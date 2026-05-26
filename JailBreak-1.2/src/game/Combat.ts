@@ -70,6 +70,7 @@ export class Combat {
   private bulletHoles: THREE.Group[] = [];
   private impactParticles: THREE.Mesh[] = [];
   private tracers: THREE.Mesh[] = [];
+  private shellCasings: THREE.Mesh[] = [];
 
   // Item system
   public heldItemType: string = 'none';
@@ -281,6 +282,9 @@ export class Combat {
       
       // Отдача камеры
       this.onCameraRecoil?.(0.03);
+
+      // Shell casing ejection
+      this.spawnShellCasing();
       
       const raycaster = new THREE.Raycaster();
       const direction = this.weapon.getAimDirection(this.camera);
@@ -418,6 +422,52 @@ export class Combat {
 
     this.scene.add(tracer);
     this.tracers.push(tracer);
+  }
+
+  private spawnShellCasing() {
+    if (!this.weapon) return;
+
+    const casingGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.025, 6);
+    const casingMat = new THREE.MeshStandardMaterial({
+      color: 0xd4a017,
+      metalness: 0.9,
+      roughness: 0.3,
+    });
+    const casing = new THREE.Mesh(casingGeo, casingMat);
+
+    // Get muzzle world position and offset to the right (ejection port)
+    const muzzlePos = this.weapon.getMuzzleWorldPosition();
+    const rightVec = new THREE.Vector3();
+    this.camera.getWorldDirection(rightVec);
+    // Camera right vector: cross forward with world up
+    const forward = rightVec.clone();
+    rightVec.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+
+    casing.position.copy(muzzlePos).add(rightVec.clone().multiplyScalar(0.05));
+
+    // Velocity: rightward + upward + slight random
+    const vx = rightVec.x * (2 + Math.random()) + (Math.random() - 0.5) * 0.5;
+    const vy = 1 + Math.random();
+    const vz = rightVec.z * (2 + Math.random()) + (Math.random() - 0.5) * 0.5;
+
+    casing.userData.velocityX = vx;
+    casing.userData.velocityY = vy;
+    casing.userData.velocityZ = vz;
+    casing.userData.spinX = (Math.random() - 0.5) * 15;
+    casing.userData.spinZ = (Math.random() - 0.5) * 15;
+    casing.userData.lifetime = 3;
+    casing.userData.bounced = false;
+
+    this.scene.add(casing);
+    this.shellCasings.push(casing);
+
+    // Limit to 10 shell casings
+    if (this.shellCasings.length > 10) {
+      const oldest = this.shellCasings.shift()!;
+      this.scene.remove(oldest);
+      oldest.geometry.dispose();
+      (oldest.material as THREE.Material).dispose();
+    }
   }
 
   private createDroppedWeapon(position: THREE.Vector3) {
@@ -1129,6 +1179,48 @@ export class Combat {
         t.geometry.dispose();
         (t.material as THREE.Material).dispose();
         this.tracers.splice(i, 1);
+      }
+    }
+
+    // Update shell casings
+    for (let i = this.shellCasings.length - 1; i >= 0; i--) {
+      const c = this.shellCasings[i];
+
+      // Apply gravity
+      c.userData.velocityY -= 15 * delta;
+
+      // Move by velocity
+      c.position.x += c.userData.velocityX * delta;
+      c.position.y += c.userData.velocityY * delta;
+      c.position.z += c.userData.velocityZ * delta;
+
+      // Apply spin rotation
+      c.rotation.x += c.userData.spinX * delta;
+      c.rotation.z += c.userData.spinZ * delta;
+
+      // Ground collision
+      if (c.position.y <= 0 && !c.userData.bounced) {
+        c.userData.bounced = true;
+        c.userData.velocityY = -c.userData.velocityY * 0.3;
+        c.userData.velocityX *= 0.3;
+        c.userData.velocityZ *= 0.3;
+        soundSystem.playShellCasing();
+      } else if (c.position.y <= 0 && c.userData.bounced) {
+        c.position.y = 0.012;
+        c.userData.velocityX = 0;
+        c.userData.velocityY = 0;
+        c.userData.velocityZ = 0;
+        c.userData.spinX = 0;
+        c.userData.spinZ = 0;
+      }
+
+      // Reduce lifetime
+      c.userData.lifetime -= delta;
+      if (c.userData.lifetime <= 0) {
+        this.scene.remove(c);
+        c.geometry.dispose();
+        (c.material as THREE.Material).dispose();
+        this.shellCasings.splice(i, 1);
       }
     }
 
