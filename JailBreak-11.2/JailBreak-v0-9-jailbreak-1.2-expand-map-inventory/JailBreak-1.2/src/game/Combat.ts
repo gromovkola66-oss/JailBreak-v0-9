@@ -666,7 +666,7 @@ export class Combat {
   }
 
   private tryPickupWeapon() {
-    if (this.isDead) return;
+    if (this.weapon || this.storedWeapon || this.isDead) return;
     
     const playerPos = this.camera.position;
     const pickupRange = 2;
@@ -678,25 +678,6 @@ export class Combat {
       const distance = Math.sqrt(dx * dx + dz * dz);
       
       if (distance < pickupRange) {
-        // Drop current weapon first if holding one
-        if (this.weapon || this.storedWeapon) {
-          this.dropWeapon();
-        }
-
-        // Dispose geometries and non-shared materials before removing from scene
-        droppedWeapon.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.geometry.dispose();
-            const mat = child.material;
-            if (mat && mat !== DROPPED_WEAPON_METAL_MAT && mat !== DROPPED_WEAPON_WOOD_MAT) {
-              if (Array.isArray(mat)) {
-                for (const m of mat) m.dispose();
-              } else {
-                (mat as THREE.Material).dispose();
-              }
-            }
-          }
-        });
         this.scene.remove(droppedWeapon);
         this.droppedWeapons.splice(i, 1);
 
