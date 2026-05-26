@@ -285,12 +285,18 @@ export class PlaytestMode {
       this.inventory.addItem(weaponItem);
       this.inventory.addNotification(weaponItem);
     };
-    this.combat.onWeaponDropped = () => {
-      // Remove whatever weapon is in inventory
-      this.inventory.removeItem('weapon_ak47');
-      this.inventory.removeItem('weapon_shotgun');
-      this.inventory.removeItem('weapon_pistol');
-      this.inventory.removeItem('weapon_taser');
+    this.combat.onWeaponDropped = (weaponType: string) => {
+      // Map weapon type to inventory item ID and remove only that weapon
+      const weaponTypeToItemId: Record<string, string> = {
+        'ak47': 'weapon_ak47',
+        'shotgun': 'weapon_shotgun',
+        'pistol': 'weapon_pistol',
+        'taser': 'weapon_taser',
+      };
+      const itemId = weaponTypeToItemId[weaponType];
+      if (itemId) {
+        this.inventory.removeItem(itemId);
+      }
     };
 
     // Handle consumed items removal

@@ -17,6 +17,19 @@ const DROPPED_ITEM_DEFAULT_MAT = new THREE.MeshStandardMaterial({
   roughness: 0.6,
 });
 
+// Cached materials for dropped weapon models
+const DROPPED_WEAPON_METAL_MAT = new THREE.MeshStandardMaterial({
+  color: 0x2a2a2a,
+  roughness: 0.4,
+  metalness: 0.8,
+});
+
+const DROPPED_WEAPON_WOOD_MAT = new THREE.MeshStandardMaterial({
+  color: 0x8b4513,
+  roughness: 0.8,
+  metalness: 0.1,
+});
+
 export interface CombatState {
   hp: number;
   maxHp: number;
@@ -91,7 +104,7 @@ export class Combat {
   public onDeath?: () => void;
   public onCameraRecoil?: (pitch: number, yaw: number) => void;
   public onWeaponPickedUp?: (weaponName: string) => void;
-  public onWeaponDropped?: () => void;
+  public onWeaponDropped?: (weaponType: WeaponType) => void;
   public onItemUsed?: (itemId: string) => void;
   public onItemDropped?: (itemId: string) => void;
   public onGlassHit?: (glassMesh: THREE.Mesh) => void;
@@ -359,7 +372,7 @@ export class Combat {
           }
         }
       } else if (wType === 'taser') {
-        // Taser: range check, no tracer/bullet hole
+        // Taser: range check, apply damage on hit and show spark VFX
         const raycaster = new THREE.Raycaster();
         const direction = this.weapon.getAimDirection(this.camera, this._isMoving, this._isCrouching, this._isSprinting, 0);
         raycaster.set(this.camera.position, direction);
@@ -372,6 +385,10 @@ export class Combat {
             if (hitObj.userData?.isGlass) { this.onGlassHit?.(hitObj as THREE.Mesh); break; }
             hitObj = hitObj.parent;
           }
+          // Visual feedback: bullet hole at impact point
+          this.createBulletHole(hit.point, hit.face?.normal);
+          // Taser spark/lightning VFX at hit point
+          this.spawnTaserSpark(hit.point);
         }
       } else {
         // AK-47 and Pistol: single ray
@@ -479,6 +496,49 @@ export class Combat {
     }
   }
 
+  private spawnTaserSpark(position: THREE.Vector3) {
+    // Emit a short-lived lightning/sparks effect at the hit point
+    const sparkGroup = new THREE.Group();
+    sparkGroup.position.copy(position);
+
+    const sparkMat = new THREE.MeshBasicMaterial({ color: 0x44ccff });
+    const sparkBrightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    // Central flash
+    const flashGeo = new THREE.SphereGeometry(0.06, 6, 6);
+    const flash = new THREE.Mesh(flashGeo, sparkBrightMat);
+    sparkGroup.add(flash);
+
+    // Lightning bolt arms
+    for (let i = 0; i < 6; i++) {
+      const armGeo = new THREE.CylinderGeometry(0.005, 0.002, 0.12, 4);
+      const arm = new THREE.Mesh(armGeo, sparkMat);
+      arm.rotation.x = (Math.random() - 0.5) * Math.PI;
+      arm.rotation.z = (Math.random() - 0.5) * Math.PI;
+      arm.position.set(
+        (Math.random() - 0.5) * 0.04,
+        (Math.random() - 0.5) * 0.04,
+        (Math.random() - 0.5) * 0.04
+      );
+      sparkGroup.add(arm);
+    }
+
+    this.scene.add(sparkGroup);
+
+    // Remove after a short delay
+    setTimeout(() => {
+      sparkGroup.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          if (child.material instanceof THREE.Material) {
+            child.material.dispose();
+          }
+        }
+      });
+      this.scene.remove(sparkGroup);
+    }, 200);
+  }
+
   private createTracer(hitPoint: THREE.Vector3) {
     if (!this.weapon) return;
 
@@ -555,48 +615,36 @@ export class Combat {
 
   private createDroppedWeapon(position: THREE.Vector3, weaponType: WeaponType = 'ak47') {
     const weaponGroup = new THREE.Group();
-    
-    const metalMaterial = new THREE.MeshStandardMaterial({
-      color: 0x2a2a2a,
-      roughness: 0.4,
-      metalness: 0.8
-    });
-    
-    const woodMaterial = new THREE.MeshStandardMaterial({
-      color: 0x8b4513,
-      roughness: 0.8,
-      metalness: 0.1
-    });
 
     if (weaponType === 'ak47') {
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.8), metalMaterial);
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.8), DROPPED_WEAPON_METAL_MAT);
       weaponGroup.add(body);
-      const stock = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.3), woodMaterial);
+      const stock = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.3), DROPPED_WEAPON_WOOD_MAT);
       stock.position.set(0, 0, 0.4);
       weaponGroup.add(stock);
-      const magazine = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.15, 0.1), metalMaterial);
+      const magazine = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.15, 0.1), DROPPED_WEAPON_METAL_MAT);
       magazine.position.set(0, -0.1, 0);
       weaponGroup.add(magazine);
     } else if (weaponType === 'shotgun') {
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.9), metalMaterial);
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.9), DROPPED_WEAPON_METAL_MAT);
       weaponGroup.add(body);
-      const stock = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.25), metalMaterial);
+      const stock = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.25), DROPPED_WEAPON_METAL_MAT);
       stock.position.set(0, 0, 0.5);
       weaponGroup.add(stock);
-      const pump = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.06, 0.15), woodMaterial);
+      const pump = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.06, 0.15), DROPPED_WEAPON_WOOD_MAT);
       pump.position.set(0, -0.02, -0.2);
       weaponGroup.add(pump);
     } else if (weaponType === 'pistol') {
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.2), metalMaterial);
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.2), DROPPED_WEAPON_METAL_MAT);
       weaponGroup.add(body);
-      const grip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 0.04), woodMaterial);
+      const grip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 0.04), DROPPED_WEAPON_WOOD_MAT);
       grip.position.set(0, -0.06, 0.05);
       weaponGroup.add(grip);
     } else if (weaponType === 'taser') {
       const yellowMat = new THREE.MeshStandardMaterial({ color: 0xf0d000, roughness: 0.5 });
       const body = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.15), yellowMat);
       weaponGroup.add(body);
-      const grip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.07, 0.04), metalMaterial);
+      const grip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.07, 0.04), DROPPED_WEAPON_METAL_MAT);
       grip.position.set(0, -0.05, 0.03);
       weaponGroup.add(grip);
     }
@@ -699,7 +747,7 @@ export class Combat {
     soundSystem.playDrop();
     
     this.notifyStateChange();
-    this.onWeaponDropped?.();
+    this.onWeaponDropped?.(droppedType);
   }
 
   private dropItem() {
