@@ -246,9 +246,6 @@ export class Combat {
     if (document.pointerLockElement === null) return;
     
     switch (event.code) {
-      case 'KeyE':
-        this.tryPickupWeapon();
-        break;
       case 'KeyG':
         if (this.weapon || this.storedWeapon) {
           this.dropWeapon();
@@ -712,6 +709,72 @@ export class Combat {
         return;
       }
     }
+  }
+
+  /**
+   * Public method for PlaytestMode to handle weapon pickup.
+   * Returns weapon info if a nearby weapon was picked up, null otherwise.
+   * Does NOT call onWeaponPickedUp callback - caller handles inventory directly.
+   */
+  public pickupNearbyWeapon(camera: THREE.Camera): { weaponType: WeaponType; weaponName: string } | null {
+    if (this.isDead) return null;
+
+    const playerPos = camera.position;
+    const pickupRange = 2.5;
+
+    for (let i = 0; i < this.droppedWeapons.length; i++) {
+      const droppedWeapon = this.droppedWeapons[i];
+      const dx = playerPos.x - droppedWeapon.position.x;
+      const dy = playerPos.y - droppedWeapon.position.y;
+      const dz = playerPos.z - droppedWeapon.position.z;
+      if (Math.abs(dy) > 3) continue;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+
+      if (distance < pickupRange) {
+        const weaponType: WeaponType = droppedWeapon.userData.weaponType || 'ak47';
+
+        // Remove from tracking array first
+        this.droppedWeapons.splice(i, 1);
+
+        // Remove from scene
+        droppedWeapon.removeFromParent();
+
+        // Dispose all geometries and non-shared materials
+        droppedWeapon.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry.dispose();
+            const mat = child.material;
+            if (mat && mat !== DROPPED_WEAPON_METAL_MAT && mat !== DROPPED_WEAPON_WOOD_MAT) {
+              if (Array.isArray(mat)) {
+                for (const m of mat) m.dispose();
+              } else {
+                (mat as THREE.Material).dispose();
+              }
+            }
+          }
+        });
+
+        // If currently holding a weapon, remove it from camera
+        if (this.weapon) {
+          this.camera.remove(this.weapon.group);
+        }
+        // Clear stored weapon reference
+        if (this.storedWeapon) {
+          this.storedWeapon = null;
+        }
+
+        // Equip the new weapon
+        this.weapon = new Weapon(this.team, weaponType);
+        this.camera.add(this.weapon.group);
+        this.hands.setVisible(false);
+
+        soundSystem.playPickup();
+        this.notifyStateChange();
+
+        return { weaponType, weaponName: this.weapon.stats.name };
+      }
+    }
+    return null;
   }
 
   private dropWeapon() {

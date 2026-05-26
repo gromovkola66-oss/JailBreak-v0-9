@@ -605,6 +605,53 @@ export class PlaytestMode {
         this.cameraSystem.enterTerminalMode(playerPos);
         return;
       }
+      // Weapon pickup (priority over item pickup)
+      const weaponPickup = this.combat.pickupNearbyWeapon(this.controller.camera);
+      if (weaponPickup) {
+        // If player already has a weapon in inventory, drop it first
+        const existingWeaponSlot = this.inventory.getState().slots.findIndex(
+          s => s !== null && s.type === 'weapon'
+        );
+        if (existingWeaponSlot >= 0) {
+          const existingItem = this.inventory.getState().slots[existingWeaponSlot];
+          if (existingItem) {
+            // Drop existing weapon visually
+            const typeMap: Record<string, string> = {
+              'weapon_ak47': 'ak47',
+              'weapon_shotgun': 'shotgun',
+              'weapon_pistol': 'pistol',
+              'weapon_taser': 'taser',
+            };
+            const dropType = typeMap[existingItem.id] || 'ak47';
+            const dropDir = new THREE.Vector3();
+            this.controller.camera.getWorldDirection(dropDir);
+            const dropPos = this.controller.camera.position.clone();
+            dropPos.y -= 0.5;
+            const hDir = new THREE.Vector3(dropDir.x, 0, dropDir.z).normalize();
+            dropPos.add(hDir.multiplyScalar(0.5));
+            this.combat.createDroppedWeaponAt(dropPos, dropType as any);
+          }
+          this.inventory.removeItem(this.inventory.getState().slots[existingWeaponSlot]!.id);
+        }
+
+        // Add new weapon to inventory
+        let itemId = 'weapon_ak47';
+        let icon = '\u{1F52B}';
+        if (weaponPickup.weaponName === 'SPAS-12') { itemId = 'weapon_shotgun'; }
+        else if (weaponPickup.weaponName === 'Makarov PM') { itemId = 'weapon_pistol'; }
+        else if (weaponPickup.weaponName === 'Taser') { itemId = 'weapon_taser'; icon = '\u26A1'; }
+
+        const weaponItem = { id: itemId, name: weaponPickup.weaponName, icon, type: 'weapon' as const, quantity: 1 };
+        this.inventory.addItem(weaponItem);
+        this.inventory.addNotification(weaponItem);
+
+        // Auto-equip the weapon slot in hotbar
+        const newSlot = this.inventory.getState().slots.findIndex(s => s?.id === itemId);
+        if (newSlot >= 0 && newSlot <= 3) {
+          this.inventory.setHotbarIndex(newSlot);
+        }
+        return;
+      }
       // Item pickup
       if (this.tryPickupItem()) return;
       // Door interaction (guards only)
