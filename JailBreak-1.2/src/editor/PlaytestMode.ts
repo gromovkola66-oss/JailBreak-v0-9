@@ -294,6 +294,11 @@ export class PlaytestMode {
       this.inventory.removeItem(itemId);
     };
 
+    // Wire camera recoil to controller
+    this.combat.onCameraRecoil = (pitch: number, yaw: number) => {
+      this.controller.addRecoil(pitch, yaw);
+    };
+
     // Handle glass hit (window breaking)
     this.combat.onGlassHit = (glassMesh: THREE.Mesh) => {
       for (const win of this.windowObjects) {
@@ -1333,6 +1338,7 @@ export class PlaytestMode {
         this.footstepTimer = 0;
       }
 
+      this.combat.setMovementState(this.controller.isMoving(), this.controller.getSprinting(), this.controller.getCrouching());
       this.combat.update(delta);
 
       // Door animation

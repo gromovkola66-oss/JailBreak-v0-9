@@ -115,7 +115,14 @@ export class FirstPersonController {
     if (!this.isLocked && this.pointerLockEnabled) document.body.requestPointerLock();
   }
 
-  addRecoil(amount: number) { this.recoilPitch += amount; }
+  addRecoil(pitch: number, yaw = 0) {
+    this.recoilPitch += pitch;
+    if (yaw !== 0) {
+      this.euler.setFromQuaternion(this.camera.quaternion);
+      this.euler.y += yaw;
+      this.camera.quaternion.setFromEuler(this.euler);
+    }
+  }
 
   private onMouseMove(event: MouseEvent) {
     if (!this.isLocked) return;

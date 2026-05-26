@@ -89,12 +89,21 @@ export class Combat {
   public onStateChange?: (state: CombatState) => void;
   public onHit?: (damage: number) => void;
   public onDeath?: () => void;
-  public onCameraRecoil?: (amount: number) => void;
+  public onCameraRecoil?: (pitch: number, yaw: number) => void;
   public onWeaponPickedUp?: (weaponName: string) => void;
   public onWeaponDropped?: () => void;
   public onItemUsed?: (itemId: string) => void;
   public onItemDropped?: (itemId: string) => void;
   public onGlassHit?: (glassMesh: THREE.Mesh) => void;
+
+  // Progressive recoil tracking
+  private consecutiveShots = 0;
+  private lastShotTime = 0;
+
+  // Movement state for dynamic spread
+  private _isMoving = false;
+  private _isSprinting = false;
+  private _isCrouching = false;
   
   private boundMouseDown = this.onMouseDown.bind(this);
   private boundMouseUp = this.onMouseUp.bind(this);
@@ -124,6 +133,12 @@ export class Combat {
 
   setMapColliders(colliders: THREE.Box3[]) {
     this.mapColliders = colliders;
+  }
+
+  setMovementState(moving: boolean, sprinting: boolean, crouching: boolean) {
+    this._isMoving = moving;
+    this._isSprinting = sprinting;
+    this._isCrouching = crouching;
   }
 
   // Выдать оружие игроку (для охраны при спавне)
@@ -280,14 +295,19 @@ export class Combat {
     if (this.weapon.fire()) {
       soundSystem.playGunshot();
       
-      // Отдача камеры
-      this.onCameraRecoil?.(0.03);
+      // Progressive recoil
+      this.consecutiveShots++;
+      this.lastShotTime = performance.now();
+      const recoil = Math.min(0.08, 0.02 + this.consecutiveShots * 0.008);
+      const yaw = (Math.random() - 0.5) * recoil * 0.5;
+      this.onCameraRecoil?.(recoil, yaw);
 
       // Shell casing ejection
       this.spawnShellCasing();
       
       const raycaster = new THREE.Raycaster();
-      const direction = this.weapon.getAimDirection(this.camera);
+      const extraSpread = Math.min(0.04, this.consecutiveShots * 0.005);
+      const direction = this.weapon.getAimDirection(this.camera, this._isMoving, this._isCrouching, this._isSprinting, extraSpread);
       
       raycaster.set(this.camera.position, direction);
       raycaster.far = this.weapon.stats.range;
@@ -1085,6 +1105,11 @@ export class Combat {
       this.punchCooldown -= delta;
     }
 
+    // Reset consecutive shots after 300ms of not firing
+    if (this.consecutiveShots > 0 && performance.now() - this.lastShotTime > 300) {
+      this.consecutiveShots = 0;
+    }
+
     // Consumable use timer
     if (this.isUsingConsumable) {
       // Cancel consumable if player died during use
@@ -1134,7 +1159,7 @@ export class Combat {
     // Обновляем оружие
     if (this.weapon) {
       const wasReloading = this.weapon.isCurrentlyReloading();
-      this.weapon.update(delta);
+      this.weapon.update(delta, this._isMoving, this._isSprinting);
       const isReloading = this.weapon.isCurrentlyReloading();
       // Обновляем UI при смене состояния перезарядки
       if (wasReloading !== isReloading || (wasReloading && isReloading)) {

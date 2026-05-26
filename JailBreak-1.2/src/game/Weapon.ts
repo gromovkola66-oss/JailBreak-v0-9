@@ -20,7 +20,10 @@ export class Weapon {
   private muzzleFlashMesh: THREE.Mesh;
   private lastFireTime = 0;
   private recoilAmount = 0;
+  private recoilYaw = 0;
   private originalPosition: THREE.Vector3;
+
+  private swayTime = 0;
 
   private leftHand: THREE.Group;
   private rightHand: THREE.Group;
@@ -220,7 +223,8 @@ export class Weapon {
     if (!this.canFire()) return false;
     this.stats.currentAmmo--;
     this.lastFireTime = performance.now();
-    this.recoilAmount = 0.04;
+    this.recoilAmount = 0.06;
+    this.recoilYaw = (Math.random() - 0.5) * 0.02;
 
     // Enhanced muzzle flash
     this.muzzleFlash.intensity = 4;
@@ -302,7 +306,7 @@ export class Weapon {
 
   isCurrentlyReloading() { return this.isReloading_; }
 
-  update(delta: number) {
+  update(delta: number, isMoving = false, isSprinting = false) {
     if (this.isReloading_) {
       this.reloadProgress += delta / this.reloadDuration;
 
@@ -353,19 +357,51 @@ export class Weapon {
     if (this.recoilAmount > 0) {
       this.group.position.z = this.originalPosition.z + this.recoilAmount;
       this.group.rotation.x = -this.recoilAmount * 1.5;
+      this.group.rotation.y = this.recoilYaw;
       this.recoilAmount -= delta * 0.4;
-      if (this.recoilAmount <= 0) this.recoilAmount = 0;
+      this.recoilYaw *= (1 - delta * 8);
+      if (this.recoilAmount <= 0) {
+        this.recoilAmount = 0;
+        this.recoilYaw = 0;
+      }
     }
-    this.group.position.lerp(this.originalPosition, delta * 8);
+
+    // Weapon sway and bob
+    this.swayTime += delta;
+
+    // Idle breathing sway
+    const breathX = Math.sin(this.swayTime * 1.8) * 0.001;
+    const breathY = Math.sin(this.swayTime * 1.3) * 0.0008;
+
+    let swayX = breathX;
+    let swayY = breathY;
+
+    // Walking bob
+    if (isMoving) {
+      const bobAmp = isSprinting ? 1.5 : 1.0;
+      swayY += Math.sin(this.swayTime * 10) * 0.003 * bobAmp;
+      swayX += Math.cos(this.swayTime * 10) * 0.002 * bobAmp;
+    }
+
+    const targetX = this.originalPosition.x + swayX;
+    const targetY = this.originalPosition.y + swayY;
+    const targetZ = this.originalPosition.z;
+
+    this.group.position.x += (targetX - this.group.position.x) * delta * 8;
+    this.group.position.y += (targetY - this.group.position.y) * delta * 8;
+    this.group.position.z += (targetZ - this.group.position.z) * delta * 8;
     this.group.rotation.x += (0 - this.group.rotation.x) * delta * 8;
+    this.group.rotation.y += (0 - this.group.rotation.y) * delta * 8;
   }
 
-  getAimDirection(camera: THREE.Camera, isMoving = false, isCrouching = false): THREE.Vector3 {
+  getAimDirection(camera: THREE.Camera, isMoving = false, isCrouching = false, isSprinting = false, extraSpread = 0): THREE.Vector3 {
     const d = new THREE.Vector3();
     camera.getWorldDirection(d);
-    let spread = this.stats.spread;
-    if (isMoving) spread *= 2.5;
+    let spread = 0.01;
+    if (isMoving) spread += 0.02;
+    if (isSprinting) spread += 0.03;
     if (isCrouching) spread *= 0.5;
+    spread += extraSpread;
     d.x += (Math.random() - 0.5) * spread;
     d.y += (Math.random() - 0.5) * spread;
     d.z += (Math.random() - 0.5) * spread;
