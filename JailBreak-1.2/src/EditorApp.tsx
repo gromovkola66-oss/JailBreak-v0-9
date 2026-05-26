@@ -1556,86 +1556,86 @@ Press any key to restart...`}
                     <span className="text-7xl font-black text-orange-400">Break</span>
                   </div>
                   {/* Desktop icons */}
-                  <div className="flex-1 p-4 flex flex-col gap-4 z-10">
+                  <div className="flex-1 p-4 flex flex-wrap content-start gap-2 z-10 overflow-hidden">
                     <div
-                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-1.5 rounded hover:bg-white/20"
                       style={{ transition: 'transform 0.1s' }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
                       onClick={(e) => { e.stopPropagation(); handleOpenTerminalApp('cameras'); }}
                     >
-                      <span className="text-6xl">📹</span>
-                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Камеры</span>
+                      <span className="text-4xl">📹</span>
+                      <span className="text-[10px] font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Камеры</span>
                     </div>
                     <div
-                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-1.5 rounded hover:bg-white/20"
                       style={{ transition: 'transform 0.1s' }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
                       onClick={(e) => { e.stopPropagation(); handleOpenTerminalApp('doors'); }}
                     >
-                      <span className="text-6xl">🚪</span>
-                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Двери</span>
+                      <span className="text-4xl">🚪</span>
+                      <span className="text-[10px] font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Двери</span>
                     </div>
                     <div
-                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-1.5 rounded hover:bg-white/20"
                       style={{ transition: 'transform 0.1s' }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('cells'); }}
                     >
-                      <span className="text-6xl">🔒</span>
-                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Клетки</span>
+                      <span className="text-4xl">🔒</span>
+                      <span className="text-[10px] font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Клетки</span>
                     </div>
                     <div
-                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-1.5 rounded hover:bg-white/20"
                       style={{ transition: 'transform 0.1s' }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('eventlog'); }}
                     >
-                      <span className="text-6xl">📋</span>
-                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Журнал событий</span>
+                      <span className="text-4xl">📋</span>
+                      <span className="text-[10px] font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Журнал событий</span>
                     </div>
                     <div
-                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-1.5 rounded hover:bg-white/20"
                       style={{ transition: 'transform 0.1s' }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('personalfiles'); }}
                     >
-                      <span className="text-6xl">📁</span>
-                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Личные дела</span>
+                      <span className="text-4xl">📁</span>
+                      <span className="text-[10px] font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Личные дела</span>
                     </div>
                     <div
-                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-1.5 rounded hover:bg-white/20"
                       style={{ transition: 'transform 0.1s' }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('minesweeper'); }}
                     >
-                      <span className="text-6xl">{'\u{1F4A3}'}</span>
-                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>{'\u0421\u0430\u043F\u0451\u0440'}</span>
+                      <span className="text-4xl">{'\u{1F4A3}'}</span>
+                      <span className="text-[10px] font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>{'\u0421\u0430\u043F\u0451\u0440'}</span>
                     </div>
                     <div
-                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-1.5 rounded hover:bg-white/20"
                       style={{ transition: 'transform 0.1s' }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('files'); playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen(); }}
                     >
-                      <span className="text-6xl">{'\u{1F4F7}'}</span>
-                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>{'\u0424\u0430\u0439\u043B\u044B'}</span>
+                      <span className="text-4xl">{'\u{1F4F7}'}</span>
+                      <span className="text-[10px] font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>{'\u0424\u0430\u0439\u043B\u044B'}</span>
                     </div>
                     <div
-                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      className="w-20 flex flex-col items-center gap-1 cursor-pointer p-1.5 rounded hover:bg-white/20"
                       style={{ transition: 'transform 0.1s' }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('paint'); playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen(); }}
                     >
-                      <span className="text-6xl">{'\u{1F3A8}'}</span>
-                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>{'\u0420\u0438\u0441\u043E\u0432\u0430\u043B\u043A\u0430'}</span>
+                      <span className="text-4xl">{'\u{1F3A8}'}</span>
+                      <span className="text-[10px] font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>{'\u0420\u0438\u0441\u043E\u0432\u0430\u043B\u043A\u0430'}</span>
                     </div>
                   </div>
 
