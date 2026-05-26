@@ -2259,6 +2259,109 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       return mergeGroup(g);
     }
   },
+  {
+    id: 'weapon_shotgun', name: 'SPAS-12 (подбираемый)', icon: '🔫', category: 'things',
+    description: 'Дробовик SPAS-12. Подбирается любой командой по нажатию E.',
+    create: () => {
+      const g = new THREE.Group();
+      // Glow ring on floor (orange)
+      const weaponGlow = new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0xff6600, emissiveIntensity: 0.3, transparent: true, opacity: 0.5 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.03, 8, 20), weaponGlow);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(0, 0.01, 0);
+      g.add(ring);
+      // SPAS-12 model
+      // Long barrel
+      g.add(pos(box(0.04, 0.04, 0.6, M.metalDark), 0, 0.5, -0.15));
+      // Pump handguard below barrel
+      g.add(pos(box(0.05, 0.04, 0.2, M.woodDark), 0, 0.46, -0.1));
+      // Receiver body
+      g.add(pos(box(0.07, 0.08, 0.2, M.metalDark), 0, 0.5, 0.15));
+      // Stock
+      g.add(pos(box(0.05, 0.06, 0.2, M.metalDark), 0, 0.5, 0.35));
+      // Front sight post
+      g.add(pos(box(0.01, 0.03, 0.01, M.metalDark), 0, 0.55, -0.44));
+      // Pickup arrow (orange)
+      const pickupMat = new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0xff6600, emissiveIntensity: 0.6 });
+      g.add(pos(box(0.03, 0.15, 0.03, pickupMat), 0, 0.8, 0));
+      g.add(pos(box(0.1, 0.03, 0.03, pickupMat), 0, 0.9, 0));
+      g.userData.scriptType = 'weapon_pickup';
+      g.userData.weaponType = 'shotgun';
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'weapon_pistol', name: 'Makarov PM (подбираемый)', icon: '🔫', category: 'things',
+    description: 'Пистолет Макарова. Подбирается любой командой по нажатию E.',
+    create: () => {
+      const g = new THREE.Group();
+      // Glow ring on floor (gray-blue)
+      const weaponGlow = new THREE.MeshStandardMaterial({ color: 0x8888cc, emissive: 0x8888cc, emissiveIntensity: 0.3, transparent: true, opacity: 0.5 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.03, 8, 20), weaponGlow);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(0, 0.01, 0);
+      g.add(ring);
+      // Makarov PM model
+      // Slide
+      g.add(pos(box(0.03, 0.03, 0.14, M.metalDark), 0, 0.45, 0));
+      // Frame/lower
+      g.add(pos(box(0.03, 0.025, 0.1, M.metalMid), 0, 0.44, 0.02));
+      // Grip
+      const gripMat = new THREE.MeshStandardMaterial({ color: 0x6b4020, roughness: 0.8 });
+      const grip = box(0.025, 0.06, 0.035, gripMat);
+      grip.position.set(0, 0.4, 0.04);
+      grip.rotation.x = -0.2;
+      g.add(grip);
+      // Trigger guard
+      g.add(pos(box(0.015, 0.02, 0.03, M.metalDark), 0, 0.42, 0.01));
+      // Pickup arrow (gray-blue)
+      const pickupMat = new THREE.MeshStandardMaterial({ color: 0x8888cc, emissive: 0x8888cc, emissiveIntensity: 0.6 });
+      g.add(pos(box(0.03, 0.15, 0.03, pickupMat), 0, 0.65, 0));
+      g.add(pos(box(0.1, 0.03, 0.03, pickupMat), 0, 0.75, 0));
+      g.userData.scriptType = 'weapon_pickup';
+      g.userData.weaponType = 'pistol';
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'weapon_taser', name: 'Taser (подбираемый)', icon: '⚡', category: 'things',
+    description: 'Тазер. Оглушает на 4 секунды. Подбирается по нажатию E.',
+    create: () => {
+      const g = new THREE.Group();
+      // Glow ring on floor (electric blue)
+      const weaponGlow = new THREE.MeshStandardMaterial({ color: 0x44aaff, emissive: 0x44aaff, emissiveIntensity: 0.3, transparent: true, opacity: 0.5 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.03, 8, 20), weaponGlow);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(0, 0.01, 0);
+      g.add(ring);
+      // Taser model
+      // Body (yellow)
+      const taserBody = new THREE.MeshStandardMaterial({ color: 0xddcc00, roughness: 0.6 });
+      g.add(pos(box(0.04, 0.035, 0.12, taserBody), 0, 0.45, 0));
+      // Front section (dark)
+      g.add(pos(box(0.04, 0.035, 0.03, M.metalDark), 0, 0.45, -0.075));
+      // Two electrode prongs
+      g.add(pos(cyl(0.005, 0.005, 0.04, M.metalShiny), 0.015, 0.45, -0.11));
+      g.add(pos(cyl(0.005, 0.005, 0.04, M.metalShiny), -0.015, 0.45, -0.11));
+      // Black stripe on body
+      g.add(pos(box(0.041, 0.015, 0.04, M.metalDark), 0, 0.45, 0.02));
+      // Green dot indicators
+      const greenDot = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00, emissiveIntensity: 0.8 });
+      const dot1 = new THREE.Mesh(new THREE.SphereGeometry(0.005, 6, 6), greenDot);
+      dot1.position.set(0.01, 0.47, 0.04);
+      g.add(dot1);
+      const dot2 = new THREE.Mesh(new THREE.SphereGeometry(0.005, 6, 6), greenDot);
+      dot2.position.set(-0.01, 0.47, 0.04);
+      g.add(dot2);
+      // Pickup arrow (electric blue)
+      const pickupMat = new THREE.MeshStandardMaterial({ color: 0x44aaff, emissive: 0x44aaff, emissiveIntensity: 0.6 });
+      g.add(pos(box(0.03, 0.15, 0.03, pickupMat), 0, 0.65, 0));
+      g.add(pos(box(0.1, 0.03, 0.03, pickupMat), 0, 0.75, 0));
+      g.userData.scriptType = 'weapon_pickup';
+      g.userData.weaponType = 'taser';
+      return mergeGroup(g);
+    }
+  },
 
   // ============ ВЕЩИ (новые предметы) ============
   {

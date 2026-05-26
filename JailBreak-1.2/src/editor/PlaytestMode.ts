@@ -274,13 +274,23 @@ export class PlaytestMode {
     this.combat.onStateChange = (state) => {
       this.onCombatUpdate?.(state);
     };
-    this.combat.onWeaponPickedUp = () => {
-      const weaponItem = { id: 'weapon_ak47', name: 'AK-47', icon: '\u{1F52B}', type: 'weapon' as const, quantity: 1 };
+    this.combat.onWeaponPickedUp = (weaponName: string) => {
+      // Map weapon name to item ID
+      let itemId = 'weapon_ak47';
+      let icon = '\u{1F52B}';
+      if (weaponName === 'SPAS-12') { itemId = 'weapon_shotgun'; }
+      else if (weaponName === 'Makarov PM') { itemId = 'weapon_pistol'; }
+      else if (weaponName === 'Taser') { itemId = 'weapon_taser'; icon = '\u26A1'; }
+      const weaponItem = { id: itemId, name: weaponName, icon, type: 'weapon' as const, quantity: 1 };
       this.inventory.addItem(weaponItem);
       this.inventory.addNotification(weaponItem);
     };
     this.combat.onWeaponDropped = () => {
+      // Remove whatever weapon is in inventory
       this.inventory.removeItem('weapon_ak47');
+      this.inventory.removeItem('weapon_shotgun');
+      this.inventory.removeItem('weapon_pistol');
+      this.inventory.removeItem('weapon_taser');
     };
 
     // Handle consumed items removal
@@ -747,6 +757,27 @@ export class PlaytestMode {
       if (objData.type === 'weapon_ak47') {
         this.combat.createDroppedWeaponAt(
           new THREE.Vector3(objData.position.x, objData.position.y + 0.5, objData.position.z)
+        );
+        continue;
+      }
+      if (objData.type === 'weapon_shotgun') {
+        this.combat.createDroppedWeaponAt(
+          new THREE.Vector3(objData.position.x, objData.position.y + 0.5, objData.position.z),
+          'shotgun'
+        );
+        continue;
+      }
+      if (objData.type === 'weapon_pistol') {
+        this.combat.createDroppedWeaponAt(
+          new THREE.Vector3(objData.position.x, objData.position.y + 0.5, objData.position.z),
+          'pistol'
+        );
+        continue;
+      }
+      if (objData.type === 'weapon_taser') {
+        this.combat.createDroppedWeaponAt(
+          new THREE.Vector3(objData.position.x, objData.position.y + 0.5, objData.position.z),
+          'taser'
         );
         continue;
       }

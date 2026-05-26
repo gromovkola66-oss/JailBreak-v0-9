@@ -2,7 +2,7 @@ export interface ItemDef {
   id: string;
   name: string;
   icon: string;
-  type: 'melee' | 'tool' | 'consumable' | 'ammo';
+  type: 'melee' | 'tool' | 'consumable' | 'ammo' | 'weapon';
   description: string;
   stackable: boolean;
   maxStack: number;
@@ -127,5 +127,38 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     maxStack: 1,
     rarity: 'rare',
     category: 'tool',
+  },
+  'weapon_shotgun': {
+    id: 'weapon_shotgun',
+    name: 'SPAS-12',
+    icon: '\u{1F52B}',
+    type: 'weapon',
+    description: '\u041f\u043e\u043c\u043f\u043e\u0432\u044b\u0439 \u0434\u0440\u043e\u0431\u043e\u0432\u0438\u043a SPAS-12. 8 \u043a\u0430\u0440\u0442\u0435\u0447\u0438\u043d \u0437\u0430 \u0432\u044b\u0441\u0442\u0440\u0435\u043b.',
+    stackable: false,
+    maxStack: 1,
+    rarity: 'rare',
+    category: 'weapon',
+  },
+  'weapon_pistol': {
+    id: 'weapon_pistol',
+    name: 'Makarov PM',
+    icon: '\u{1F52B}',
+    type: 'weapon',
+    description: '\u041f\u0438\u0441\u0442\u043e\u043b\u0435\u0442 \u041c\u0430\u043a\u0430\u0440\u043e\u0432\u0430 \u041f\u041c. \u041f\u043e\u043b\u0443\u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0439, 8 \u043f\u0430\u0442\u0440\u043e\u043d\u043e\u0432.',
+    stackable: false,
+    maxStack: 1,
+    rarity: 'uncommon',
+    category: 'weapon',
+  },
+  'weapon_taser': {
+    id: 'weapon_taser',
+    name: '\u0422\u0430\u0437\u0435\u0440',
+    icon: '\u26A1',
+    type: 'weapon',
+    description: '\u042d\u043b\u0435\u043a\u0442\u0440\u043e\u0448\u043e\u043a\u0435\u0440. \u041f\u0430\u0440\u0430\u043b\u0438\u0437\u0443\u0435\u0442 \u0446\u0435\u043b\u044c \u043d\u0430 4 \u0441\u0435\u043a\u0443\u043d\u0434\u044b.',
+    stackable: false,
+    maxStack: 1,
+    rarity: 'epic',
+    category: 'weapon',
   },
 };
