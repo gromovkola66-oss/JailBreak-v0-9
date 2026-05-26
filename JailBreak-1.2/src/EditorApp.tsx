@@ -41,6 +41,109 @@ const TERMINAL_WALLPAPERS: { background: string }[] = [
   { background: 'linear-gradient(180deg, #ff9a56 0%, #ff6b6b 40%, #c44569 70%, #4a2040 100%)' },
 ];
 
+// Terminal theme definitions
+type TerminalTheme = 'win95' | 'win98' | 'linux' | 'dos';
+
+interface ThemeConfig {
+  desktopBg: string | null; // null = use wallpaper
+  windowBg: string;
+  titleBarStyle: string; // Tailwind classes for title bar bg
+  titleBarBg?: string; // inline style override for non-gradient themes
+  textColor: string;
+  borders: string; // Tailwind border classes for windows
+  buttonBorders: string; // Tailwind border classes for buttons
+  font: string;
+  taskbarBg: string;
+  taskbarBorderColor: string;
+  startMenuBg: string;
+  startMenuHover: string;
+  startMenuText: string;
+  windowContentBorders: string;
+  iconTextShadow: string;
+  clockTextColor: string;
+  contentBg: string;
+  textShadow?: string;
+}
+
+const THEME_CONFIGS: Record<TerminalTheme, ThemeConfig> = {
+  win95: {
+    desktopBg: null,
+    windowBg: '#c0c0c0',
+    titleBarStyle: 'bg-gradient-to-r from-[#000080] to-[#1084d0]',
+    textColor: 'black',
+    borders: 'border-t-white border-l-white border-b-gray-700 border-r-gray-700',
+    buttonBorders: 'border-t-white border-l-white border-b-gray-700 border-r-gray-700',
+    font: "'Tahoma', sans-serif",
+    taskbarBg: '#c0c0c0',
+    taskbarBorderColor: 'white',
+    startMenuBg: '#c0c0c0',
+    startMenuHover: '#000080',
+    startMenuText: 'black',
+    windowContentBorders: 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white',
+    iconTextShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+    clockTextColor: '#374151',
+    contentBg: 'white',
+  },
+  win98: {
+    desktopBg: null,
+    windowBg: '#d4d0c8',
+    titleBarStyle: 'bg-gradient-to-r from-[#0a246a] to-[#a6caf0]',
+    textColor: 'black',
+    borders: 'border-t-[#ffffff] border-l-[#ffffff] border-b-[#404040] border-r-[#404040]',
+    buttonBorders: 'border-t-[#ffffff] border-l-[#ffffff] border-b-[#404040] border-r-[#404040]',
+    font: "'Tahoma', sans-serif",
+    taskbarBg: '#d4d0c8',
+    taskbarBorderColor: '#ffffff',
+    startMenuBg: '#d4d0c8',
+    startMenuHover: '#0a246a',
+    startMenuText: 'black',
+    windowContentBorders: 'border-t-[#808080] border-l-[#808080] border-b-[#ffffff] border-r-[#ffffff]',
+    iconTextShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+    clockTextColor: '#374151',
+    contentBg: '#ffffff',
+  },
+  linux: {
+    desktopBg: '#000000',
+    windowBg: '#0a0a0a',
+    titleBarStyle: '',
+    titleBarBg: '#333333',
+    textColor: '#00ff00',
+    borders: 'border-[#00ff00]/30',
+    buttonBorders: 'border-[#00ff00]/30',
+    font: "'Courier New', monospace",
+    taskbarBg: '#111111',
+    taskbarBorderColor: '#00ff00',
+    startMenuBg: '#111111',
+    startMenuHover: '#003300',
+    startMenuText: '#00ff00',
+    windowContentBorders: 'border-[#00ff00]/20',
+    iconTextShadow: '0 0 8px rgba(0,255,0,0.6)',
+    clockTextColor: '#00ff00',
+    contentBg: '#0a0a0a',
+    textShadow: '0 0 4px rgba(0,255,0,0.4)',
+  },
+  dos: {
+    desktopBg: '#0a0a00',
+    windowBg: '#000000',
+    titleBarStyle: '',
+    titleBarBg: '#2a2a00',
+    textColor: '#ffb000',
+    borders: 'border-[#ffb000]/40',
+    buttonBorders: 'border-[#ffb000]/40',
+    font: "'Courier New', monospace",
+    taskbarBg: '#1a1a00',
+    taskbarBorderColor: '#ffb000',
+    startMenuBg: '#0a0a00',
+    startMenuHover: '#2a2a00',
+    startMenuText: '#ffb000',
+    windowContentBorders: 'border-[#ffb000]/20',
+    iconTextShadow: '0 0 6px rgba(255,176,0,0.5)',
+    clockTextColor: '#ffb000',
+    contentBg: '#0a0a00',
+    textShadow: '0 0 3px rgba(255,176,0,0.3)',
+  },
+};
+
 interface EditorAppProps {
   onBackToGame: () => void;
 }
@@ -119,6 +222,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
   // Terminal wallpaper & start menu state
   const [terminalWallpaperIdx, setTerminalWallpaperIdx] = useState(() => Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
+  const [terminalTheme, setTerminalTheme] = useState<TerminalTheme>('win95');
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'minesweeper' | 'files' | null>(null);
   const [glitchActive, setGlitchActive] = useState(false);
@@ -166,6 +270,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
   // === Keep locker state ref in sync ===
   useEffect(() => { ptLockerStateRef.current = ptLockerState; }, [ptLockerState]);
+
+  // Current theme config
+  const thCfg = THEME_CONFIGS[terminalTheme];
 
   // === EDITOR ===
   useEffect(() => {
@@ -1370,9 +1477,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
               {/* Boot screen */}
               {ptCameraState.terminalView === 'booting' && (
                 <div className="absolute inset-0 bg-black flex flex-col items-center justify-center z-40">
-                  <div className="text-green-400 text-xl font-mono mb-8" style={{ textShadow: '0 0 8px rgba(0,255,0,0.5)' }}>Jail Break OS Loading...</div>
-                  <div className="w-64 h-4 border border-green-400/60 rounded-sm overflow-hidden">
-                    <div className="h-full bg-green-400" style={{ animation: 'bootProgress 1.5s ease-out forwards' }} />
+                  <div className="text-xl font-mono mb-8" style={{
+                    color: terminalTheme === 'dos' ? '#ffb000' : '#4ade80',
+                    textShadow: terminalTheme === 'dos' ? '0 0 8px rgba(255,176,0,0.5)' : '0 0 8px rgba(0,255,0,0.5)'
+                  }}>
+                    {terminalTheme === 'dos' ? 'C:\\>LOADING...' : terminalTheme === 'linux' ? '$ booting...' : 'Jail Break OS Loading...'}
+                  </div>
+                  <div className="w-64 h-4 border rounded-sm overflow-hidden" style={{ borderColor: terminalTheme === 'dos' ? 'rgba(255,176,0,0.6)' : 'rgba(74,222,128,0.6)' }}>
+                    <div className="h-full" style={{ backgroundColor: terminalTheme === 'dos' ? '#ffb000' : '#4ade80', animation: 'bootProgress 1.5s ease-out forwards' }} />
                   </div>
                 </div>
               )}
@@ -1389,9 +1501,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
               )}
               {/* Desktop view */}
               {ptCameraState.terminalView === 'desktop' && (
-                <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none" onClick={() => startMenuOpen && setStartMenuOpen(false)}>
+                <div className="absolute inset-0 flex flex-col text-sm select-none" style={{ fontFamily: thCfg.font, color: thCfg.textColor, textShadow: thCfg.textShadow }} onClick={() => startMenuOpen && setStartMenuOpen(false)}>
                   {/* Wallpaper background */}
-                  <div className="absolute inset-0" style={{ background: TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
+                  <div className="absolute inset-0" style={{ background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   {/* JailBreak watermark */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15 pointer-events-none" style={{ animation: 'gentleSpin 4s ease-in-out infinite' }}>
                     <span className="text-7xl font-black text-blue-400">Jail</span>
@@ -1407,7 +1519,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       onClick={(e) => { e.stopPropagation(); handleOpenTerminalApp('cameras'); }}
                     >
                       <span className="text-6xl">📹</span>
-                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Камеры</span>
+                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Камеры</span>
                     </div>
                     <div
                       className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
@@ -1417,7 +1529,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       onClick={(e) => { e.stopPropagation(); handleOpenTerminalApp('doors'); }}
                     >
                       <span className="text-6xl">🚪</span>
-                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Двери</span>
+                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Двери</span>
                     </div>
                     <div
                       className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
@@ -1427,7 +1539,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('cells'); }}
                     >
                       <span className="text-6xl">🔒</span>
-                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Клетки</span>
+                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Клетки</span>
                     </div>
                     <div
                       className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
@@ -1437,7 +1549,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('eventlog'); }}
                     >
                       <span className="text-6xl">📋</span>
-                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Журнал событий</span>
+                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Журнал событий</span>
                     </div>
                     <div
                       className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
@@ -1447,7 +1559,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('personalfiles'); }}
                     >
                       <span className="text-6xl">📁</span>
-                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>Личные дела</span>
+                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>Личные дела</span>
                     </div>
                     <div
                       className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
@@ -1457,7 +1569,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('minesweeper'); }}
                     >
                       <span className="text-6xl">{'\u{1F4A3}'}</span>
-                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{'\u0421\u0430\u043F\u0451\u0440'}</span>
+                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>{'\u0421\u0430\u043F\u0451\u0440'}</span>
                     </div>
                     <div
                       className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
@@ -1467,28 +1579,30 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                       onClick={(e) => { e.stopPropagation(); setTerminalApp('files'); playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen(); }}
                     >
                       <span className="text-6xl">{'\u{1F4F7}'}</span>
-                      <span className="text-white text-sm font-bold text-center" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{'\u0424\u0430\u0439\u043B\u044B'}</span>
+                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>{'\u0424\u0430\u0439\u043B\u044B'}</span>
                     </div>
                   </div>
 
                   {/* Info app window */}
                   {terminalApp === 'info' && !minimizedApps.includes('info') && (
                     <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['info']?.x || 0)}px, ${(windowPositions['info']?.y || 0)}px)` }}>
-                      <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('info', e)}>
+                      <div className={`w-[500px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
+                        <div className={`${thCfg.titleBarStyle} text-white font-bold px-2 py-1 flex items-center justify-between cursor-move`} style={thCfg.titleBarBg ? { backgroundColor: thCfg.titleBarBg } : undefined} onMouseDown={(e) => handleWindowDragStart('info', e)}>
                           <span className="text-xs">Информация о тюрьме</span>
                           <div className="flex gap-0.5">
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleMinimizeApp('info'); }}
                             >_</button>
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
                             >X</button>
                           </div>
                         </div>
-                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white text-xs leading-relaxed max-h-[300px] overflow-y-auto">
+                        <div className={`p-4 border-2 ${thCfg.windowContentBorders} m-1 text-xs leading-relaxed max-h-[300px] overflow-y-auto`} style={{ backgroundColor: thCfg.contentBg, color: thCfg.textColor }}>
                           <p className="font-bold text-sm mb-2">Правила учреждения:</p>
                           <p>1. Заключенным запрещено покидать камеры без разрешения.</p>
                           <p>2. Все перемещения по территории под наблюдением камер.</p>
@@ -1512,22 +1626,24 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   {/* Map app window */}
                   {terminalApp === 'map' && !minimizedApps.includes('map') && (
                     <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['map']?.x || 0)}px, ${(windowPositions['map']?.y || 0)}px)` }}>
-                      <div className="w-[550px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('map', e)}>
+                      <div className={`w-[550px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
+                        <div className={`${thCfg.titleBarStyle} text-white font-bold px-2 py-1 flex items-center justify-between cursor-move`} style={thCfg.titleBarBg ? { backgroundColor: thCfg.titleBarBg } : undefined} onMouseDown={(e) => handleWindowDragStart('map', e)}>
                           <span className="text-xs">Карта территории</span>
                           <div className="flex gap-0.5">
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleMinimizeApp('map'); }}
                             >_</button>
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
                             >X</button>
                           </div>
                         </div>
-                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white">
-                          <div className="w-full h-[280px] bg-[#f0f0e0] border border-gray-300 relative flex items-center justify-center">
+                        <div className={`p-4 border-2 ${thCfg.windowContentBorders} m-1`} style={{ backgroundColor: thCfg.contentBg }}>
+                          <div className="w-full h-[280px] border border-gray-300 relative flex items-center justify-center" style={{ backgroundColor: terminalTheme === 'linux' || terminalTheme === 'dos' ? thCfg.windowBg : '#f0f0e0' }}>
                             {/* Simple map representation */}
                             <svg viewBox="0 0 400 200" className="w-full h-full">
                               {/* Outer walls */}
@@ -1559,39 +1675,65 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   {/* Settings app window */}
                   {terminalApp === 'settings' && !minimizedApps.includes('settings') && (
                     <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['settings']?.x || 0)}px, ${(windowPositions['settings']?.y || 0)}px)` }}>
-                      <div className="w-[400px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('settings', e)}>
-                          <span className="text-xs">Настройки</span>
+                      <div className={`w-[400px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
+                        <div className={`${thCfg.titleBarStyle} text-white font-bold px-2 py-1 flex items-center justify-between cursor-move`} style={thCfg.titleBarBg ? { backgroundColor: thCfg.titleBarBg } : undefined} onMouseDown={(e) => handleWindowDragStart('settings', e)}>
+                          <span className="text-xs">{terminalTheme === 'linux' ? '> Настройки' : terminalTheme === 'dos' ? 'C:\\SETTINGS' : 'Настройки'}</span>
                           <div className="flex gap-0.5">
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleMinimizeApp('settings'); }}
                             >_</button>
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
                             >X</button>
                           </div>
                         </div>
-                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
+                        <div className={`p-4 border-2 ${thCfg.windowContentBorders} m-1`}>
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold">Громкость оповещений</span>
-                              <div className="w-24 h-3 bg-white border border-gray-600 relative">
-                                <div className="h-full bg-[#000080] w-3/4"></div>
+                              <div className="w-24 h-3 border border-gray-600 relative" style={{ backgroundColor: thCfg.contentBg }}>
+                                <div className="h-full w-3/4" style={{ backgroundColor: terminalTheme === 'linux' ? '#00ff00' : terminalTheme === 'dos' ? '#ffb000' : '#000080' }}></div>
                               </div>
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold">Яркость экрана</span>
-                              <div className="w-24 h-3 bg-white border border-gray-600 relative">
-                                <div className="h-full bg-[#000080] w-full"></div>
+                              <div className="w-24 h-3 border border-gray-600 relative" style={{ backgroundColor: thCfg.contentBg }}>
+                                <div className="h-full w-full" style={{ backgroundColor: terminalTheme === 'linux' ? '#00ff00' : terminalTheme === 'dos' ? '#ffb000' : '#000080' }}></div>
                               </div>
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold">Язык</span>
-                              <span className="text-xs border border-gray-600 px-2 py-0.5 bg-white">Русский</span>
+                              <span className="text-xs border border-gray-600 px-2 py-0.5" style={{ backgroundColor: thCfg.contentBg }}>Русский</span>
                             </div>
-                            <div className="pt-2 border-t border-gray-400 text-xs text-gray-600">
+                            {/* Theme selector */}
+                            <div className="pt-2 border-t border-gray-400">
+                              <span className="text-xs font-bold block mb-2">Тема оформления</span>
+                              <div className="grid grid-cols-2 gap-2">
+                                {([
+                                  { id: 'win95' as TerminalTheme, label: 'Windows 95' },
+                                  { id: 'win98' as TerminalTheme, label: 'Windows 98' },
+                                  { id: 'linux' as TerminalTheme, label: 'Linux Terminal' },
+                                  { id: 'dos' as TerminalTheme, label: 'Retro DOS' },
+                                ]).map(t => (
+                                  <button
+                                    key={t.id}
+                                    className={`px-2 py-1.5 text-xs border-2 font-bold ${terminalTheme === t.id ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white' : thCfg.buttonBorders}`}
+                                    style={{
+                                      backgroundColor: terminalTheme === t.id ? (THEME_CONFIGS[t.id].titleBarBg || '#000080') : thCfg.windowBg,
+                                      color: terminalTheme === t.id ? '#ffffff' : thCfg.textColor,
+                                    }}
+                                    onClick={() => setTerminalTheme(t.id)}
+                                  >
+                                    {t.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="pt-2 border-t border-gray-400 text-xs" style={{ color: terminalTheme === 'linux' || terminalTheme === 'dos' ? thCfg.textColor : '#6b7280' }}>
                               JailBreak Security Terminal v2.4.1
                             </div>
                           </div>
@@ -1603,21 +1745,23 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   {/* Cells app window */}
                   {terminalApp === 'cells' && !minimizedApps.includes('cells') && (
                     <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['cells']?.x || 0)}px, ${(windowPositions['cells']?.y || 0)}px)` }}>
-                      <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('cells', e)}>
+                      <div className={`w-[500px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
+                        <div className={`${thCfg.titleBarStyle} text-white font-bold px-2 py-1 flex items-center justify-between cursor-move`} style={thCfg.titleBarBg ? { backgroundColor: thCfg.titleBarBg } : undefined} onMouseDown={(e) => handleWindowDragStart('cells', e)}>
                           <span className="text-xs">{'\u{1F512}'} Клетки</span>
                           <div className="flex gap-0.5">
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleMinimizeApp('cells'); }}
                             >_</button>
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
                             >X</button>
                           </div>
                         </div>
-                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
+                        <div className={`p-4 border-2 ${thCfg.windowContentBorders} m-1`}>
                           <div className="space-y-4">
                             {/* Status */}
                             <div className="p-3 border border-gray-600 bg-white">
@@ -1635,13 +1779,15 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                             {/* Instant actions */}
                             <div className="grid grid-cols-2 gap-2">
                               <button
-                                className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                className={`px-3 py-2 border-2 ${thCfg.borders} text-xs font-bold`}
+                                style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                                 onClick={() => { playtestRef.current?.openAllDoors(); addEventLog('Клетки открыты', 'Охранник'); }}
                               >
                                 🔓 Открыть клетки
                               </button>
                               <button
-                                className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                className={`px-3 py-2 border-2 ${thCfg.borders} text-xs font-bold`}
+                                style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                                 onClick={() => { playtestRef.current?.closeAllDoors(); addEventLog('Клетки закрыты', 'Охранник'); }}
                               >
                                 🔒 Закрыть клетки
@@ -1653,13 +1799,15 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                               <div className="text-xs text-gray-600 mb-2">Таймер (10 минут):</div>
                               <div className="grid grid-cols-2 gap-2">
                                 <button
-                                  className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                  className={`px-3 py-2 border-2 ${thCfg.borders} text-xs font-bold`}
+                                style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                                   onClick={startOpenTimer}
                                 >
                                   ⏱ Открыть через 10 мин
                                 </button>
                                 <button
-                                  className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                  className={`px-3 py-2 border-2 ${thCfg.borders} text-xs font-bold`}
+                                style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                                   onClick={startCloseTimer}
                                 >
                                   ⏱ Закрыть через 10 мин
@@ -1667,7 +1815,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                               </div>
                               {cellTimerActive && (
                                 <button
-                                  className="mt-2 w-full px-3 py-1.5 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold text-red-700"
+                                  className={`mt-2 w-full px-3 py-1.5 border-2 ${thCfg.borders} text-xs font-bold`}
+                                  style={{ backgroundColor: thCfg.windowBg, color: terminalTheme === 'linux' ? '#ff4444' : terminalTheme === 'dos' ? '#ff6600' : '#b91c1c' }}
                                   onClick={cancelCellTimer}
                                 >
                                   ✕ Отменить таймер
@@ -1683,21 +1832,23 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   {/* Event Log app window */}
                   {terminalApp === 'eventlog' && !minimizedApps.includes('eventlog') && (
                     <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['eventlog']?.x || 0)}px, ${(windowPositions['eventlog']?.y || 0)}px)` }}>
-                      <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('eventlog', e)}>
+                      <div className={`w-[500px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
+                        <div className={`${thCfg.titleBarStyle} text-white font-bold px-2 py-1 flex items-center justify-between cursor-move`} style={thCfg.titleBarBg ? { backgroundColor: thCfg.titleBarBg } : undefined} onMouseDown={(e) => handleWindowDragStart('eventlog', e)}>
                           <span className="text-xs">{'\u{1F4CB}'} Журнал событий</span>
                           <div className="flex gap-0.5">
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleMinimizeApp('eventlog'); }}
                             >_</button>
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
                             >X</button>
                           </div>
                         </div>
-                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white text-xs max-h-[300px] overflow-y-auto">
+                        <div className={`p-4 border-2 ${thCfg.windowContentBorders} m-1 text-xs max-h-[300px] overflow-y-auto`} style={{ backgroundColor: thCfg.contentBg, color: thCfg.textColor }}>
                           {eventLog.length === 0 ? (
                             <div className="text-gray-500 text-center py-4">Нет записей</div>
                           ) : (
@@ -1717,21 +1868,23 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   {/* Personal Files app window */}
                   {terminalApp === 'personalfiles' && !minimizedApps.includes('personalfiles') && (
                     <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['personalfiles']?.x || 0)}px, ${(windowPositions['personalfiles']?.y || 0)}px)` }}>
-                      <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('personalfiles', e)}>
+                      <div className={`w-[500px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
+                        <div className={`${thCfg.titleBarStyle} text-white font-bold px-2 py-1 flex items-center justify-between cursor-move`} style={thCfg.titleBarBg ? { backgroundColor: thCfg.titleBarBg } : undefined} onMouseDown={(e) => handleWindowDragStart('personalfiles', e)}>
                           <span className="text-xs">{'\u{1F4C1}'} Личные дела</span>
                           <div className="flex gap-0.5">
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleMinimizeApp('personalfiles'); }}
                             >_</button>
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); setPfView('list'); }}
                             >X</button>
                           </div>
                         </div>
-                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white text-xs max-h-[350px] overflow-y-auto">
+                        <div className={`p-4 border-2 ${thCfg.windowContentBorders} m-1 text-xs max-h-[350px] overflow-y-auto`} style={{ backgroundColor: thCfg.contentBg, color: thCfg.textColor }}>
                           {pfView === 'list' ? (
                             <div>
                               {personalFiles.length === 0 ? (
@@ -1757,7 +1910,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                                 </div>
                               )}
                               <button
-                                className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                className={`px-3 py-2 border-2 ${thCfg.borders} text-xs font-bold`}
+                                style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                                 onClick={() => setPfView('create')}
                               >
                                 + Создать документ
@@ -1784,7 +1938,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                               </div>
                               <div className="flex gap-2">
                                 <button
-                                  className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                  className={`px-3 py-2 border-2 ${thCfg.borders} text-xs font-bold`}
+                                style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                                   onClick={() => {
                                     if (!pfName.trim()) {
                                       playtestRef.current?.getSoundSystem()?.playTerminalError();
@@ -1802,7 +1957,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                                   Создать
                                 </button>
                                 <button
-                                  className="px-3 py-2 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white text-xs font-bold"
+                                  className={`px-3 py-2 border-2 ${thCfg.borders} text-xs font-bold`}
+                                style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                                   onClick={() => { setPfView('list'); setPfName(''); setPfDescription(''); }}
                                 >
                                   Назад
@@ -1818,21 +1974,23 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   {/* Files (screenshots) app window */}
                   {terminalApp === 'files' && !minimizedApps.includes('files') && (
                     <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={{ transform: `translate(${(windowPositions['files']?.x || 0)}px, ${(windowPositions['files']?.y || 0)}px)` }}>
-                      <div className="w-[500px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
-                        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={(e) => handleWindowDragStart('files', e)}>
+                      <div className={`w-[500px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
+                        <div className={`${thCfg.titleBarStyle} text-white font-bold px-2 py-1 flex items-center justify-between cursor-move`} style={thCfg.titleBarBg ? { backgroundColor: thCfg.titleBarBg } : undefined} onMouseDown={(e) => handleWindowDragStart('files', e)}>
                           <span className="text-xs">{'\u{1F4F7}'} {'\u0424\u0430\u0439\u043B\u044B'}</span>
                           <div className="flex gap-0.5">
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleMinimizeApp('files'); }}
                             >_</button>
                             <button
-                              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                              style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                               onClick={(e) => { e.stopPropagation(); handleCloseTerminalApp(); }}
                             >X</button>
                           </div>
                         </div>
-                        <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1 bg-white text-xs max-h-[350px] overflow-y-auto">
+                        <div className={`p-4 border-2 ${thCfg.windowContentBorders} m-1 text-xs max-h-[350px] overflow-y-auto`} style={{ backgroundColor: thCfg.contentBg, color: thCfg.textColor }}>
                           {savedScreenshots.length === 0 ? (
                             <div className="text-gray-500 text-center py-4">{'\u041D\u0435\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D\u043D\u044B\u0445 \u0441\u043D\u0438\u043C\u043A\u043E\u0432'}</div>
                           ) : (
@@ -1864,76 +2022,98 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
                   {/* Start Menu */}
                   {startMenuOpen && (
-                    <div className="absolute bottom-[30px] left-0 z-30 w-[200px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg" onClick={(e) => e.stopPropagation()}>
+                    <div className={`absolute bottom-[30px] left-0 z-30 w-[200px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.startMenuBg, color: thCfg.startMenuText, fontFamily: thCfg.font }} onClick={(e) => e.stopPropagation()}>
                       {/* Side banner */}
                       <div className="flex">
-                        <div className="w-6 bg-gradient-to-t from-[#000080] to-[#1084d0] flex items-end justify-center pb-1">
+                        <div className="w-6 flex items-end justify-center pb-1" style={{ background: thCfg.titleBarBg ? thCfg.titleBarBg : 'linear-gradient(to top, #000080, #1084d0)' }}>
                           <span className="text-white text-[9px] font-bold [writing-mode:vertical-lr] rotate-180">JailBreak</span>
                         </div>
                         <div className="flex-1 flex flex-col py-1">
                           <button
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
                             onClick={() => handleStartMenuApp('cameras')}
                           >
                             <span>📹</span><span className="text-xs">Камеры</span>
                           </button>
                           <button
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
                             onClick={() => handleStartMenuApp('doors')}
                           >
                             <span>🚪</span><span className="text-xs">Двери</span>
                           </button>
                           <button
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
                             onClick={() => handleStartMenuApp('info')}
                           >
                             <span>📋</span><span className="text-xs">Информация</span>
                           </button>
                           <button
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
                             onClick={() => handleStartMenuApp('map')}
                           >
                             <span>🗺️</span><span className="text-xs">Карта</span>
                           </button>
                           <button
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
                             onClick={() => handleStartMenuApp('settings')}
                           >
                             <span>⚙️</span><span className="text-xs">Настройки</span>
                           </button>
                           <button
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
                             onClick={() => handleStartMenuApp('cells')}
                           >
                             <span>🔒</span><span className="text-xs">Клетки</span>
                           </button>
                           <button
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
                             onClick={() => handleStartMenuApp('eventlog')}
                           >
                             <span>📋</span><span className="text-xs">Журнал событий</span>
                           </button>
                           <button
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
                             onClick={() => handleStartMenuApp('personalfiles')}
                           >
                             <span>📁</span><span className="text-xs">Личные дела</span>
                           </button>
                           <button
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
                             onClick={() => handleStartMenuApp('minesweeper')}
                           >
                             <span>{'\u{1F4A3}'}</span><span className="text-xs">{'\u0421\u0430\u043F\u0451\u0440'}</span>
                           </button>
                           <button
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
                             onClick={() => handleStartMenuApp('files')}
                           >
                             <span>{'\u{1F4F7}'}</span><span className="text-xs">{'\u0424\u0430\u0439\u043B\u044B'}</span>
                           </button>
                           <div className="border-t border-gray-400 my-1"></div>
                           <button
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#000080] hover:text-white text-left"
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
                             onClick={() => handleStartMenuApp('exit')}
                           >
                             <span>🔌</span><span className="text-xs">Выйти</span>
@@ -1944,9 +2124,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                   )}
 
                   {/* Taskbar */}
-                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2 z-20">
+                  <div className="h-[30px] border-t-2 flex items-center px-1 gap-2 z-20" style={{ backgroundColor: thCfg.taskbarBg, borderTopColor: thCfg.taskbarBorderColor }}>
                     <button
-                      className={`h-[22px] px-2 flex items-center gap-1 border-2 ${startMenuOpen ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#b0b0b0]' : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0]'} active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white`}
+                      className={`h-[22px] px-2 flex items-center gap-1 border-2 ${startMenuOpen ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white' : thCfg.borders}`}
+                      style={{ backgroundColor: startMenuOpen ? (terminalTheme === 'linux' || terminalTheme === 'dos' ? thCfg.startMenuHover : '#b0b0b0') : thCfg.taskbarBg, color: thCfg.textColor }}
                       onClick={(e) => { e.stopPropagation(); handleStartMenuToggle(); }}
                     >
                       <span className="w-3 h-3 bg-green-600 inline-block"></span>
@@ -1955,18 +2136,19 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     {minimizedApps.map(app => (
                       <button
                         key={app}
-                        className="h-[22px] px-2 flex items-center border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#a0a0a0] text-xs font-bold"
+                        className={`h-[22px] px-2 flex items-center border-2 ${thCfg.windowContentBorders} text-xs font-bold`}
+                        style={{ backgroundColor: terminalTheme === 'linux' || terminalTheme === 'dos' ? thCfg.windowBg : '#a0a0a0', color: thCfg.textColor }}
                         onClick={(e) => { e.stopPropagation(); handleRestoreApp(app); }}
                       >
                         {app}
                       </button>
                     ))}
-                    <span className="text-xs text-green-700 font-mono" style={{ animation: 'cursorBlink 1s step-end infinite' }}>_</span>
+                    <span className="text-xs font-mono" style={{ color: terminalTheme === 'linux' ? '#00ff00' : terminalTheme === 'dos' ? '#ffb000' : '#166534', animation: 'cursorBlink 1s step-end infinite' }}>_</span>
                     <div className="flex-1"></div>
-                    <div className="text-xs text-gray-700 mr-2">
+                    <div className="text-xs mr-2" style={{ color: thCfg.clockTextColor }}>
                       E - Выйти
                     </div>
-                    <div className="h-[22px] px-2 flex items-center border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white text-xs">
+                    <div className={`h-[22px] px-2 flex items-center border-2 ${thCfg.windowContentBorders} text-xs`} style={{ color: thCfg.clockTextColor }}>
                       {new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
@@ -1975,23 +2157,24 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
               {/* Cameras view - grid (no camera selected) */}
               {ptCameraState.terminalView === 'cameras' && ptCameraState.selectedCameraIndex === null && (
-                <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                <div className="absolute inset-0 flex flex-col text-sm select-none" style={{ fontFamily: thCfg.font, color: thCfg.textColor }}>
                   {/* Wallpaper background */}
-                  <div className="absolute inset-0" style={{ background: TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
+                  <div className="absolute inset-0" style={{ background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   <div className="flex-1 flex items-center justify-center p-4 relative z-10">
-                    <div className="w-[95vw] max-w-[1100px] h-[85vh] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg flex flex-col">
+                    <div className={`w-[95vw] max-w-[1100px] h-[85vh] border-2 ${thCfg.borders} shadow-lg flex flex-col`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
                       {/* Title bar */}
-                      <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between shrink-0">
+                      <div className={`${thCfg.titleBarStyle} text-white font-bold px-2 py-1 flex items-center justify-between shrink-0`} style={thCfg.titleBarBg ? { backgroundColor: thCfg.titleBarBg } : undefined}>
                         <span className="text-xs">Система наблюдения</span>
                         <button
-                          className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                          className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${thCfg.buttonBorders}`}
+                          style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                           onClick={handleBackToTerminalDesktop}
                         >
                           X
                         </button>
                       </div>
                       {/* Window body - scrollable */}
-                      <div className="flex-1 overflow-y-auto p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
+                      <div className={`flex-1 overflow-y-auto p-4 border-2 ${thCfg.windowContentBorders} m-1`}>
                         {ptCameraState.cameras.length === 0 ? (
                           <div className="text-center py-8 text-gray-600">Нет подключённых камер</div>
                         ) : (
@@ -1999,7 +2182,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                             {ptCameraState.cameras.map((cam, idx) => (
                               <div
                                 key={cam.id}
-                                className="border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#c0c0c0] p-2 cursor-pointer hover:bg-[#d4d4d4] transition-colors"
+                                className={`border-2 ${thCfg.windowContentBorders} p-2 cursor-pointer transition-colors`}
+                                style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                                 onClick={() => handleSelectCamera(idx)}
                               >
                                 <div className="text-xs font-bold mb-1">CAM {idx + 1}</div>
@@ -2019,19 +2203,19 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     </div>
                   </div>
                   {/* Taskbar */}
-                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2 shrink-0 relative z-10">
-                    <button className="h-[22px] px-2 flex items-center gap-1 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white">
+                  <div className="h-[30px] border-t-2 flex items-center px-1 gap-2 shrink-0 relative z-10" style={{ backgroundColor: thCfg.taskbarBg, borderTopColor: thCfg.taskbarBorderColor }}>
+                    <button className={`h-[22px] px-2 flex items-center gap-1 border-2 ${thCfg.borders}`} style={{ backgroundColor: thCfg.taskbarBg, color: thCfg.textColor }}>
                       <span className="w-3 h-3 bg-green-600 inline-block"></span>
                       <span className="font-bold text-xs">Пуск</span>
                     </button>
-                    <div className="h-[22px] px-2 flex items-center border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#a0a0a0] text-xs font-bold">
+                    <div className={`h-[22px] px-2 flex items-center border-2 ${thCfg.windowContentBorders} text-xs font-bold`} style={{ backgroundColor: terminalTheme === 'linux' || terminalTheme === 'dos' ? thCfg.windowBg : '#a0a0a0', color: thCfg.textColor }}>
                       📹 Камеры
                     </div>
                     <div className="flex-1"></div>
-                    <div className="text-xs text-gray-700 mr-2">
+                    <div className="text-xs mr-2" style={{ color: thCfg.clockTextColor }}>
                       E - Выйти
                     </div>
-                    <div className="h-[22px] px-2 flex items-center border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white text-xs">
+                    <div className={`h-[22px] px-2 flex items-center border-2 ${thCfg.windowContentBorders} text-xs`} style={{ color: thCfg.clockTextColor }}>
                       {new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
@@ -2040,7 +2224,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
               {/* Cameras view - selected camera (transparent so 3D canvas shows through) */}
               {ptCameraState.terminalView === 'cameras' && ptCameraState.selectedCameraIndex !== null && (
-                <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none" style={ptCameraState.nightVision ? { filter: 'brightness(1.5) saturate(0.3) hue-rotate(80deg)' } : undefined}>
+                <div className="absolute inset-0 flex flex-col text-sm select-none" style={{ fontFamily: thCfg.font, ...(ptCameraState.nightVision ? { filter: 'brightness(1.5) saturate(0.3) hue-rotate(80deg)' } : {}) }}>
                   {/* Top bar */}
                   <div className="bg-black/80 px-4 py-2 flex items-center justify-between shrink-0">
                     <div className="text-green-400 font-mono text-sm">
@@ -2150,26 +2334,27 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
               {/* Doors view */}
               {ptCameraState.terminalView === 'doors' && (
-                <div className="absolute inset-0 flex flex-col font-['Tahoma',_sans-serif] text-sm select-none">
+                <div className="absolute inset-0 flex flex-col text-sm select-none" style={{ fontFamily: thCfg.font, color: thCfg.textColor }}>
                   {/* Wallpaper background */}
-                  <div className="absolute inset-0" style={{ background: TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
+                  <div className="absolute inset-0" style={{ background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   {/* Centered Win95 window */}
                   <div className="flex-1 flex items-center justify-center relative z-10">
-                    <div className="w-[450px] border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+                    <div className={`w-[450px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
                       {/* Title bar */}
-                      <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between">
+                      <div className={`${thCfg.titleBarStyle} text-white font-bold px-2 py-1 flex items-center justify-between`} style={thCfg.titleBarBg ? { backgroundColor: thCfg.titleBarBg } : undefined}>
                         <span className="text-xs">Управление дверями</span>
                         <button
-                          className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                          className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white ${thCfg.buttonBorders}`}
+                          style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                           onClick={handleBackToTerminalDesktop}
                         >
                           X
                         </button>
                       </div>
                       {/* Window body */}
-                      <div className="p-4 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white m-1">
+                      <div className={`p-4 border-2 ${thCfg.windowContentBorders} m-1`}>
                         {/* Status indicator */}
-                        <div className="mb-4 p-3 border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-white">
+                        <div className={`mb-4 p-3 border-2 ${thCfg.windowContentBorders}`} style={{ backgroundColor: thCfg.contentBg }}>
                           {ptGarageLockState.state === 'unlocked' && (
                             <div className="flex items-center gap-2">
                               <div className="w-3 h-3 rounded-full bg-green-500"></div>
@@ -2202,9 +2387,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                           <button
                             className={`border-2 px-4 py-2 text-left font-bold ${
                               ptGarageLockState.state === 'locked'
-                                ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#a0a0a0]'
-                                : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white'
+                                ? `${thCfg.windowContentBorders}`
+                                : thCfg.borders
                             }`}
+                            style={{ backgroundColor: ptGarageLockState.state === 'locked' ? (terminalTheme === 'linux' || terminalTheme === 'dos' ? thCfg.startMenuHover : '#a0a0a0') : thCfg.windowBg, color: thCfg.textColor }}
                             onClick={handleLockGarageDoors}
                           >
                             🔒 Заблокировать двери
@@ -2212,9 +2398,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                           <button
                             className={`border-2 px-4 py-2 text-left font-bold ${
                               ptGarageLockState.state === 'unlocked'
-                                ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#a0a0a0]'
-                                : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white'
+                                ? `${thCfg.windowContentBorders}`
+                                : thCfg.borders
                             }`}
+                            style={{ backgroundColor: ptGarageLockState.state === 'unlocked' ? (terminalTheme === 'linux' || terminalTheme === 'dos' ? thCfg.startMenuHover : '#a0a0a0') : thCfg.windowBg, color: thCfg.textColor }}
                             onClick={handleUnlockGarageDoors}
                           >
                             🔓 Разблокировать двери
@@ -2222,9 +2409,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                           <button
                             className={`border-2 px-4 py-2 text-left font-bold ${
                               ptGarageLockState.state === 'temp_locked'
-                                ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white bg-[#a0a0a0]'
-                                : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white'
+                                ? `${thCfg.windowContentBorders}`
+                                : thCfg.borders
                             }`}
+                            style={{ backgroundColor: ptGarageLockState.state === 'temp_locked' ? (terminalTheme === 'linux' || terminalTheme === 'dos' ? thCfg.startMenuHover : '#a0a0a0') : thCfg.windowBg, color: thCfg.textColor }}
                             onClick={() => setPtShowTempLockOptions(prev => !prev)}
                           >
                             ⏱️ Временно заблокировать
@@ -2232,19 +2420,22 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                           {(ptShowTempLockOptions || ptGarageLockState.state === 'temp_locked') && (
                             <div className="flex gap-2 ml-6 mt-1">
                               <button
-                                className="border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] px-3 py-1 text-xs font-bold hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                                className={`border-2 ${thCfg.borders} px-3 py-1 text-xs font-bold`}
+                                style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                                 onClick={() => handleTempLockGarageDoors(5)}
                               >
                                 5 мин
                               </button>
                               <button
-                                className="border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] px-3 py-1 text-xs font-bold hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                                className={`border-2 ${thCfg.borders} px-3 py-1 text-xs font-bold`}
+                                style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                                 onClick={() => handleTempLockGarageDoors(10)}
                               >
                                 10 мин
                               </button>
                               <button
-                                className="border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] px-3 py-1 text-xs font-bold hover:bg-[#d4d4d4] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                                className={`border-2 ${thCfg.borders} px-3 py-1 text-xs font-bold`}
+                                style={{ backgroundColor: thCfg.windowBg, color: thCfg.textColor }}
                                 onClick={() => handleTempLockGarageDoors(15)}
                               >
                                 15 мин
@@ -2256,16 +2447,16 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     </div>
                   </div>
                   {/* Taskbar */}
-                  <div className="h-[30px] bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 gap-2 relative z-10">
-                    <button className="h-[22px] px-2 flex items-center gap-1 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white">
+                  <div className="h-[30px] border-t-2 flex items-center px-1 gap-2 relative z-10" style={{ backgroundColor: thCfg.taskbarBg, borderTopColor: thCfg.taskbarBorderColor }}>
+                    <button className={`h-[22px] px-2 flex items-center gap-1 border-2 ${thCfg.borders}`} style={{ backgroundColor: thCfg.taskbarBg, color: thCfg.textColor }}>
                       <span className="w-3 h-3 bg-green-600 inline-block"></span>
                       <span className="font-bold text-xs">Пуск</span>
                     </button>
                     <div className="flex-1"></div>
-                    <div className="text-xs text-gray-700 mr-2">
+                    <div className="text-xs mr-2" style={{ color: thCfg.clockTextColor }}>
                       E - Выйти
                     </div>
-                    <div className="h-[22px] px-2 flex items-center border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white text-xs">
+                    <div className={`h-[22px] px-2 flex items-center border-2 ${thCfg.windowContentBorders} text-xs`} style={{ color: thCfg.clockTextColor }}>
                       {new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
