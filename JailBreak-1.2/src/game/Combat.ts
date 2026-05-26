@@ -294,6 +294,7 @@ export class Combat {
     
     if (this.weapon.fire()) {
       soundSystem.playGunshot();
+      setTimeout(() => soundSystem.playMechanicalCycle(), 80);
       
       // Progressive recoil
       this.consecutiveShots++;

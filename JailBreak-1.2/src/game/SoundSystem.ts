@@ -18,6 +18,9 @@ export class SoundSystem {
     const ctx = this.getContext();
     const now = ctx.currentTime;
 
+    // Pitch variation per shot
+    const pitchFactor = 0.95 + Math.random() * 0.1;
+
     // Шум выстрела
     const bufferSize = ctx.sampleRate * 0.15;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -33,7 +36,7 @@ export class SoundSystem {
     // Фильтр для "тяжести" звука
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(3000, now);
+    filter.frequency.setValueAtTime(3000 * pitchFactor, now);
     filter.frequency.exponentialRampToValueAtTime(300, now + 0.1);
 
     // Громкость
@@ -43,8 +46,8 @@ export class SoundSystem {
 
     // Низкочастотный удар
     const osc = ctx.createOscillator();
-    osc.frequency.setValueAtTime(150, now);
-    osc.frequency.exponentialRampToValueAtTime(50, now + 0.05);
+    osc.frequency.setValueAtTime(150 * pitchFactor, now);
+    osc.frequency.exponentialRampToValueAtTime(50 * pitchFactor, now + 0.05);
     
     const oscGain = ctx.createGain();
     oscGain.gain.setValueAtTime(this.masterVolume, now);
@@ -57,6 +60,32 @@ export class SoundSystem {
     noise.stop(now + 0.15);
     osc.start(now);
     osc.stop(now + 0.05);
+
+    // Echo 1: delayed copy at now + 0.15
+    const echo1 = ctx.createBufferSource();
+    echo1.buffer = buffer;
+    const echo1Filter = ctx.createBiquadFilter();
+    echo1Filter.type = 'lowpass';
+    echo1Filter.frequency.value = 1500;
+    const echo1Gain = ctx.createGain();
+    echo1Gain.gain.setValueAtTime(this.masterVolume * 0.45, now + 0.15);
+    echo1Gain.gain.exponentialRampToValueAtTime(0.001, now + 0.27);
+    echo1.connect(echo1Filter).connect(echo1Gain).connect(ctx.destination);
+    echo1.start(now + 0.15);
+    echo1.stop(now + 0.27);
+
+    // Echo 2: delayed copy at now + 0.28
+    const echo2 = ctx.createBufferSource();
+    echo2.buffer = buffer;
+    const echo2Filter = ctx.createBiquadFilter();
+    echo2Filter.type = 'lowpass';
+    echo2Filter.frequency.value = 800;
+    const echo2Gain = ctx.createGain();
+    echo2Gain.gain.setValueAtTime(this.masterVolume * 0.2, now + 0.28);
+    echo2Gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+    echo2.connect(echo2Filter).connect(echo2Gain).connect(ctx.destination);
+    echo2.start(now + 0.28);
+    echo2.stop(now + 0.38);
   }
 
   // === УДАР КУЛАКОМ ===
@@ -960,6 +989,53 @@ export class SoundSystem {
     noise.connect(filter).connect(noiseGain).connect(ctx.destination);
     noise.start(now);
     noise.stop(now + 0.03);
+  }
+
+  // === МЕХАНИЧЕСКИЙ ЦИКЛ ЗАТВОРА ===
+  playMechanicalCycle() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Square wave oscillator for bolt click
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 700;
+    osc.type = 'square';
+
+    const bpFilter = ctx.createBiquadFilter();
+    bpFilter.type = 'bandpass';
+    bpFilter.frequency.value = 1000;
+    bpFilter.Q.value = 2;
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(this.masterVolume * 0.12, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+    osc.connect(bpFilter).connect(oscGain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.04);
+
+    // Tiny noise burst for metallic slide texture
+    const bufferSize = Math.floor(ctx.sampleRate * 0.02);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 40);
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const hpFilter = ctx.createBiquadFilter();
+    hpFilter.type = 'highpass';
+    hpFilter.frequency.value = 2000;
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(this.masterVolume * 0.12, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+
+    noise.connect(hpFilter).connect(noiseGain).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.02);
   }
 
   // === ТЕРМИНАЛ: ФОНОВЫЙ ГУЛ ===
