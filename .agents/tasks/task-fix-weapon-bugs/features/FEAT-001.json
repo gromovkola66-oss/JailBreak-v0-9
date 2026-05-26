@@ -1,0 +1,23 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix 3 weapon-related bugs: (1) Pistol/Taser cannot be picked up from floor because they get merged into static geometry, (2) Weapon model remains on floor after pickup for same reason, (3) Weapon informer always shows 'AK-47' instead of actual weapon name",
+  "status": "in_progress",
+  "steps": [
+    "Step 1 - Fix BUG 1 and BUG 2 (mesh merging swallows weapon groups): In src/editor/PlaytestMode.ts, in the loadMap() method, find the section '--- Static mesh merging ---' where interactiveObjects set is populated. AFTER the line 'this.scene.traverse((child) => { if (child.userData && child.userData.__interactive) { interactiveObjects.add(child); } });' and BEFORE the 'Group meshes by material for merging' comment, add code to include all dropped weapons from the combat system in the interactiveObjects set: 'for (const dw of this.combat.droppedWeapons) { interactiveObjects.add(dw); }'. This prevents weapon groups placed via editor from being merged into static geometry and subsequently removed from the scene.",
+    "Step 2 - Fix BUG 3 (weapon informer hardcodes AK-47): In src/game/Combat.ts, add 'weaponName: string;' to the CombatState interface (after the 'hasWeapon: boolean;' line). Then in the getState() method, add 'weaponName: this.weapon?.stats.name ?? this.storedWeapon?.stats.name ?? \"\",' after the 'hasWeapon' line.",
+    "Step 3 - Update EditorApp.tsx weapon informer display: In src/EditorApp.tsx, find the line '<span className=\"text-yellow-400 font-bold\">AK-47</span>' (around line 1161) and replace it with '<span className=\"text-yellow-400 font-bold\">{ptCombat.weaponName || \"AK-47\"}</span>'. Also update the initial setPtCombat call (around line 715) to include 'weaponName: team === \"guard\" ? \"AK-47\" : \"\",' after the hasWeapon line."
+  ],
+  "acceptance_criteria": [
+    "Dropped weapons placed via editor are excluded from static mesh merging (they remain in the interactiveObjects set)",
+    "CombatState interface includes weaponName field",
+    "getState() returns the actual weapon name from weapon.stats.name or storedWeapon.stats.name",
+    "EditorApp.tsx displays ptCombat.weaponName instead of hardcoded 'AK-47'",
+    "TypeScript compilation (vite build) succeeds without errors"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/JailBreak-v0-9/JailBreak-11.2-unpacked/JailBreak-v0-9-jailbreak-1.2-expand-map-inventory/JailBreak-1.2 && npx vite build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
