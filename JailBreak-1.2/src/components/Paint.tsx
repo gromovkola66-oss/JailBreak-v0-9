@@ -1,11 +1,24 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
+interface PaintThemeConfig {
+  windowBg: string;
+  titleBarStyle: string;
+  titleBarBg?: string;
+  textColor: string;
+  borders: string;
+  buttonBorders: string;
+  font: string;
+  windowContentBorders: string;
+  contentBg: string;
+}
+
 interface PaintProps {
   onClose: () => void;
   onMinimize?: () => void;
   onTitleBarMouseDown?: (e: React.MouseEvent) => void;
   style?: React.CSSProperties;
   onSaveAsWallpaper: (dataUrl: string) => void;
+  themeConfig?: PaintThemeConfig;
 }
 
 type PaintTool = 'brush' | 'eraser';
@@ -30,7 +43,20 @@ const COLOR_PALETTE = [
   '#ff69b4', // pink
 ];
 
-export const Paint = ({ onClose, onMinimize, onTitleBarMouseDown, style, onSaveAsWallpaper }: PaintProps) => {
+// Default Win95 theme config for backwards compatibility
+const DEFAULT_THEME: PaintThemeConfig = {
+  windowBg: '#c0c0c0',
+  titleBarStyle: 'bg-gradient-to-r from-[#000080] to-[#1084d0]',
+  textColor: 'black',
+  borders: 'border-t-white border-l-white border-b-gray-700 border-r-gray-700',
+  buttonBorders: 'border-t-white border-l-white border-b-gray-700 border-r-gray-700',
+  font: "'Tahoma', sans-serif",
+  windowContentBorders: 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white',
+  contentBg: 'white',
+};
+
+export const Paint = ({ onClose, onMinimize, onTitleBarMouseDown, style, onSaveAsWallpaper, themeConfig }: PaintProps) => {
+  const th = themeConfig || DEFAULT_THEME;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [tool, setTool] = useState<PaintTool>('brush');
   const [color, setColor] = useState('#000000');
@@ -112,19 +138,21 @@ export const Paint = ({ onClose, onMinimize, onTitleBarMouseDown, style, onSaveA
 
   return (
     <div className="absolute inset-0 flex items-center justify-center z-20" onClick={(e) => e.stopPropagation()} style={style}>
-      <div className="border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] shadow-lg">
+      <div className={`border-2 ${th.borders} shadow-lg`} style={{ backgroundColor: th.windowBg, fontFamily: th.font, color: th.textColor }}>
         {/* Title bar */}
-        <div className="bg-gradient-to-r from-[#000080] to-[#1084d0] text-white font-bold px-2 py-1 flex items-center justify-between cursor-move" onMouseDown={onTitleBarMouseDown}>
+        <div className={`${th.titleBarStyle} text-white font-bold px-2 py-1 flex items-center justify-between cursor-move`} style={th.titleBarBg ? { backgroundColor: th.titleBarBg } : undefined} onMouseDown={onTitleBarMouseDown}>
           <span className="text-xs">{'\u{1F3A8}'} {'\u0420\u0438\u0441\u043E\u0432\u0430\u043B\u043A\u0430'}</span>
           <div className="flex gap-0.5">
             {onMinimize && (
               <button
-                className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+                className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${th.buttonBorders}`}
+                style={{ backgroundColor: th.windowBg, color: th.textColor }}
                 onClick={(e) => { e.stopPropagation(); onMinimize(); }}
               >_</button>
             )}
             <button
-              className="w-4 h-4 bg-[#c0c0c0] border border-t-white border-l-white border-b-gray-700 border-r-gray-700 text-black text-xs flex items-center justify-center leading-none font-bold"
+              className={`w-4 h-4 border text-xs flex items-center justify-center leading-none font-bold ${th.buttonBorders}`}
+              style={{ backgroundColor: th.windowBg, color: th.textColor }}
               onClick={onClose}
             >X</button>
           </div>
@@ -133,7 +161,7 @@ export const Paint = ({ onClose, onMinimize, onTitleBarMouseDown, style, onSaveA
         {/* Content area */}
         <div className="p-2">
           {/* Canvas */}
-          <div className="border-2 border-t-gray-700 border-l-gray-700 border-b-white border-r-white mb-2">
+          <div className={`border-2 ${th.windowContentBorders} mb-2`}>
             <canvas
               ref={canvasRef}
               width={400}
@@ -152,14 +180,14 @@ export const Paint = ({ onClose, onMinimize, onTitleBarMouseDown, style, onSaveA
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold mr-1">{'\u0418\u043D\u0441\u0442\u0440.:'}</span>
               <button
-                className={`w-7 h-7 border-2 flex items-center justify-center text-sm ${tool === 'brush' ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white' : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700'}`}
-                style={{ backgroundColor: '#c0c0c0' }}
+                className={`w-7 h-7 border-2 flex items-center justify-center text-sm ${tool === 'brush' ? th.windowContentBorders : th.buttonBorders}`}
+                style={{ backgroundColor: th.windowBg }}
                 onClick={() => setTool('brush')}
                 title="Кисть"
               >{'\u{270F}\u{FE0F}'}</button>
               <button
-                className={`w-7 h-7 border-2 flex items-center justify-center text-sm ${tool === 'eraser' ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white' : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700'}`}
-                style={{ backgroundColor: '#c0c0c0' }}
+                className={`w-7 h-7 border-2 flex items-center justify-center text-sm ${tool === 'eraser' ? th.windowContentBorders : th.buttonBorders}`}
+                style={{ backgroundColor: th.windowBg }}
                 onClick={() => setTool('eraser')}
                 title="Ластик"
               >{'\u{1F9F9}'}</button>
@@ -167,25 +195,25 @@ export const Paint = ({ onClose, onMinimize, onTitleBarMouseDown, style, onSaveA
               {/* Brush sizes */}
               <span className="text-[10px] font-bold ml-2 mr-1">{'\u0420\u0430\u0437\u043C\u0435\u0440:'}</span>
               <button
-                className={`w-6 h-6 border-2 flex items-center justify-center ${brushSize === 'small' ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white' : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700'}`}
-                style={{ backgroundColor: '#c0c0c0' }}
+                className={`w-6 h-6 border-2 flex items-center justify-center ${brushSize === 'small' ? th.windowContentBorders : th.buttonBorders}`}
+                style={{ backgroundColor: th.windowBg }}
                 onClick={() => setBrushSize('small')}
               >
-                <div className="w-1 h-1 bg-black rounded-full"></div>
+                <div className="w-1 h-1 rounded-full" style={{ backgroundColor: th.textColor }}></div>
               </button>
               <button
-                className={`w-6 h-6 border-2 flex items-center justify-center ${brushSize === 'medium' ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white' : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700'}`}
-                style={{ backgroundColor: '#c0c0c0' }}
+                className={`w-6 h-6 border-2 flex items-center justify-center ${brushSize === 'medium' ? th.windowContentBorders : th.buttonBorders}`}
+                style={{ backgroundColor: th.windowBg }}
                 onClick={() => setBrushSize('medium')}
               >
-                <div className="w-2 h-2 bg-black rounded-full"></div>
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: th.textColor }}></div>
               </button>
               <button
-                className={`w-6 h-6 border-2 flex items-center justify-center ${brushSize === 'large' ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white' : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700'}`}
-                style={{ backgroundColor: '#c0c0c0' }}
+                className={`w-6 h-6 border-2 flex items-center justify-center ${brushSize === 'large' ? th.windowContentBorders : th.buttonBorders}`}
+                style={{ backgroundColor: th.windowBg }}
                 onClick={() => setBrushSize('large')}
               >
-                <div className="w-3 h-3 bg-black rounded-full"></div>
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: th.textColor }}></div>
               </button>
             </div>
 
@@ -195,7 +223,7 @@ export const Paint = ({ onClose, onMinimize, onTitleBarMouseDown, style, onSaveA
               {COLOR_PALETTE.map((c) => (
                 <button
                   key={c}
-                  className={`w-5 h-5 border-2 ${color === c && tool === 'brush' ? 'border-t-gray-700 border-l-gray-700 border-b-white border-r-white' : 'border-t-white border-l-white border-b-gray-700 border-r-gray-700'}`}
+                  className={`w-5 h-5 border-2 ${color === c && tool === 'brush' ? th.windowContentBorders : th.buttonBorders}`}
                   style={{ backgroundColor: c }}
                   onClick={() => { setColor(c); setTool('brush'); }}
                   title={c}
@@ -206,11 +234,13 @@ export const Paint = ({ onClose, onMinimize, onTitleBarMouseDown, style, onSaveA
             {/* Actions row */}
             <div className="flex items-center gap-2 mt-1">
               <button
-                className="px-2 py-0.5 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] text-[10px] font-bold active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                className={`px-2 py-0.5 border-2 ${th.buttonBorders} text-[10px] font-bold`}
+                style={{ backgroundColor: th.windowBg, color: th.textColor }}
                 onClick={handleClear}
               >{'\u041E\u0447\u0438\u0441\u0442\u0438\u0442\u044C'}</button>
               <button
-                className="px-2 py-0.5 border-2 border-t-white border-l-white border-b-gray-700 border-r-gray-700 bg-[#c0c0c0] text-[10px] font-bold active:border-t-gray-700 active:border-l-gray-700 active:border-b-white active:border-r-white"
+                className={`px-2 py-0.5 border-2 ${th.buttonBorders} text-[10px] font-bold`}
+                style={{ backgroundColor: th.windowBg, color: th.textColor }}
                 onClick={handleSaveWallpaper}
               >{'\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u043A\u0430\u043A \u043E\u0431\u043E\u0438'}</button>
             </div>

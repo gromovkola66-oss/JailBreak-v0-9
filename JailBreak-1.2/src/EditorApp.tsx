@@ -1549,7 +1549,7 @@ Press any key to restart...`}
               {ptCameraState.terminalView === 'desktop' && (
                 <div className="absolute inset-0 flex flex-col text-sm select-none" style={{ fontFamily: thCfg.font, color: thCfg.textColor, textShadow: thCfg.textShadow }} onClick={() => startMenuOpen && setStartMenuOpen(false)}>
                   {/* Wallpaper background */}
-                  <div className="absolute inset-0" style={customWallpaper && !thCfg.desktopBg ? { backgroundImage: `url(${customWallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
+                  <div className="absolute inset-0" style={customWallpaper ? { backgroundImage: `url(${customWallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   {/* JailBreak watermark */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15 pointer-events-none" style={{ animation: 'gentleSpin 4s ease-in-out infinite' }}>
                     <span className="text-7xl font-black text-blue-400">Jail</span>
@@ -2084,6 +2084,7 @@ Press any key to restart...`}
                       onTitleBarMouseDown={(e) => handleWindowDragStart('paint', e)}
                       style={{ transform: `translate(${(windowPositions['paint']?.x || 0)}px, ${(windowPositions['paint']?.y || 0)}px)` }}
                       onSaveAsWallpaper={handleSaveAsWallpaper}
+                      themeConfig={thCfg}
                     />
                   )}
 
@@ -2234,7 +2235,7 @@ Press any key to restart...`}
               {ptCameraState.terminalView === 'cameras' && ptCameraState.selectedCameraIndex === null && (
                 <div className="absolute inset-0 flex flex-col text-sm select-none" style={{ fontFamily: thCfg.font, color: thCfg.textColor }}>
                   {/* Wallpaper background */}
-                  <div className="absolute inset-0" style={customWallpaper && !thCfg.desktopBg ? { backgroundImage: `url(${customWallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
+                  <div className="absolute inset-0" style={customWallpaper ? { backgroundImage: `url(${customWallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   <div className="flex-1 flex items-center justify-center p-4 relative z-10">
                     <div className={`w-[95vw] max-w-[1100px] h-[85vh] border-2 ${thCfg.borders} shadow-lg flex flex-col`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
                       {/* Title bar */}
@@ -2411,7 +2412,7 @@ Press any key to restart...`}
               {ptCameraState.terminalView === 'doors' && (
                 <div className="absolute inset-0 flex flex-col text-sm select-none" style={{ fontFamily: thCfg.font, color: thCfg.textColor }}>
                   {/* Wallpaper background */}
-                  <div className="absolute inset-0" style={customWallpaper && !thCfg.desktopBg ? { backgroundImage: `url(${customWallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
+                  <div className="absolute inset-0" style={customWallpaper ? { backgroundImage: `url(${customWallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   {/* Centered Win95 window */}
                   <div className="flex-1 flex items-center justify-center relative z-10">
                     <div className={`w-[450px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
