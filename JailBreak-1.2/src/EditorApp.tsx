@@ -510,6 +510,24 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     }
   }, [ptCameraState?.terminalView]);
 
+  // BSOD auto-dismiss after 3s or on any keypress
+  useEffect(() => {
+    if (ptCameraState?.terminalView === 'bsod') {
+      const timer = setTimeout(() => {
+        playtestRef.current?.restartBoot();
+      }, 3000);
+      const handleKey = () => {
+        clearTimeout(timer);
+        playtestRef.current?.restartBoot();
+      };
+      window.addEventListener('keydown', handleKey);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('keydown', handleKey);
+      };
+    }
+  }, [ptCameraState?.terminalView]);
+
   // Terminal hum ambient: start on desktop, stop on exit
   useEffect(() => {
     if (ptCameraState?.inTerminalMode && ptCameraState.terminalView === 'desktop') {
@@ -537,7 +555,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
   // Glitch effect every 30 seconds while in terminal mode
   useEffect(() => {
-    if (!ptCameraState?.inTerminalMode || ptCameraState.terminalView === 'booting' || ptCameraState.terminalView === 'shutting_down') {
+    if (!ptCameraState?.inTerminalMode || ptCameraState.terminalView === 'booting' || ptCameraState.terminalView === 'shutting_down' || ptCameraState.terminalView === 'bsod') {
       return;
     }
     const interval = setInterval(() => {
@@ -1479,6 +1497,28 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                 boxShadow: 'inset 0 0 80px rgba(0,0,0,0.4)',
                 animation: 'crtFlicker 3s ease-in-out infinite',
               }} />
+
+              {/* BSOD screen */}
+              {ptCameraState.terminalView === 'bsod' && (
+                <div className="absolute inset-0 flex items-center justify-center z-40" style={{ backgroundColor: '#0000AA' }}>
+                  <div className="text-white font-mono text-xs leading-relaxed whitespace-pre-wrap max-w-2xl px-8 text-center">
+{`A problem has been detected and JailBreak OS has been
+shut down to prevent damage to your terminal.
+
+CRITICAL_PROCESS_DIED
+
+*** STOP: 0x000000EF (0x00000001, 0x00000000, 0x00000000, 0x00000000)
+
+Technical information:
+*** jailbreak.sys - Address 0xFFFFF802 base at 0xFFFFF800
+
+Beginning dump of physical memory...
+Physical memory dump complete.
+
+Press any key to restart...`}
+                  </div>
+                </div>
+              )}
 
               {/* Boot screen */}
               {ptCameraState.terminalView === 'booting' && (

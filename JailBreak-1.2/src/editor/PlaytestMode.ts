@@ -1418,6 +1418,10 @@ export class PlaytestMode {
     this.cameraSystem.transitionToDesktop();
   }
 
+  restartBoot() {
+    this.cameraSystem.restartBoot();
+  }
+
   // === PTZ Passthrough ===
   ptzPan(dx: number, dy: number) { this.cameraSystem.ptzPan(dx, dy); }
   ptzZoom(delta: number) { this.cameraSystem.ptzZoom(delta); }

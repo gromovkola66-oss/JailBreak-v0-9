@@ -21,7 +21,7 @@ export interface CameraSystemState {
   cameras: SecurityCamera[];
   selectedCameraIndex: number | null;
   screenshots: string[];
-  terminalView: 'desktop' | 'cameras' | 'doors' | 'booting' | 'shutting_down';
+  terminalView: 'desktop' | 'cameras' | 'doors' | 'booting' | 'shutting_down' | 'bsod';
   ptzPan: number;
   ptzTilt: number;
   ptzZoom: number;
@@ -39,7 +39,7 @@ export class CameraSystem {
   private _selectedCameraIndex: number | null = null;
   private _activeCameras: SecurityCamera[] = [];
   private _screenshots: string[] = [];
-  private _terminalView: 'desktop' | 'cameras' | 'doors' | 'booting' | 'shutting_down' = 'desktop';
+  private _terminalView: 'desktop' | 'cameras' | 'doors' | 'booting' | 'shutting_down' | 'bsod' = 'desktop';
 
   private highlightedMeshes: { mesh: THREE.Mesh; originalMaterial: THREE.Material }[] = [];
 
@@ -226,6 +226,9 @@ export class CameraSystem {
     this._inTerminalMode = true;
     this._selectedCameraIndex = null;
     this._terminalView = 'booting';
+    if (Math.random() < 0.01) {
+      this._terminalView = 'bsod';
+    }
 
     document.exitPointerLock();
     this.emitState();
@@ -251,6 +254,11 @@ export class CameraSystem {
 
   transitionToDesktop() {
     this._terminalView = 'desktop';
+    this.emitState();
+  }
+
+  restartBoot() {
+    this._terminalView = 'booting';
     this.emitState();
   }
 
