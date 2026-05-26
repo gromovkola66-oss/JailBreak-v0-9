@@ -17,6 +17,7 @@ export class Weapon {
   public stats: WeaponStats;
 
   private muzzleFlash: THREE.PointLight;
+  private muzzleFlashMesh: THREE.Mesh;
   private lastFireTime = 0;
   private recoilAmount = 0;
   private originalPosition: THREE.Vector3;
@@ -29,6 +30,8 @@ export class Weapon {
   private isReloading_ = false;
   private reloadProgress = 0;
   private readonly reloadDuration = 1.6;
+
+  private smokeParticles: THREE.Mesh[] = [];
 
   constructor(team: WeaponTeam = 'guard') {
     this.group = new THREE.Group();
@@ -47,6 +50,20 @@ export class Weapon {
     this.muzzleFlash = new THREE.PointLight(0xffaa00, 0, 3);
     this.muzzleFlash.position.set(0, 0.02, -0.7);
     this.group.add(this.muzzleFlash);
+
+    // Muzzle flash mesh (starburst texture on a plane)
+    const flashTexture = this.createMuzzleFlashTexture();
+    const flashMat = new THREE.MeshBasicMaterial({
+      map: flashTexture,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    this.muzzleFlashMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.12), flashMat);
+    this.muzzleFlashMesh.position.set(0, 0.02, -0.7);
+    this.muzzleFlashMesh.visible = false;
+    this.group.add(this.muzzleFlashMesh);
   }
 
   private buildGun() {
@@ -157,6 +174,43 @@ export class Weapon {
     return mesh;
   }
 
+  private createMuzzleFlashTexture(): THREE.CanvasTexture {
+    const size = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+    const cx = size / 2;
+    const cy = size / 2;
+
+    // Draw starburst rays
+    const rayCount = 8;
+    for (let i = 0; i < rayCount; i++) {
+      const angle = (i / rayCount) * Math.PI * 2;
+      const grad = ctx.createLinearGradient(cx, cy, cx + Math.cos(angle) * cx, cy + Math.sin(angle) * cy);
+      grad.addColorStop(0, 'rgba(255, 255, 200, 1)');
+      grad.addColorStop(0.3, 'rgba(255, 180, 50, 0.8)');
+      grad.addColorStop(1, 'rgba(255, 100, 0, 0)');
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      const spread = Math.PI / rayCount * 0.6;
+      ctx.arc(cx, cy, cx, angle - spread, angle + spread);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // Bright center
+    const centerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, cx * 0.3);
+    centerGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    centerGrad.addColorStop(1, 'rgba(255, 200, 50, 0)');
+    ctx.fillStyle = centerGrad;
+    ctx.fillRect(0, 0, size, size);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }
+
   canFire(): boolean {
     if (this.isReloading_) return false;
     return this.stats.currentAmmo > 0 && (performance.now() - this.lastFireTime) >= 1000 / this.stats.fireRate;
@@ -167,9 +221,77 @@ export class Weapon {
     this.stats.currentAmmo--;
     this.lastFireTime = performance.now();
     this.recoilAmount = 0.04;
-    this.muzzleFlash.intensity = 2;
-    setTimeout(() => { this.muzzleFlash.intensity = 0; }, 50);
+
+    // Enhanced muzzle flash
+    this.muzzleFlash.intensity = 4;
+    this.muzzleFlashMesh.visible = true;
+    this.muzzleFlashMesh.rotation.z = Math.random() * Math.PI * 2;
+    setTimeout(() => {
+      this.muzzleFlash.intensity = 0;
+      this.muzzleFlashMesh.visible = false;
+    }, 50);
+
+    // Spawn smoke particle at muzzle world position
+    this.spawnSmokeParticle();
+
     return true;
+  }
+
+  private spawnSmokeParticle() {
+    const smokeMat = new THREE.MeshBasicMaterial({
+      color: 0x888888,
+      transparent: true,
+      opacity: 0.4,
+      depthWrite: false,
+    });
+    const smoke = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), smokeMat);
+
+    // Get world position of muzzle
+    const muzzleWorldPos = new THREE.Vector3();
+    this.muzzleFlash.getWorldPosition(muzzleWorldPos);
+    smoke.position.copy(muzzleWorldPos);
+
+    smoke.userData.lifetime = 0;
+    smoke.userData.maxLifetime = 0.3;
+    smoke.userData.velocityY = 0.3;
+
+    // Add to scene (parent of group's scene)
+    const sceneObj = this.group.parent?.parent; // camera -> scene
+    if (sceneObj instanceof THREE.Scene) {
+      sceneObj.add(smoke);
+    } else if (this.group.parent) {
+      // fallback: try traversing up
+      let obj: THREE.Object3D | null = this.group.parent;
+      while (obj && !(obj instanceof THREE.Scene)) {
+        obj = obj.parent;
+      }
+      if (obj) obj.add(smoke);
+    }
+    this.smokeParticles.push(smoke);
+  }
+
+  getSmokeParticles(): THREE.Mesh[] {
+    return this.smokeParticles;
+  }
+
+  updateSmoke(delta: number) {
+    for (let i = this.smokeParticles.length - 1; i >= 0; i--) {
+      const smoke = this.smokeParticles[i];
+      smoke.userData.lifetime += delta;
+      smoke.position.y += smoke.userData.velocityY * delta;
+
+      const progress = smoke.userData.lifetime / smoke.userData.maxLifetime;
+      const mat = smoke.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.4 * (1 - progress);
+      smoke.scale.setScalar(1 + progress);
+
+      if (smoke.userData.lifetime >= smoke.userData.maxLifetime) {
+        smoke.parent?.remove(smoke);
+        smoke.geometry.dispose();
+        mat.dispose();
+        this.smokeParticles.splice(i, 1);
+      }
+    }
   }
 
   reload() {
@@ -248,5 +370,11 @@ export class Weapon {
     d.y += (Math.random() - 0.5) * spread;
     d.z += (Math.random() - 0.5) * spread;
     return d.normalize();
+  }
+
+  getMuzzleWorldPosition(): THREE.Vector3 {
+    const pos = new THREE.Vector3();
+    this.muzzleFlash.getWorldPosition(pos);
+    return pos;
   }
 }

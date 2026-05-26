@@ -66,6 +66,11 @@ export class Combat {
   
   private storedWeapon: Weapon | null = null;
 
+  // VFX tracking
+  private bulletHoles: THREE.Group[] = [];
+  private impactParticles: THREE.Mesh[] = [];
+  private tracers: THREE.Mesh[] = [];
+
   // Item system
   public heldItemType: string = 'none';
   private flashlightOn = false;
@@ -297,6 +302,7 @@ export class Combat {
           hitObj = hitObj.parent;
         }
         this.createBulletHole(hit.point, hit.face?.normal);
+        this.createTracer(hit.point);
       }
       
       this.notifyStateChange();
@@ -309,25 +315,109 @@ export class Combat {
   
 
   private createBulletHole(position: THREE.Vector3, normal?: THREE.Vector3) {
-    const geometry = new THREE.CircleGeometry(0.05, 8);
-    const material = new THREE.MeshBasicMaterial({ 
-      color: 0x111111,
-      side: THREE.DoubleSide
+    const holeGroup = new THREE.Group();
+
+    // Inner dark circle
+    const innerGeo = new THREE.CircleGeometry(0.03, 8);
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: 0x050505,
+      side: THREE.DoubleSide,
     });
-    const hole = new THREE.Mesh(geometry, material);
-    hole.position.copy(position);
-    
+    const inner = new THREE.Mesh(innerGeo, innerMat);
+    holeGroup.add(inner);
+
+    // Outer ring
+    const outerGeo = new THREE.RingGeometry(0.03, 0.08, 12);
+    const outerMat = new THREE.MeshBasicMaterial({
+      color: 0x222222,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const outer = new THREE.Mesh(outerGeo, outerMat);
+    outer.position.z = -0.001; // slight offset to avoid z-fighting
+    holeGroup.add(outer);
+
+    holeGroup.position.copy(position);
+
     if (normal) {
-      hole.position.add(normal.multiplyScalar(0.01));
-      hole.lookAt(position.clone().add(normal));
+      const offsetNormal = normal.clone().normalize();
+      holeGroup.position.add(offsetNormal.multiplyScalar(0.01));
+      holeGroup.lookAt(position.clone().add(normal));
     }
-    
-    this.scene.add(hole);
-    
-    // Удаляем через 30 секунд
-    setTimeout(() => {
-      this.scene.remove(hole);
-    }, 30000);
+
+    this.scene.add(holeGroup);
+    this.bulletHoles.push(holeGroup);
+
+    // Limit to 30 bullet holes
+    if (this.bulletHoles.length > 30) {
+      const oldest = this.bulletHoles.shift()!;
+      oldest.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          if (child.material instanceof THREE.Material) {
+            child.material.dispose();
+          }
+        }
+      });
+      this.scene.remove(oldest);
+    }
+
+    // Spawn impact particles
+    this.spawnImpactParticles(position, normal);
+  }
+
+  private spawnImpactParticles(position: THREE.Vector3, normal?: THREE.Vector3) {
+    const particleMat = new THREE.MeshBasicMaterial({ color: 0xff6600 });
+    const particleGeo = new THREE.BoxGeometry(0.01, 0.01, 0.01);
+
+    for (let i = 0; i < 4; i++) {
+      const particle = new THREE.Mesh(particleGeo, particleMat);
+      particle.position.copy(position);
+
+      // Random velocity outward from hit normal
+      const dir = normal ? normal.clone().normalize() : new THREE.Vector3(0, 1, 0);
+      const vx = dir.x * 2 + (Math.random() - 0.5) * 3;
+      const vy = dir.y * 2 + Math.random() * 2;
+      const vz = dir.z * 2 + (Math.random() - 0.5) * 3;
+
+      particle.userData.velocityX = vx;
+      particle.userData.velocityY = vy;
+      particle.userData.velocityZ = vz;
+      particle.userData.lifetime = 0;
+      particle.userData.maxLifetime = 0.3;
+
+      this.scene.add(particle);
+      this.impactParticles.push(particle);
+    }
+  }
+
+  private createTracer(hitPoint: THREE.Vector3) {
+    if (!this.weapon) return;
+
+    const muzzlePos = this.weapon.getMuzzleWorldPosition();
+    const direction = new THREE.Vector3().subVectors(hitPoint, muzzlePos);
+    const distance = direction.length();
+
+    if (distance < 0.1) return;
+
+    const tracerGeo = new THREE.CylinderGeometry(0.003, 0.003, distance, 4);
+    const tracerMat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+    const tracer = new THREE.Mesh(tracerGeo, tracerMat);
+
+    // Position at midpoint
+    const midpoint = new THREE.Vector3().addVectors(muzzlePos, hitPoint).multiplyScalar(0.5);
+    tracer.position.copy(midpoint);
+
+    // Orient along direction
+    tracer.lookAt(hitPoint);
+    tracer.rotateX(Math.PI / 2);
+
+    tracer.userData.lifetime = 0;
+    tracer.userData.maxLifetime = 0.08;
+
+    this.scene.add(tracer);
+    this.tracers.push(tracer);
   }
 
   private createDroppedWeapon(position: THREE.Vector3) {
@@ -1010,6 +1100,41 @@ export class Combat {
     // Update dropped items physics
     for (const item of this.droppedItems) {
       this.updateDroppedObjectPhysics(item, delta);
+    }
+
+    // Update impact particles
+    for (let i = this.impactParticles.length - 1; i >= 0; i--) {
+      const p = this.impactParticles[i];
+      p.userData.lifetime += delta;
+      p.position.x += p.userData.velocityX * delta;
+      p.position.y += p.userData.velocityY * delta;
+      p.position.z += p.userData.velocityZ * delta;
+      // Apply gravity
+      p.userData.velocityY -= 9.8 * delta;
+
+      if (p.userData.lifetime >= p.userData.maxLifetime) {
+        this.scene.remove(p);
+        p.geometry.dispose();
+        (p.material as THREE.Material).dispose();
+        this.impactParticles.splice(i, 1);
+      }
+    }
+
+    // Update tracers
+    for (let i = this.tracers.length - 1; i >= 0; i--) {
+      const t = this.tracers[i];
+      t.userData.lifetime += delta;
+      if (t.userData.lifetime >= t.userData.maxLifetime) {
+        this.scene.remove(t);
+        t.geometry.dispose();
+        (t.material as THREE.Material).dispose();
+        this.tracers.splice(i, 1);
+      }
+    }
+
+    // Update weapon smoke particles
+    if (this.weapon) {
+      this.weapon.updateSmoke(delta);
     }
   }
 
