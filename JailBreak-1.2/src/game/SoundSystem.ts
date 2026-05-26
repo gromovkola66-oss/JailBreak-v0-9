@@ -1038,6 +1038,323 @@ export class SoundSystem {
     noise.stop(now + 0.02);
   }
 
+  // === SHOTGUN BLAST ===
+  playShotgunBlast() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Deep bass boom noise
+    const bufferSize = Math.floor(ctx.sampleRate * 0.25);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 8) * 0.9;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2000, now);
+    filter.frequency.exponentialRampToValueAtTime(200, now + 0.2);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(this.masterVolume * 1.8, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+    // Low oscillator
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.exponentialRampToValueAtTime(30, now + 0.08);
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(this.masterVolume * 1.2, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    osc.connect(oscGain).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.25);
+    osc.start(now);
+    osc.stop(now + 0.08);
+
+    // Echo 1
+    const echo1 = ctx.createBufferSource();
+    echo1.buffer = buffer;
+    const e1f = ctx.createBiquadFilter();
+    e1f.type = 'lowpass'; e1f.frequency.value = 800;
+    const e1g = ctx.createGain();
+    e1g.gain.setValueAtTime(this.masterVolume * 0.5, now + 0.2);
+    e1g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    echo1.connect(e1f).connect(e1g).connect(ctx.destination);
+    echo1.start(now + 0.2);
+    echo1.stop(now + 0.35);
+
+    // Echo 2
+    const echo2 = ctx.createBufferSource();
+    echo2.buffer = buffer;
+    const e2f = ctx.createBiquadFilter();
+    e2f.type = 'lowpass'; e2f.frequency.value = 400;
+    const e2g = ctx.createGain();
+    e2g.gain.setValueAtTime(this.masterVolume * 0.25, now + 0.35);
+    e2g.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    echo2.connect(e2f).connect(e2g).connect(ctx.destination);
+    echo2.start(now + 0.35);
+    echo2.stop(now + 0.5);
+  }
+
+  // === SHOTGUN PUMP ===
+  playShotgunPump() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // First click
+    const osc1 = ctx.createOscillator();
+    osc1.frequency.value = 500; osc1.type = 'square';
+    const g1 = ctx.createGain();
+    g1.gain.setValueAtTime(this.masterVolume * 0.4, now);
+    g1.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+    osc1.connect(g1).connect(ctx.destination);
+    osc1.start(now); osc1.stop(now + 0.04);
+
+    // Slide noise
+    const bufSize = Math.floor(ctx.sampleRate * 0.15);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      const t = i / bufSize;
+      d[i] = (Math.random() * 2 - 1) * Math.exp(-t * 10) * 0.4;
+    }
+    const n = ctx.createBufferSource(); n.buffer = buf;
+    const nf = ctx.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 1200; nf.Q.value = 1;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(this.masterVolume * 0.3, now + 0.04);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+    n.connect(nf).connect(ng).connect(ctx.destination);
+    n.start(now + 0.04); n.stop(now + 0.19);
+
+    // Second click
+    const osc2 = ctx.createOscillator();
+    osc2.frequency.value = 700; osc2.type = 'square';
+    const g2 = ctx.createGain();
+    g2.gain.setValueAtTime(this.masterVolume * 0.45, now + 0.2);
+    g2.gain.exponentialRampToValueAtTime(0.001, now + 0.23);
+    osc2.connect(g2).connect(ctx.destination);
+    osc2.start(now + 0.2); osc2.stop(now + 0.23);
+  }
+
+  // === PISTOL SHOT ===
+  playPistolShot() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Sharp crack noise
+    const bufferSize = Math.floor(ctx.sampleRate * 0.08);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 25) * 0.8;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 1500;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(this.masterVolume * 1.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    // Low thump
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(200, now);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.04);
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(this.masterVolume * 0.8, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+    noise.connect(hp).connect(gain).connect(ctx.destination);
+    osc.connect(oscGain).connect(ctx.destination);
+    noise.start(now); noise.stop(now + 0.08);
+    osc.start(now); osc.stop(now + 0.04);
+
+    // Short echo
+    const echo = ctx.createBufferSource();
+    echo.buffer = buffer;
+    const ef = ctx.createBiquadFilter();
+    ef.type = 'lowpass'; ef.frequency.value = 1000;
+    const eg = ctx.createGain();
+    eg.gain.setValueAtTime(this.masterVolume * 0.3, now + 0.1);
+    eg.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    echo.connect(ef).connect(eg).connect(ctx.destination);
+    echo.start(now + 0.1); echo.stop(now + 0.18);
+  }
+
+  // === PISTOL SLIDE ===
+  playPistolSlide() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 2000; osc.type = 'square';
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(this.masterVolume * 0.25, now);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+    osc.connect(og).connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.03);
+
+    // Noise burst
+    const bufSize = Math.floor(ctx.sampleRate * 0.02);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) { d[i] = (Math.random() * 2 - 1) * Math.exp(-(i / bufSize) * 30); }
+    const n = ctx.createBufferSource(); n.buffer = buf;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2500; bp.Q.value = 2;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(this.masterVolume * 0.2, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+    n.connect(bp).connect(ng).connect(ctx.destination);
+    n.start(now); n.stop(now + 0.02);
+  }
+
+  // === PISTOL MAG RELEASE ===
+  playPistolMagRelease() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 1500; osc.type = 'sine';
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(this.masterVolume * 0.2, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.02);
+  }
+
+  // === TASER BUZZ ===
+  playTaserBuzz() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Low sawtooth hum
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 50; osc.type = 'sawtooth';
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(this.masterVolume * 0.15, now);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+    // Noise modulated at 120Hz
+    const bufSize = Math.floor(ctx.sampleRate * 0.3);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      const t = i / ctx.sampleRate;
+      d[i] = (Math.random() * 2 - 1) * (0.5 + 0.5 * Math.sin(t * 120 * Math.PI * 2)) * 0.3;
+    }
+    const n = ctx.createBufferSource(); n.buffer = buf;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(this.masterVolume * 0.2, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+    osc.connect(og).connect(ctx.destination);
+    n.connect(ng).connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.3);
+    n.start(now); n.stop(now + 0.3);
+  }
+
+  // === TASER FIRE ===
+  playTaserFire() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Loud crackle noise through highpass
+    const bufSize = Math.floor(ctx.sampleRate * 0.15);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      const t = i / bufSize;
+      d[i] = (Math.random() * 2 - 1) * Math.exp(-t * 6) * 0.9;
+    }
+    const n = ctx.createBufferSource(); n.buffer = buf;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3000;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(this.masterVolume * 1.5, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    // Oscillator sweep
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(8000, now);
+    osc.frequency.exponentialRampToValueAtTime(2000, now + 0.1);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(this.masterVolume * 0.5, now);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+    n.connect(hp).connect(ng).connect(ctx.destination);
+    osc.connect(og).connect(ctx.destination);
+    n.start(now); n.stop(now + 0.15);
+    osc.start(now); osc.stop(now + 0.1);
+  }
+
+  // === TASER WIRE SHOT ===
+  playTaserWireShot() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Puff sound - low noise through lowpass
+    const bufSize = Math.floor(ctx.sampleRate * 0.1);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      const t = i / bufSize;
+      d[i] = (Math.random() * 2 - 1) * Math.exp(-t * 12) * 0.5;
+    }
+    const n = ctx.createBufferSource(); n.buffer = buf;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 800;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(this.masterVolume * 0.4, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+    // Brief osc
+    const osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.06);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(this.masterVolume * 0.3, now);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+    n.connect(lp).connect(ng).connect(ctx.destination);
+    osc.connect(og).connect(ctx.destination);
+    n.start(now); n.stop(now + 0.1);
+    osc.start(now); osc.stop(now + 0.06);
+  }
+
+  // === SHOTGUN RELOAD SHELL ===
+  playShotgunReloadShell() {
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+
+    // Metallic click
+    const osc = ctx.createOscillator();
+    osc.frequency.value = 1000; osc.type = 'sine';
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(this.masterVolume * 0.3, now);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+    osc.connect(og).connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.03);
+
+    // Small noise burst
+    const bufSize = Math.floor(ctx.sampleRate * 0.02);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) { d[i] = (Math.random() * 2 - 1) * Math.exp(-(i / bufSize) * 30); }
+    const n = ctx.createBufferSource(); n.buffer = buf;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(this.masterVolume * 0.2, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+    n.connect(ng).connect(ctx.destination);
+    n.start(now); n.stop(now + 0.02);
+  }
+
   // === ТЕРМИНАЛ: ФОНОВЫЙ ГУЛ ===
   startTerminalHum(): () => void {
     const ctx = this.getContext();

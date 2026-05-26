@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Weapon } from './Weapon';
+import { Weapon, WeaponType } from './Weapon';
 import { Hands } from './Hands';
 import { soundSystem } from './SoundSystem';
 
@@ -100,6 +100,9 @@ export class Combat {
   private consecutiveShots = 0;
   private lastShotTime = 0;
 
+  // Semi-auto tracking
+  private semiAutoFired = false;
+
   // Movement state for dynamic spread
   private _isMoving = false;
   private _isSprinting = false;
@@ -141,20 +144,20 @@ export class Combat {
     this._isCrouching = crouching;
   }
 
-  // Выдать оружие игроку (для охраны при спавне)
-  giveWeapon() {
+  // Give weapon to player (for guards at spawn)
+  giveWeapon(weaponType: WeaponType = 'ak47') {
     if (this.weapon) return;
     
-    this.weapon = new Weapon(this.team);
+    this.weapon = new Weapon(this.team, weaponType);
     this.camera.add(this.weapon.group);
     this.hands.setVisible(false);
     this.notifyStateChange();
     this.onWeaponPickedUp?.(this.weapon.stats.name);
   }
 
-  // Создать подбираемое оружие в указанной позиции
-  createDroppedWeaponAt(position: THREE.Vector3) {
-    this.createDroppedWeapon(position);
+  // Create pickable weapon at specified position
+  createDroppedWeaponAt(position: THREE.Vector3, weaponType: WeaponType = 'ak47') {
+    this.createDroppedWeapon(position, weaponType);
   }
 
   // Убрать оружие у игрока (при респавне зека)
@@ -221,6 +224,7 @@ export class Combat {
   private onMouseUp(event: MouseEvent) {
     if (event.button === 0) {
       this.isMouseDown = false;
+      this.semiAutoFired = false;
     }
   }
 
@@ -291,11 +295,38 @@ export class Combat {
 
   private shoot() {
     if (!this.weapon || this.isDead) return;
-    
-    if (this.weapon.fire()) {
-      soundSystem.playGunshot();
-      setTimeout(() => soundSystem.playMechanicalCycle(), 80);
-      
+
+    const wType = this.weapon.weaponType;
+
+    // Semi-auto: only fire once per click
+    if (wType === 'pistol' && this.semiAutoFired) return;
+    // Pump: block during pump
+    if (wType === 'shotgun' && this.weapon.isPumping) return;
+
+    // For shotgun, allow interrupting reload to fire
+    if (this.weapon.isCurrentlyReloading() && wType === 'shotgun') {
+      if (!this.weapon.interruptReload()) return;
+    }
+
+    const result = this.weapon.fire();
+    if (result.fired) {
+      // Mark semi-auto as fired
+      if (wType === 'pistol') this.semiAutoFired = true;
+
+      // Play weapon-specific sounds
+      if (wType === 'ak47') {
+        soundSystem.playGunshot();
+        setTimeout(() => soundSystem.playMechanicalCycle(), 80);
+      } else if (wType === 'shotgun') {
+        soundSystem.playShotgunBlast();
+        setTimeout(() => soundSystem.playShotgunPump(), 300);
+      } else if (wType === 'pistol') {
+        soundSystem.playPistolShot();
+        setTimeout(() => soundSystem.playPistolSlide(), 50);
+      } else if (wType === 'taser') {
+        soundSystem.playTaserFire();
+      }
+
       // Progressive recoil
       this.consecutiveShots++;
       this.lastShotTime = performance.now();
@@ -303,36 +334,67 @@ export class Combat {
       const yaw = (Math.random() - 0.5) * recoil * 0.5;
       this.onCameraRecoil?.(recoil, yaw);
 
-      // Shell casing ejection
-      this.spawnShellCasing();
-      
-      const raycaster = new THREE.Raycaster();
-      const extraSpread = Math.min(0.04, this.consecutiveShots * 0.005);
-      const direction = this.weapon.getAimDirection(this.camera, this._isMoving, this._isCrouching, this._isSprinting, extraSpread);
-      
-      raycaster.set(this.camera.position, direction);
-      raycaster.far = this.weapon.stats.range;
-      
-      const intersects = raycaster.intersectObjects(this.scene.children, true);
-      
-      if (intersects.length > 0) {
-        const hit = intersects[0];
-        // Check if hit glass
-        let hitObj: THREE.Object3D | null = hit.object;
-        while (hitObj) {
-          if (hitObj.userData?.isGlass) {
-            this.onGlassHit?.(hitObj as THREE.Mesh);
-            break;
-          }
-          hitObj = hitObj.parent;
-        }
-        this.createBulletHole(hit.point, hit.face?.normal);
-        this.createTracer(hit.point);
+      // Shell casing ejection (not for taser)
+      if (wType !== 'taser') {
+        this.spawnShellCasing();
       }
-      
+
+      if (wType === 'shotgun') {
+        // Multi-pellet raycast
+        for (let p = 0; p < result.pelletsPerShot; p++) {
+          const raycaster = new THREE.Raycaster();
+          const direction = this.weapon.getAimDirection(this.camera, this._isMoving, this._isCrouching, this._isSprinting, this.weapon.stats.spread);
+          raycaster.set(this.camera.position, direction);
+          raycaster.far = this.weapon.stats.range;
+          const intersects = raycaster.intersectObjects(this.scene.children, true);
+          if (intersects.length > 0) {
+            const hit = intersects[0];
+            let hitObj: THREE.Object3D | null = hit.object;
+            while (hitObj) {
+              if (hitObj.userData?.isGlass) { this.onGlassHit?.(hitObj as THREE.Mesh); break; }
+              hitObj = hitObj.parent;
+            }
+            this.createBulletHole(hit.point, hit.face?.normal);
+            this.createTracer(hit.point);
+          }
+        }
+      } else if (wType === 'taser') {
+        // Taser: range check, no tracer/bullet hole
+        const raycaster = new THREE.Raycaster();
+        const direction = this.weapon.getAimDirection(this.camera, this._isMoving, this._isCrouching, this._isSprinting, 0);
+        raycaster.set(this.camera.position, direction);
+        raycaster.far = this.weapon.stats.range;
+        const intersects = raycaster.intersectObjects(this.scene.children, true);
+        if (intersects.length > 0) {
+          const hit = intersects[0];
+          let hitObj: THREE.Object3D | null = hit.object;
+          while (hitObj) {
+            if (hitObj.userData?.isGlass) { this.onGlassHit?.(hitObj as THREE.Mesh); break; }
+            hitObj = hitObj.parent;
+          }
+        }
+      } else {
+        // AK-47 and Pistol: single ray
+        const raycaster = new THREE.Raycaster();
+        const extraSpread = Math.min(0.04, this.consecutiveShots * 0.005);
+        const direction = this.weapon.getAimDirection(this.camera, this._isMoving, this._isCrouching, this._isSprinting, extraSpread);
+        raycaster.set(this.camera.position, direction);
+        raycaster.far = this.weapon.stats.range;
+        const intersects = raycaster.intersectObjects(this.scene.children, true);
+        if (intersects.length > 0) {
+          const hit = intersects[0];
+          let hitObj: THREE.Object3D | null = hit.object;
+          while (hitObj) {
+            if (hitObj.userData?.isGlass) { this.onGlassHit?.(hitObj as THREE.Mesh); break; }
+            hitObj = hitObj.parent;
+          }
+          this.createBulletHole(hit.point, hit.face?.normal);
+          this.createTracer(hit.point);
+        }
+      }
+
       this.notifyStateChange();
     } else if (this.weapon.stats.currentAmmo <= 0 && !this.weapon.isCurrentlyReloading()) {
-      // Сухой щелчок
       soundSystem.playDryFire();
     }
   }
@@ -491,7 +553,7 @@ export class Combat {
     }
   }
 
-  private createDroppedWeapon(position: THREE.Vector3) {
+  private createDroppedWeapon(position: THREE.Vector3, weaponType: WeaponType = 'ak47') {
     const weaponGroup = new THREE.Group();
     
     const metalMaterial = new THREE.MeshStandardMaterial({
@@ -506,34 +568,45 @@ export class Combat {
       metalness: 0.1
     });
 
-    // Упрощённая модель AK на земле
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(0.1, 0.1, 0.8),
-      metalMaterial
-    );
-    weaponGroup.add(body);
-
-    const stock = new THREE.Mesh(
-      new THREE.BoxGeometry(0.08, 0.08, 0.3),
-      woodMaterial
-    );
-    stock.position.set(0, 0, 0.4);
-    weaponGroup.add(stock);
-
-    const magazine = new THREE.Mesh(
-      new THREE.BoxGeometry(0.06, 0.15, 0.1),
-      metalMaterial
-    );
-    magazine.position.set(0, -0.1, 0);
-    weaponGroup.add(magazine);
+    if (weaponType === 'ak47') {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.8), metalMaterial);
+      weaponGroup.add(body);
+      const stock = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.3), woodMaterial);
+      stock.position.set(0, 0, 0.4);
+      weaponGroup.add(stock);
+      const magazine = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.15, 0.1), metalMaterial);
+      magazine.position.set(0, -0.1, 0);
+      weaponGroup.add(magazine);
+    } else if (weaponType === 'shotgun') {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.9), metalMaterial);
+      weaponGroup.add(body);
+      const stock = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.25), metalMaterial);
+      stock.position.set(0, 0, 0.5);
+      weaponGroup.add(stock);
+      const pump = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.06, 0.15), woodMaterial);
+      pump.position.set(0, -0.02, -0.2);
+      weaponGroup.add(pump);
+    } else if (weaponType === 'pistol') {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.2), metalMaterial);
+      weaponGroup.add(body);
+      const grip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 0.04), woodMaterial);
+      grip.position.set(0, -0.06, 0.05);
+      weaponGroup.add(grip);
+    } else if (weaponType === 'taser') {
+      const yellowMat = new THREE.MeshStandardMaterial({ color: 0xf0d000, roughness: 0.5 });
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.15), yellowMat);
+      weaponGroup.add(body);
+      const grip = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.07, 0.04), metalMaterial);
+      grip.position.set(0, -0.05, 0.03);
+      weaponGroup.add(grip);
+    }
 
     weaponGroup.position.copy(position);
     weaponGroup.rotation.z = Math.PI / 2;
     weaponGroup.rotation.y = Math.random() * Math.PI;
     
-    // Метаданные для идентификации
     weaponGroup.userData.isWeapon = true;
-    weaponGroup.userData.weaponType = 'AK-47';
+    weaponGroup.userData.weaponType = weaponType;
     weaponGroup.userData.velocityY = 0;
     weaponGroup.userData.velocityX = 0;
     weaponGroup.userData.velocityZ = 0;
@@ -556,21 +629,18 @@ export class Combat {
       const distance = Math.sqrt(dx * dx + dz * dz);
       
       if (distance < pickupRange) {
-        // Подбираем оружие
         this.scene.remove(droppedWeapon);
         this.droppedWeapons.splice(i, 1);
-        
-        this.weapon = new Weapon(this.team);
+
+        const storedType: WeaponType = droppedWeapon.userData.weaponType || 'ak47';
+        this.weapon = new Weapon(this.team, storedType);
         this.camera.add(this.weapon.group);
         
-        // Скрываем руки
         this.hands.setVisible(false);
-        
-        // Звук подбора
         soundSystem.playPickup();
         
         this.notifyStateChange();
-        this.onWeaponPickedUp?.('AK-47');
+        this.onWeaponPickedUp?.(this.weapon.stats.name);
         return;
       }
     }
@@ -586,11 +656,13 @@ export class Combat {
     }
 
     if (!this.weapon) return;
+
+    const droppedType = this.weapon.weaponType;
     
-    // Убираем оружие из камеры
+    // Remove weapon from camera
     this.camera.remove(this.weapon.group);
     
-    // Создаём выброшенное оружие перед игроком
+    // Create dropped weapon in front of player
     const dropDirection = new THREE.Vector3();
     this.camera.getWorldDirection(dropDirection);
     
@@ -606,14 +678,13 @@ export class Combat {
     );
     for (const collider of this.mapColliders) {
       if (dropBox.intersectsBox(collider)) {
-        // Drop at player feet instead
         dropPosition.copy(this.camera.position);
         dropPosition.y -= 0.5;
         break;
       }
     }
     
-    this.createDroppedWeapon(dropPosition);
+    this.createDroppedWeapon(dropPosition, droppedType);
     
     // Give the dropped weapon initial throw velocity
     const lastDropped = this.droppedWeapons[this.droppedWeapons.length - 1];
@@ -624,10 +695,7 @@ export class Combat {
     
     this.weapon = null;
     
-    // Показываем руки
     this.hands.setVisible(true);
-    
-    // Звук выброса
     soundSystem.playDrop();
     
     this.notifyStateChange();
@@ -1152,9 +1220,11 @@ export class Combat {
       }
     }
 
-    // Automatic fire while holding mouse button
+    // Automatic fire while holding mouse button (only for auto weapons)
     if (this.isMouseDown && this.weapon && document.pointerLockElement !== null) {
-      this.shoot();
+      if (this.weapon.stats.fireMode === 'auto') {
+        this.shoot();
+      }
     }
     
     // Обновляем оружие
