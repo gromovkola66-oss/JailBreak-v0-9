@@ -7,6 +7,7 @@ import { PlaytestMode } from './editor/PlaytestMode';
 import { EditorUI } from './components/EditorUI';
 import { GuardMenu } from './components/GuardMenu';
 import { Minesweeper } from './components/Minesweeper';
+import { Paint } from './components/Paint';
 import { EditorObjectType } from './editor/EditorObjects';
 import { CombatState } from './game/Combat';
 import { CameraSystemState } from './game/CameraSystem';
@@ -222,9 +223,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
   // Terminal wallpaper & start menu state
   const [terminalWallpaperIdx, setTerminalWallpaperIdx] = useState(() => Math.floor(Math.random() * TERMINAL_WALLPAPERS.length));
+  const [customWallpaper, setCustomWallpaper] = useState<string | null>(null);
   const [terminalTheme, setTerminalTheme] = useState<TerminalTheme>('win95');
   const [startMenuOpen, setStartMenuOpen] = useState(false);
-  const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'minesweeper' | 'files' | null>(null);
+  const [terminalApp, setTerminalApp] = useState<'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'minesweeper' | 'files' | 'paint' | null>(null);
   const [glitchActive, setGlitchActive] = useState(false);
 
   // Event log state
@@ -882,6 +884,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setTerminalApp(null);
   }, []);
 
+  const handleSaveAsWallpaper = useCallback((dataUrl: string) => {
+    setCustomWallpaper(dataUrl);
+  }, []);
+
   const startOpenTimer = useCallback(() => {
     cancelCellTimer();
     setCellTimerActive(true);
@@ -926,7 +932,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     cellTimerRef.current = interval;
   }, [cancelCellTimer]);
 
-  const handleStartMenuApp = useCallback((app: 'cameras' | 'doors' | 'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'minesweeper' | 'files' | 'exit') => {
+  const handleStartMenuApp = useCallback((app: 'cameras' | 'doors' | 'info' | 'map' | 'settings' | 'cells' | 'eventlog' | 'personalfiles' | 'minesweeper' | 'files' | 'paint' | 'exit') => {
     setStartMenuOpen(false);
     if (app === 'cameras' || app === 'doors') {
       handleOpenTerminalApp(app);
@@ -1503,7 +1509,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
               {ptCameraState.terminalView === 'desktop' && (
                 <div className="absolute inset-0 flex flex-col text-sm select-none" style={{ fontFamily: thCfg.font, color: thCfg.textColor, textShadow: thCfg.textShadow }} onClick={() => startMenuOpen && setStartMenuOpen(false)}>
                   {/* Wallpaper background */}
-                  <div className="absolute inset-0" style={{ background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
+                  <div className="absolute inset-0" style={customWallpaper && !thCfg.desktopBg ? { backgroundImage: `url(${customWallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   {/* JailBreak watermark */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15 pointer-events-none" style={{ animation: 'gentleSpin 4s ease-in-out infinite' }}>
                     <span className="text-7xl font-black text-blue-400">Jail</span>
@@ -1580,6 +1586,16 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     >
                       <span className="text-6xl">{'\u{1F4F7}'}</span>
                       <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>{'\u0424\u0430\u0439\u043B\u044B'}</span>
+                    </div>
+                    <div
+                      className="w-32 flex flex-col items-center gap-1 cursor-pointer p-2 rounded hover:bg-white/20"
+                      style={{ transition: 'transform 0.1s' }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.animation = 'iconWobble 0.4s ease-in-out'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.animation = ''; }}
+                      onClick={(e) => { e.stopPropagation(); setTerminalApp('paint'); playtestRef.current?.getSoundSystem()?.playTerminalWindowOpen(); }}
+                    >
+                      <span className="text-6xl">{'\u{1F3A8}'}</span>
+                      <span className="text-sm font-bold text-center" style={{ color: (terminalTheme === 'linux' || terminalTheme === 'dos') ? thCfg.textColor : 'white', textShadow: thCfg.iconTextShadow }}>{'\u0420\u0438\u0441\u043E\u0432\u0430\u043B\u043A\u0430'}</span>
                     </div>
                   </div>
 
@@ -2020,6 +2036,17 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                     />
                   )}
 
+                  {/* Paint app window */}
+                  {terminalApp === 'paint' && !minimizedApps.includes('paint') && (
+                    <Paint
+                      onClose={() => handleCloseTerminalApp()}
+                      onMinimize={() => handleMinimizeApp('paint')}
+                      onTitleBarMouseDown={(e) => handleWindowDragStart('paint', e)}
+                      style={{ transform: `translate(${(windowPositions['paint']?.x || 0)}px, ${(windowPositions['paint']?.y || 0)}px)` }}
+                      onSaveAsWallpaper={handleSaveAsWallpaper}
+                    />
+                  )}
+
                   {/* Start Menu */}
                   {startMenuOpen && (
                     <div className={`absolute bottom-[30px] left-0 z-30 w-[200px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.startMenuBg, color: thCfg.startMenuText, fontFamily: thCfg.font }} onClick={(e) => e.stopPropagation()}>
@@ -2109,6 +2136,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
                           >
                             <span>{'\u{1F4F7}'}</span><span className="text-xs">{'\u0424\u0430\u0439\u043B\u044B'}</span>
                           </button>
+                          <button
+                            className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = thCfg.startMenuHover; e.currentTarget.style.color = 'white'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = thCfg.startMenuText; }}
+                            onClick={() => handleStartMenuApp('paint')}
+                          >
+                            <span>{'\u{1F3A8}'}</span><span className="text-xs">{'\u0420\u0438\u0441\u043E\u0432\u0430\u043B\u043A\u0430'}</span>
+                          </button>
                           <div className="border-t border-gray-400 my-1"></div>
                           <button
                             className="flex items-center gap-2 px-3 py-1.5 text-left" style={{ color: thCfg.startMenuText }}
@@ -2159,7 +2194,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
               {ptCameraState.terminalView === 'cameras' && ptCameraState.selectedCameraIndex === null && (
                 <div className="absolute inset-0 flex flex-col text-sm select-none" style={{ fontFamily: thCfg.font, color: thCfg.textColor }}>
                   {/* Wallpaper background */}
-                  <div className="absolute inset-0" style={{ background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
+                  <div className="absolute inset-0" style={customWallpaper && !thCfg.desktopBg ? { backgroundImage: `url(${customWallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   <div className="flex-1 flex items-center justify-center p-4 relative z-10">
                     <div className={`w-[95vw] max-w-[1100px] h-[85vh] border-2 ${thCfg.borders} shadow-lg flex flex-col`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
                       {/* Title bar */}
@@ -2336,7 +2371,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
               {ptCameraState.terminalView === 'doors' && (
                 <div className="absolute inset-0 flex flex-col text-sm select-none" style={{ fontFamily: thCfg.font, color: thCfg.textColor }}>
                   {/* Wallpaper background */}
-                  <div className="absolute inset-0" style={{ background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
+                  <div className="absolute inset-0" style={customWallpaper && !thCfg.desktopBg ? { backgroundImage: `url(${customWallpaper})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: thCfg.desktopBg || TERMINAL_WALLPAPERS[terminalWallpaperIdx].background }} />
                   {/* Centered Win95 window */}
                   <div className="flex-1 flex items-center justify-center relative z-10">
                     <div className={`w-[450px] border-2 ${thCfg.borders} shadow-lg`} style={{ backgroundColor: thCfg.windowBg, fontFamily: thCfg.font, color: thCfg.textColor }}>
