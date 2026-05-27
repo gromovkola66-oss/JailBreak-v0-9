@@ -1,7 +1,0 @@
-{
-  "task_id": "task-win7-main-menu",
-  "task_description": "Redesign the main menu (MainMenu.tsx) to look like a Windows 7 desktop with Aero glass effects, taskbar, start menu, desktop icons, and a CSS-based cutscene replacing the 3D Three.js scene",
-  "status": "in_progress",
-  "feature_order": ["FEAT-001"],
-  "blocked_reason": null
-}
