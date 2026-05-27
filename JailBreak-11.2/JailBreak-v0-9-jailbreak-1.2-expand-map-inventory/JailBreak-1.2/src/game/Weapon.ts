@@ -98,6 +98,13 @@ export class Weapon {
     this.buildGunForType();
     this.buildHands(team);
 
+    // For pistol and taser: one-handed grip (right hand only, left hidden)
+    if (weaponType === 'pistol' || weaponType === 'taser') {
+      this.leftHand.visible = false;
+      // Adjust right hand to be more centered for one-handed look
+      this.rightHand.position.set(0.01, -0.05, 0.02);
+    }
+
     this.group.position.set(0.18, -0.18, -0.38);
     this.originalPosition = this.group.position.clone();
 
@@ -646,6 +653,11 @@ export class Weapon {
   }
 
   private updatePistolReload(delta: number) {
+    // Show left hand during pistol reload
+    if (!this.leftHand.visible) {
+      this.leftHand.visible = true;
+    }
+
     const totalDuration = 1.2;
     this.reloadProgress += delta / totalDuration;
 
@@ -661,6 +673,10 @@ export class Weapon {
         this.slideLocked = false;
         this.slideOffset = 0;
         if (this.slideMesh) this.slideMesh.position.z = -0.22;
+      }
+      // Hide left hand again after reload (one-handed grip)
+      if (this.weaponType === 'pistol') {
+        this.leftHand.visible = false;
       }
     } else {
       const p = this.reloadProgress;
