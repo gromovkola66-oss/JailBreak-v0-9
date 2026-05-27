@@ -40,6 +40,55 @@ interface HistoryEntry {
   multiData?: PlacedObject[];
 }
 
+function compactObject(obj: PlacedObject): Record<string, unknown> {
+  const o: Record<string, unknown> = {
+    id: obj.id,
+    type: obj.type,
+    position: {
+      x: Math.round(obj.position.x * 100) / 100,
+      y: Math.round(obj.position.y * 100) / 100,
+      z: Math.round(obj.position.z * 100) / 100,
+    },
+  };
+  if (obj.rotation !== 0) o.rotation = Math.round(obj.rotation * 100) / 100;
+  if (obj.rotationX && obj.rotationX !== 0) o.rotationX = Math.round(obj.rotationX * 100) / 100;
+  if (obj.rotationZ && obj.rotationZ !== 0) o.rotationZ = Math.round(obj.rotationZ * 100) / 100;
+  if (obj.scale && obj.scale !== 1) o.scale = Math.round(obj.scale * 100) / 100;
+  if (obj.scaleX !== undefined && obj.scaleX !== 1) o.scaleX = Math.round(obj.scaleX * 100) / 100;
+  if (obj.scaleY !== undefined && obj.scaleY !== 1) o.scaleY = Math.round(obj.scaleY * 100) / 100;
+  if (obj.scaleZ !== undefined && obj.scaleZ !== 1) o.scaleZ = Math.round(obj.scaleZ * 100) / 100;
+  if (obj.groupId !== undefined && obj.groupId !== 0) o.groupId = obj.groupId;
+  if (obj.label !== undefined && obj.label !== '') o.label = obj.label;
+  return o;
+}
+
+function compactMapJSON(mapData: MapData): string {
+  const compactObjects = mapData.objects.map(compactObject);
+
+  const parts: string[] = [];
+  parts.push('{');
+  parts.push(`"name":${JSON.stringify(mapData.name)},`);
+  parts.push(`"version":${mapData.version},`);
+
+  parts.push('"objects":[');
+  for (let i = 0; i < compactObjects.length; i++) {
+    const comma = i < compactObjects.length - 1 ? ',' : '';
+    parts.push(JSON.stringify(compactObjects[i]) + comma);
+  }
+  parts.push(']');
+
+  if (mapData.terrain) {
+    parts.push(`,"terrain":${JSON.stringify(mapData.terrain)}`);
+  }
+
+  if (mapData.waterZones && mapData.waterZones.length > 0) {
+    parts.push(`,"waterZones":${JSON.stringify(mapData.waterZones)}`);
+  }
+
+  parts.push('}');
+  return parts.join('\n');
+}
+
 export class MapEditor {
   private scene: THREE.Scene;
   private renderer: THREE.WebGLRenderer;
@@ -1075,7 +1124,7 @@ export class MapEditor {
     }
     return { name: 'Untitled Map', version: 1, objects: [...this.placedObjectsData], terrain: this.terrainSystem.exportData(), waterZones };
   }
-  exportJSON(): string { return JSON.stringify(this.exportMap(), null, 2); }
+  exportJSON(): string { return compactMapJSON(this.exportMap()); }
   importMap(data: MapData) {
     this.clearMap();
     if (data.terrain) {
