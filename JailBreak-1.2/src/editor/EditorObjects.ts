@@ -2923,25 +2923,29 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
     id: 'stairs_straight', name: 'Лестница (ступени)', icon: '🪜', category: 'building',
     create: () => {
       const g = new THREE.Group();
+      // 8 steps, each 0.5 tall and 0.5 deep
       for (let i = 0; i < 8; i++) {
         const sy = i * 0.5;
         const sz = -i * 0.5;
-        // Горизонтальная ступень (поднята вровень с верхом подступенка)
+        // Tread (horizontal step surface)
         g.add(pos(box(2, 0.12, 0.52, M.conc2), 0, sy + 0.5, sz));
-        // Подступенок (вертикальная часть, заполняет до предыдущей ступени)
-        g.add(pos(box(2, 0.5, 0.06, M.conc3), 0, sy + 0.25, sz + 0.23));
+        // Riser (vertical face, thicker for visibility)
+        g.add(pos(box(2, 0.5, 0.12, M.conc3), 0, sy + 0.25, sz + 0.2));
       }
-      // Боковые стенки (each segment only 0.62 tall, just above step height)
+      // Solid side panels: each side is a continuous wall from ground to step top
+      // Built as stacked boxes per step that extend from floor to step height
       for (const dx of [-1.03, 1.03]) {
         for (let i = 0; i < 8; i++) {
-          const sy = i * 0.5;
-          g.add(pos(box(0.06, 0.62, 0.52, M.concDirty), dx, sy + 0.31, -i * 0.5));
+          const stepTop = (i + 1) * 0.5; // top of this step
+          const sz = -i * 0.5;
+          // Full-height panel from ground (0) to step top
+          g.add(pos(box(0.1, stepTop, 0.52, M.concDirty), dx, stepTop / 2, sz));
         }
       }
-      // Underside fill panel (angled box covering visual gaps from below)
-      const fill = box(2, 0.1, 5.2, M.conc3);
+      // Underside fill: thick angled panel covering the bottom of the staircase
+      const fill = box(2, 0.15, 5.8, M.conc3);
       fill.position.set(0, 1.75, -1.75);
-      fill.rotation.x = -Math.PI / 4;
+      fill.rotation.x = -Math.atan(0.5 / 0.5); // 45 degrees to match stair slope
       g.add(fill);
       return mergeGroup(g);
     }
