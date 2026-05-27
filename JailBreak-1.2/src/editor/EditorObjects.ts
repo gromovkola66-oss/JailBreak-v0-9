@@ -2932,14 +2932,17 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
         // Riser (vertical face, thicker for visibility)
         g.add(pos(box(2, 0.5, 0.12, M.conc3), 0, sy + 0.25, sz + 0.2));
       }
-      // Solid side panels: each side is a continuous wall from ground to step top
-      // Built as stacked boxes per step that extend from floor to step height
-      for (const dx of [-1.03, 1.03]) {
+      // Solid side panels (visual, each segment = one step height for step-up compatibility)
+      for (const dx of [-1.02, 1.02]) {
         for (let i = 0; i < 8; i++) {
-          const stepTop = (i + 1) * 0.5; // top of this step
+          const stepY = i * 0.5;
           const sz = -i * 0.5;
-          // Full-height panel from ground (0) to step top
-          g.add(pos(box(0.1, stepTop, 0.52, M.concDirty), dx, stepTop / 2, sz));
+          // Each panel is exactly 0.5 tall (= step height, within stepUpHeight 0.55)
+          // Width 0.025 is < 0.03 so addColliders will skip if z is also < 0.03
+          // But z=0.52 so it won't be filtered. Use width 0.02 which IS < 0.03:
+          // addColliders skips when BOTH x < 0.03 AND z < 0.03. Here z=0.52, so NO skip.
+          // So make width thin enough visually but accept collision (0.5 height = OK for step-up)
+          g.add(pos(box(0.08, 0.5, 0.52, M.concDirty), dx, stepY + 0.25, sz));
         }
       }
       // Underside fill: thick angled panel covering the bottom of the staircase
