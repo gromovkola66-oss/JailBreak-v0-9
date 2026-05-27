@@ -684,25 +684,33 @@ export class PlaytestMode {
         this.scene.remove(droppedWeapon);
         this.combat.droppedWeapons.splice(i, 1);
 
-        // Store weapon in combat (put it in storedWeapon so takeOutWeapon can retrieve it)
-        this.combat.storeWeaponForPickup(weaponType);
+        // Determine weapon info for inventory
+        const weaponTypeToInfo: Record<string, { id: string; name: string; icon: string }> = {
+          'ak47': { id: 'weapon_ak47', name: 'AK-47', icon: '\u{1F52B}' },
+          'shotgun': { id: 'weapon_shotgun', name: 'SPAS-12', icon: '\u{1F52B}' },
+          'pistol': { id: 'weapon_pistol', name: 'Makarov PM', icon: '\u{1F52B}' },
+          'taser': { id: 'weapon_taser', name: '\u0422\u0430\u0437\u0435\u0440', icon: '\u26A1' },
+        };
+        const info = weaponTypeToInfo[weaponType] || weaponTypeToInfo['ak47'];
 
-        // Add weapon to inventory
-        const weaponName = this.combat.getStoredWeapon()!.stats.name;
-        let itemId = 'weapon_ak47';
-        let icon = '\u{1F52B}';
-        if (weaponName === 'SPAS-12') { itemId = 'weapon_shotgun'; }
-        else if (weaponName === 'Makarov PM') { itemId = 'weapon_pistol'; }
-        else if (weaponName === 'Taser') { itemId = 'weapon_taser'; icon = '\u26A1'; }
-        const weaponItem = { id: itemId, name: weaponName, icon, type: 'weapon' as const, quantity: 1 };
+        // Add weapon to inventory first
+        const weaponItem = { id: info.id, name: info.name, icon: info.icon, type: 'weapon' as const, quantity: 1 };
         this.inventory.addItem(weaponItem);
         this.inventory.addNotification(weaponItem);
 
-        // Equip the weapon slot - this triggers onEquip which calls takeOutWeapon()
+        // Store weapon in combat storedWeapon
+        this.combat.storeWeaponForPickup(weaponType);
+
+        // Find the slot and equip it (triggers onEquip -> takeOutWeapon)
         const state = this.inventory.getState();
-        const weaponIdx = state.slots.findIndex(s => s?.id === itemId);
+        const weaponIdx = state.slots.findIndex(s => s?.id === info.id);
         if (weaponIdx >= 0) {
           this.inventory.equipSlot(weaponIdx);
+        }
+
+        // Fallback: if weapon still not in hands after equipSlot chain, force it
+        if (!this.combat.weapon && this.combat.getStoredWeapon()) {
+          this.combat.takeOutWeapon();
         }
 
         soundSystem.playPickup();
