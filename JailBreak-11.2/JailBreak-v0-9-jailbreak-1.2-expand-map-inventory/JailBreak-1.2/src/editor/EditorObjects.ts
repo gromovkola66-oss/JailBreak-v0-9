@@ -4169,6 +4169,469 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       return mergeGroup(g);
     }
   },
+  // === ITEMS CATEGORY (decorative models) ===
+  {
+    id: 'vase_amphora', name: 'Амфора', icon: '🏺', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(cyl(0.15, 0.18, 0.06, M.conc2), 0, 0.03, 0));
+      g.add(pos(cyl(0.12, 0.15, 0.1, M.conc1), 0, 0.11, 0));
+      g.add(pos(cyl(0.2, 0.12, 0.12, M.conc1), 0, 0.22, 0));
+      g.add(pos(cyl(0.25, 0.2, 0.15, M.conc1), 0, 0.36, 0));
+      g.add(pos(cyl(0.22, 0.25, 0.1, M.conc1), 0, 0.48, 0));
+      g.add(pos(cyl(0.15, 0.22, 0.08, M.conc2), 0, 0.57, 0));
+      g.add(pos(cyl(0.08, 0.1, 0.12, M.conc1), 0, 0.67, 0));
+      g.add(pos(cyl(0.12, 0.08, 0.04, M.conc2), 0, 0.73, 0));
+      g.add(pos(box(0.03, 0.08, 0.03, M.conc3), -0.2, 0.6, 0));
+      g.add(pos(box(0.06, 0.03, 0.03, M.conc3), -0.22, 0.64, 0));
+      g.add(pos(box(0.03, 0.08, 0.03, M.conc3), -0.24, 0.56, 0));
+      g.add(pos(box(0.06, 0.03, 0.03, M.conc3), -0.22, 0.52, 0));
+      g.add(pos(box(0.03, 0.08, 0.03, M.conc3), 0.2, 0.6, 0));
+      g.add(pos(box(0.06, 0.03, 0.03, M.conc3), 0.22, 0.64, 0));
+      g.add(pos(box(0.03, 0.08, 0.03, M.conc3), 0.24, 0.56, 0));
+      g.add(pos(box(0.06, 0.03, 0.03, M.conc3), 0.22, 0.52, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'vase_floor', name: 'Напольная ваза', icon: '🏺', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(cyl(0.2, 0.22, 0.06, M.conc2), 0, 0.03, 0));
+      g.add(pos(cyl(0.15, 0.2, 0.15, M.conc1), 0, 0.135, 0));
+      g.add(pos(cyl(0.12, 0.15, 0.15, M.conc1), 0, 0.285, 0));
+      g.add(pos(cyl(0.14, 0.14, 0.03, M.conc3), 0, 0.37, 0));
+      g.add(pos(cyl(0.2, 0.14, 0.2, M.conc1), 0, 0.485, 0));
+      g.add(pos(cyl(0.18, 0.2, 0.15, M.conc1), 0, 0.66, 0));
+      g.add(pos(cyl(0.19, 0.19, 0.03, M.conc3), 0, 0.75, 0));
+      g.add(pos(cyl(0.1, 0.14, 0.12, M.conc2), 0, 0.83, 0));
+      g.add(pos(cyl(0.16, 0.1, 0.06, M.conc1), 0, 0.92, 0));
+      g.add(pos(cyl(0.17, 0.17, 0.02, M.conc3), 0, 0.96, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'fountain_tiered', name: 'Фонтан многоярусный', icon: '⛲', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(cyl(1.2, 1.3, 0.15, M.conc2), 0, 0.075, 0));
+      g.add(pos(cyl(1.3, 1.35, 0.08, M.conc3), 0, 0.19, 0));
+      g.add(pos(cyl(1.1, 1.1, 0.02, M.glass), 0, 0.16, 0));
+      g.add(pos(cyl(0.12, 0.15, 0.6, M.conc1), 0, 0.53, 0));
+      g.add(pos(cyl(0.6, 0.65, 0.1, M.conc2), 0, 0.88, 0));
+      g.add(pos(cyl(0.65, 0.67, 0.05, M.conc3), 0, 0.96, 0));
+      g.add(pos(cyl(0.55, 0.55, 0.02, M.glass), 0, 0.92, 0));
+      g.add(pos(cyl(0.08, 0.1, 0.4, M.conc1), 0, 1.19, 0));
+      g.add(pos(cyl(0.3, 0.32, 0.08, M.conc2), 0, 1.43, 0));
+      g.add(pos(cyl(0.32, 0.34, 0.04, M.conc3), 0, 1.49, 0));
+      g.add(pos(cyl(0.28, 0.28, 0.02, M.glass), 0, 1.46, 0));
+      g.add(pos(cyl(0.05, 0.08, 0.15, M.conc1), 0, 1.59, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'urn_decorative', name: 'Урна декоративная', icon: '⚱️', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(cyl(0.12, 0.14, 0.04, M.conc3), 0, 0.02, 0));
+      g.add(pos(cyl(0.1, 0.12, 0.06, M.conc2), 0, 0.07, 0));
+      g.add(pos(cyl(0.16, 0.1, 0.1, M.conc1), 0, 0.15, 0));
+      g.add(pos(cyl(0.2, 0.16, 0.12, M.conc1), 0, 0.26, 0));
+      g.add(pos(cyl(0.18, 0.2, 0.1, M.conc1), 0, 0.37, 0));
+      g.add(pos(cyl(0.12, 0.18, 0.06, M.conc2), 0, 0.45, 0));
+      g.add(pos(cyl(0.09, 0.1, 0.05, M.conc1), 0, 0.505, 0));
+      g.add(pos(cyl(0.13, 0.12, 0.03, M.conc3), 0, 0.545, 0));
+      g.add(pos(cyl(0.04, 0.12, 0.06, M.conc2), 0, 0.59, 0));
+      g.add(pos(cyl(0.025, 0.025, 0.03, M.conc3), 0, 0.635, 0));
+      g.add(pos(box(0.03, 0.06, 0.02, M.conc3), -0.17, 0.38, 0));
+      g.add(pos(box(0.04, 0.02, 0.02, M.conc3), -0.19, 0.35, 0));
+      g.add(pos(box(0.03, 0.06, 0.02, M.conc3), 0.17, 0.38, 0));
+      g.add(pos(box(0.04, 0.02, 0.02, M.conc3), 0.19, 0.35, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'bust_pedestal', name: 'Бюст на постаменте', icon: '🗿', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(0.6, 0.08, 0.6, M.conc3), 0, 0.04, 0));
+      g.add(pos(box(0.5, 0.3, 0.5, M.conc2), 0, 0.23, 0));
+      g.add(pos(box(0.54, 0.04, 0.54, M.conc3), 0, 0.4, 0));
+      g.add(pos(box(0.45, 0.5, 0.45, M.conc1), 0, 0.67, 0));
+      g.add(pos(box(0.5, 0.04, 0.5, M.conc3), 0, 0.94, 0));
+      g.add(pos(cyl(0.08, 0.1, 0.12, M.conc1), 0, 1.02, 0));
+      g.add(pos(box(0.4, 0.12, 0.2, M.conc1), 0, 1.14, 0));
+      g.add(pos(box(0.18, 0.24, 0.2, M.conc1), 0, 1.32, 0));
+      g.add(pos(box(0.04, 0.06, 0.06, M.conc2), 0, 1.3, 0.12));
+      g.add(pos(box(0.14, 0.03, 0.03, M.conc2), 0, 1.38, 0.09));
+      g.add(pos(box(0.2, 0.1, 0.18, M.conc3), 0, 1.45, -0.02));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'obelisk', name: 'Обелиск', icon: '🗼', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(0.8, 0.15, 0.8, M.conc3), 0, 0.075, 0));
+      g.add(pos(box(0.6, 0.1, 0.6, M.conc2), 0, 0.2, 0));
+      g.add(pos(box(0.45, 0.7, 0.45, M.conc1), 0, 0.6, 0));
+      g.add(pos(box(0.4, 0.7, 0.4, M.conc1), 0, 1.3, 0));
+      g.add(pos(box(0.35, 0.7, 0.35, M.conc2), 0, 2.0, 0));
+      g.add(pos(box(0.3, 0.5, 0.3, M.conc2), 0, 2.6, 0));
+      g.add(pos(box(0.25, 0.15, 0.25, M.conc3), 0, 2.925, 0));
+      g.add(pos(box(0.15, 0.1, 0.15, M.conc3), 0, 3.05, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'sculpture_sphere', name: 'Сфера на кубе', icon: '🔮', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(0.7, 0.05, 0.7, M.conc3), 0, 0.025, 0));
+      g.add(pos(box(0.6, 0.6, 0.6, M.conc1), 0, 0.35, 0));
+      g.add(pos(box(0.65, 0.04, 0.65, M.conc2), 0, 0.67, 0));
+      g.add(pos(cyl(0.35, 0.35, 0.7, M.conc2, 16), 0, 1.05, 0));
+      g.add(pos(cyl(0.1, 0.3, 0.15, M.conc1, 16), 0, 1.475, 0));
+      g.add(pos(cyl(0.3, 0.1, 0.15, M.conc1, 16), 0, 0.625, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'sculpture_eagle', name: 'Орёл', icon: '🦅', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(cyl(0.04, 0.04, 0.8, M.metalDark), 0, 0.04, 0));
+      g.add(pos(box(0.04, 0.08, 0.04, M.metalDark), -0.3, 0.04, 0));
+      g.add(pos(box(0.04, 0.08, 0.04, M.metalDark), 0.3, 0.04, 0));
+      g.add(pos(box(0.06, 0.04, 0.08, M.conc3), -0.05, 0.1, 0));
+      g.add(pos(box(0.06, 0.04, 0.08, M.conc3), 0.05, 0.1, 0));
+      g.add(pos(box(0.03, 0.12, 0.03, M.conc3), -0.04, 0.18, 0));
+      g.add(pos(box(0.03, 0.12, 0.03, M.conc3), 0.04, 0.18, 0));
+      g.add(pos(box(0.2, 0.25, 0.3, M.conc2), 0, 0.37, 0));
+      g.add(pos(box(0.15, 0.12, 0.1, M.conc1), 0, 0.42, 0.15));
+      g.add(pos(box(0.08, 0.1, 0.08, M.conc1), 0, 0.55, 0.08));
+      g.add(pos(box(0.1, 0.1, 0.12, M.conc1), 0, 0.65, 0.1));
+      g.add(pos(box(0.04, 0.04, 0.08, M.conc3), 0, 0.63, 0.2));
+      g.add(pos(box(0.3, 0.04, 0.2, M.conc2), -0.25, 0.5, 0));
+      g.add(pos(box(0.2, 0.03, 0.15, M.conc2), -0.4, 0.56, 0));
+      g.add(pos(box(0.3, 0.04, 0.2, M.conc2), 0.25, 0.5, 0));
+      g.add(pos(box(0.2, 0.03, 0.15, M.conc2), 0.4, 0.56, 0));
+      g.add(pos(box(0.12, 0.03, 0.2, M.conc3), 0, 0.35, -0.2));
+      g.add(pos(box(0.08, 0.02, 0.15, M.conc3), 0, 0.33, -0.3));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'lion_head', name: 'Львиная голова', icon: '🦁', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(0.5, 0.5, 0.05, M.conc2), 0, 0.25, 0));
+      g.add(pos(box(0.25, 0.28, 0.12, M.conc1), 0, 0.25, 0.08));
+      g.add(pos(box(0.14, 0.12, 0.1, M.conc1), 0, 0.2, 0.16));
+      g.add(pos(box(0.1, 0.05, 0.08, M.concDirty), 0, 0.13, 0.16));
+      g.add(pos(box(0.06, 0.04, 0.04, M.conc3), 0, 0.24, 0.22));
+      g.add(pos(box(0.04, 0.03, 0.03, M.concDirty), -0.07, 0.32, 0.14));
+      g.add(pos(box(0.04, 0.03, 0.03, M.concDirty), 0.07, 0.32, 0.14));
+      g.add(pos(box(0.08, 0.1, 0.06, M.conc3), -0.2, 0.38, 0.05));
+      g.add(pos(box(0.08, 0.1, 0.06, M.conc3), 0.2, 0.38, 0.05));
+      g.add(pos(box(0.08, 0.1, 0.06, M.conc3), -0.22, 0.25, 0.05));
+      g.add(pos(box(0.08, 0.1, 0.06, M.conc3), 0.22, 0.25, 0.05));
+      g.add(pos(box(0.1, 0.08, 0.06, M.conc3), -0.15, 0.45, 0.05));
+      g.add(pos(box(0.1, 0.08, 0.06, M.conc3), 0.15, 0.45, 0.05));
+      g.add(pos(box(0.12, 0.08, 0.06, M.conc3), 0, 0.48, 0.05));
+      g.add(pos(box(0.08, 0.1, 0.06, M.conc3), -0.2, 0.12, 0.05));
+      g.add(pos(box(0.08, 0.1, 0.06, M.conc3), 0.2, 0.12, 0.05));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'floor_mosaic', name: 'Мозаичный пол', icon: '🟫', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const mat = (row + col) % 2 === 0 ? M.tileWhite : M.tileDark;
+          g.add(pos(box(0.48, 0.02, 0.48, mat), -1.75 + col * 0.5, 0.01, -1.75 + row * 0.5));
+        }
+      }
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'rug_round', name: 'Круглый ковёр', icon: '🔴', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(cyl(1.0, 1.0, 0.02, M.fabricOrange, 16), 0, 0.01, 0));
+      g.add(pos(cyl(0.75, 0.75, 0.022, M.fabricKhaki, 16), 0, 0.012, 0));
+      g.add(pos(cyl(0.5, 0.5, 0.024, M.danger, 16), 0, 0.014, 0));
+      g.add(pos(cyl(0.25, 0.25, 0.026, M.warning, 16), 0, 0.016, 0));
+      g.add(pos(cyl(0.1, 0.1, 0.028, M.fabricOrange, 16), 0, 0.018, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'manhole', name: 'Люк', icon: '⚙️', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(cyl(0.45, 0.48, 0.06, M.metalDark, 16), 0, 0.03, 0));
+      g.add(pos(cyl(0.4, 0.4, 0.03, M.metalMid, 16), 0, 0.075, 0));
+      g.add(pos(box(0.7, 0.02, 0.05, M.metalDark), 0, 0.1, 0));
+      g.add(pos(box(0.05, 0.02, 0.7, M.metalDark), 0, 0.1, 0));
+      g.add(pos(box(0.6, 0.02, 0.05, M.metalDark), 0, 0.1, 0.15));
+      g.add(pos(box(0.6, 0.02, 0.05, M.metalDark), 0, 0.1, -0.15));
+      g.add(pos(box(0.05, 0.02, 0.6, M.metalDark), 0.15, 0.1, 0));
+      g.add(pos(box(0.05, 0.02, 0.6, M.metalDark), -0.15, 0.1, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'podium', name: 'Подиум', icon: '🏆', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(2.0, 0.33, 2.0, M.conc2), 0, 0.165, 0));
+      g.add(pos(box(1.5, 0.33, 1.5, M.conc1), 0, 0.495, 0));
+      g.add(pos(box(1.0, 0.34, 1.0, M.conc3), 0, 0.83, 0));
+      g.add(pos(box(2.05, 0.03, 2.05, M.metalDark), 0, 0.33, 0));
+      g.add(pos(box(1.55, 0.03, 1.55, M.metalDark), 0, 0.66, 0));
+      g.add(pos(box(1.05, 0.03, 1.05, M.metalDark), 0, 1.0, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'throne', name: 'Трон', icon: '👑', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(0.1, 0.4, 0.1, M.woodDark), -0.35, 0.2, -0.25));
+      g.add(pos(box(0.1, 0.4, 0.1, M.woodDark), 0.35, 0.2, -0.25));
+      g.add(pos(box(0.1, 0.4, 0.1, M.woodDark), -0.35, 0.2, 0.25));
+      g.add(pos(box(0.1, 0.4, 0.1, M.woodDark), 0.35, 0.2, 0.25));
+      g.add(pos(box(0.8, 0.1, 0.6, M.woodMid), 0, 0.45, 0));
+      g.add(pos(box(0.7, 0.06, 0.5, M.fabricKhaki), 0, 0.53, 0));
+      g.add(pos(box(0.8, 1.2, 0.08, M.woodDark), 0, 1.1, -0.28));
+      g.add(pos(box(0.6, 0.8, 0.03, M.woodMid), 0, 1.1, -0.24));
+      g.add(pos(box(0.3, 0.12, 0.06, M.woodDark), 0, 1.76, -0.28));
+      g.add(pos(box(0.12, 0.08, 0.06, M.woodDark), -0.25, 1.72, -0.28));
+      g.add(pos(box(0.12, 0.08, 0.06, M.woodDark), 0.25, 1.72, -0.28));
+      g.add(pos(box(0.08, 0.5, 0.08, M.woodDark), -0.4, 0.75, 0.1));
+      g.add(pos(box(0.08, 0.5, 0.08, M.woodDark), 0.4, 0.75, 0.1));
+      g.add(pos(box(0.1, 0.06, 0.5, M.woodMid), -0.4, 1.03, -0.05));
+      g.add(pos(box(0.1, 0.06, 0.5, M.woodMid), 0.4, 1.03, -0.05));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'vitrine', name: 'Витрина', icon: '🗄️', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(1.0, 0.06, 0.5, M.metalDark), 0, 0.03, 0));
+      g.add(pos(box(1.0, 0.06, 0.5, M.metalDark), 0, 1.97, 0));
+      g.add(pos(box(0.04, 2.0, 0.04, M.metalDark), -0.48, 1.0, -0.23));
+      g.add(pos(box(0.04, 2.0, 0.04, M.metalDark), 0.48, 1.0, -0.23));
+      g.add(pos(box(0.04, 2.0, 0.04, M.metalDark), -0.48, 1.0, 0.23));
+      g.add(pos(box(0.04, 2.0, 0.04, M.metalDark), 0.48, 1.0, 0.23));
+      g.add(pos(box(0.92, 1.85, 0.02, M.glass), 0, 1.0, 0.24));
+      g.add(pos(box(0.92, 1.85, 0.02, M.glass), 0, 1.0, -0.24));
+      g.add(pos(box(0.02, 1.85, 0.44, M.glass), -0.49, 1.0, 0));
+      g.add(pos(box(0.02, 1.85, 0.44, M.glass), 0.49, 1.0, 0));
+      g.add(pos(box(0.9, 0.02, 0.42, M.glass), 0, 0.65, 0));
+      g.add(pos(box(0.9, 0.02, 0.42, M.glass), 0, 1.3, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'desk_ornate', name: 'Письменный стол', icon: '📝', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(1.2, 0.05, 0.6, M.woodMid), 0, 0.78, 0));
+      g.add(pos(cyl(0.05, 0.07, 0.25, M.woodDark), -0.5, 0.125, -0.22));
+      g.add(pos(cyl(0.07, 0.05, 0.25, M.woodDark), -0.5, 0.375, -0.22));
+      g.add(pos(cyl(0.05, 0.07, 0.25, M.woodDark), -0.5, 0.625, -0.22));
+      g.add(pos(cyl(0.05, 0.07, 0.25, M.woodDark), 0.5, 0.125, -0.22));
+      g.add(pos(cyl(0.07, 0.05, 0.25, M.woodDark), 0.5, 0.375, -0.22));
+      g.add(pos(cyl(0.05, 0.07, 0.25, M.woodDark), 0.5, 0.625, -0.22));
+      g.add(pos(cyl(0.05, 0.07, 0.25, M.woodDark), -0.5, 0.125, 0.22));
+      g.add(pos(cyl(0.07, 0.05, 0.25, M.woodDark), -0.5, 0.375, 0.22));
+      g.add(pos(cyl(0.05, 0.07, 0.25, M.woodDark), -0.5, 0.625, 0.22));
+      g.add(pos(cyl(0.05, 0.07, 0.25, M.woodDark), 0.5, 0.125, 0.22));
+      g.add(pos(cyl(0.07, 0.05, 0.25, M.woodDark), 0.5, 0.375, 0.22));
+      g.add(pos(cyl(0.05, 0.07, 0.25, M.woodDark), 0.5, 0.625, 0.22));
+      g.add(pos(box(0.03, 0.4, 0.4, M.woodMid), -0.5, 0.55, 0));
+      g.add(pos(box(0.9, 0.08, 0.03, M.woodMid), 0, 0.72, 0.28));
+      g.add(pos(box(0.35, 0.1, 0.03, M.woodDark), -0.2, 0.6, 0.28));
+      g.add(pos(box(0.35, 0.1, 0.03, M.woodDark), 0.2, 0.6, 0.28));
+      g.add(pos(cyl(0.015, 0.015, 0.03, M.chrome), -0.2, 0.6, 0.3));
+      g.add(pos(cyl(0.015, 0.015, 0.03, M.chrome), 0.2, 0.6, 0.3));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'bookshelf_tall', name: 'Книжный шкаф', icon: '📚', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(0.04, 2.2, 0.35, M.woodDark), -0.5, 1.1, 0));
+      g.add(pos(box(0.04, 2.2, 0.35, M.woodDark), 0.5, 1.1, 0));
+      g.add(pos(box(1.04, 0.04, 0.35, M.woodDark), 0, 2.2, 0));
+      g.add(pos(box(1.04, 0.06, 0.35, M.woodDark), 0, 0.03, 0));
+      g.add(pos(box(0.96, 0.03, 0.33, M.woodMid), 0, 0.44, 0));
+      g.add(pos(box(0.96, 0.03, 0.33, M.woodMid), 0, 0.88, 0));
+      g.add(pos(box(0.96, 0.03, 0.33, M.woodMid), 0, 1.32, 0));
+      g.add(pos(box(0.96, 0.03, 0.33, M.woodMid), 0, 1.76, 0));
+      g.add(pos(box(0.15, 0.35, 0.22, M.bookRed), -0.3, 0.235, 0));
+      g.add(pos(box(0.12, 0.35, 0.22, M.bookBlue), -0.1, 0.235, 0));
+      g.add(pos(box(0.18, 0.35, 0.22, M.bookGreen), 0.1, 0.235, 0));
+      g.add(pos(box(0.14, 0.35, 0.22, M.bookYellow), 0.3, 0.235, 0));
+      g.add(pos(box(0.16, 0.38, 0.22, M.bookBlue), -0.25, 0.65, 0));
+      g.add(pos(box(0.14, 0.38, 0.22, M.bookRed), -0.05, 0.65, 0));
+      g.add(pos(box(0.12, 0.38, 0.22, M.bookYellow), 0.12, 0.65, 0));
+      g.add(pos(box(0.18, 0.38, 0.22, M.bookGreen), 0.32, 0.65, 0));
+      g.add(pos(box(0.15, 0.36, 0.22, M.bookGreen), -0.3, 1.08, 0));
+      g.add(pos(box(0.18, 0.36, 0.22, M.bookYellow), -0.08, 1.08, 0));
+      g.add(pos(box(0.14, 0.36, 0.22, M.bookRed), 0.14, 1.08, 0));
+      g.add(pos(box(0.12, 0.36, 0.22, M.bookBlue), 0.32, 1.08, 0));
+      g.add(pos(box(0.16, 0.37, 0.22, M.bookYellow), -0.28, 1.535, 0));
+      g.add(pos(box(0.12, 0.37, 0.22, M.bookGreen), -0.08, 1.535, 0));
+      g.add(pos(box(0.15, 0.37, 0.22, M.bookBlue), 0.12, 1.535, 0));
+      g.add(pos(box(0.14, 0.37, 0.22, M.bookRed), 0.3, 1.535, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'piano', name: 'Рояль', icon: '🎹', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(1.5, 0.15, 1.0, M.woodDark), 0, 0.7, 0));
+      g.add(pos(box(1.5, 0.5, 0.06, M.woodDark), 0, 0.45, -0.47));
+      g.add(pos(box(1.5, 0.5, 0.06, M.woodDark), 0, 0.45, 0.47));
+      g.add(pos(box(0.06, 0.5, 1.0, M.woodDark), -0.73, 0.45, 0));
+      g.add(pos(box(0.9, 0.04, 0.15, M.porcBase), 0.25, 0.8, 0.38));
+      g.add(pos(box(0.05, 0.03, 0.09, M.metalDark), -0.05, 0.83, 0.38));
+      g.add(pos(box(0.05, 0.03, 0.09, M.metalDark), 0.08, 0.83, 0.38));
+      g.add(pos(box(0.05, 0.03, 0.09, M.metalDark), 0.21, 0.83, 0.38));
+      g.add(pos(box(0.05, 0.03, 0.09, M.metalDark), 0.38, 0.83, 0.38));
+      g.add(pos(box(0.05, 0.03, 0.09, M.metalDark), 0.51, 0.83, 0.38));
+      g.add(pos(box(0.05, 0.03, 0.09, M.metalDark), 0.64, 0.83, 0.38));
+      g.add(pos(cyl(0.04, 0.05, 0.5, M.metalDark), -0.5, 0.25, -0.3));
+      g.add(pos(cyl(0.04, 0.05, 0.5, M.metalDark), 0.5, 0.25, -0.3));
+      g.add(pos(cyl(0.04, 0.05, 0.5, M.metalDark), 0.3, 0.25, 0.3));
+      g.add(pos(box(0.6, 0.3, 0.02, M.woodDark), -0.2, 1.0, -0.2));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'fireplace', name: 'Камин', icon: '🔥', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(1.6, 0.06, 0.7, M.conc3), 0, 0.03, 0));
+      g.add(pos(box(0.2, 1.3, 0.15, M.conc1), -0.6, 0.68, 0));
+      g.add(pos(box(0.2, 1.3, 0.15, M.conc1), 0.6, 0.68, 0));
+      g.add(pos(box(1.6, 0.1, 0.25, M.conc2), 0, 1.38, 0));
+      g.add(pos(box(0.8, 0.9, 0.4, M.concDirty), 0, 0.51, -0.1));
+      g.add(pos(box(0.75, 0.85, 0.03, M.concDirty), 0, 0.49, -0.3));
+      g.add(pos(box(1.5, 0.05, 0.18, M.conc3), 0, 1.25, 0.02));
+      g.add(pos(box(1.5, 0.05, 0.18, M.conc3), 0, 0.09, 0.02));
+      g.add(pos(box(0.22, 0.05, 0.17, M.conc3), -0.6, 0.4, 0));
+      g.add(pos(box(0.22, 0.05, 0.17, M.conc3), -0.6, 0.9, 0));
+      g.add(pos(box(0.22, 0.05, 0.17, M.conc3), 0.6, 0.4, 0));
+      g.add(pos(box(0.22, 0.05, 0.17, M.conc3), 0.6, 0.9, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'chandelier', name: 'Люстра', icon: '✨', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(cyl(0.03, 0.03, 0.4, M.chrome), 0, 0.6, 0));
+      g.add(pos(cyl(0.06, 0.04, 0.08, M.chrome), 0, 0.82, 0));
+      g.add(pos(cyl(0.35, 0.35, 0.03, M.metalShiny), 0, 0.45, 0));
+      g.add(pos(cyl(0.32, 0.32, 0.03, M.chrome), 0, 0.43, 0));
+      g.add(pos(box(0.35, 0.02, 0.03, M.chrome), 0.2, 0.45, 0));
+      g.add(pos(box(0.35, 0.02, 0.03, M.chrome), -0.2, 0.45, 0));
+      g.add(pos(box(0.03, 0.02, 0.35, M.chrome), 0, 0.45, 0.2));
+      g.add(pos(box(0.03, 0.02, 0.35, M.chrome), 0, 0.45, -0.2));
+      g.add(pos(box(0.25, 0.02, 0.25, M.chrome), 0.15, 0.45, 0.15));
+      g.add(pos(box(0.25, 0.02, 0.25, M.chrome), -0.15, 0.45, -0.15));
+      g.add(pos(cyl(0.025, 0.03, 0.06, M.metalShiny), 0.38, 0.42, 0));
+      g.add(pos(cyl(0.025, 0.03, 0.06, M.metalShiny), -0.38, 0.42, 0));
+      g.add(pos(cyl(0.025, 0.03, 0.06, M.metalShiny), 0, 0.42, 0.38));
+      g.add(pos(cyl(0.025, 0.03, 0.06, M.metalShiny), 0, 0.42, -0.38));
+      g.add(pos(cyl(0.025, 0.03, 0.06, M.metalShiny), 0.27, 0.42, 0.27));
+      g.add(pos(cyl(0.025, 0.03, 0.06, M.metalShiny), -0.27, 0.42, -0.27));
+      g.add(pos(cyl(0.015, 0.015, 0.05, M.porcBase), 0.38, 0.48, 0));
+      g.add(pos(cyl(0.015, 0.015, 0.05, M.porcBase), -0.38, 0.48, 0));
+      g.add(pos(cyl(0.015, 0.015, 0.05, M.porcBase), 0, 0.48, 0.38));
+      g.add(pos(cyl(0.015, 0.015, 0.05, M.porcBase), 0, 0.48, -0.38));
+      g.add(pos(cyl(0.015, 0.015, 0.05, M.porcBase), 0.27, 0.48, 0.27));
+      g.add(pos(cyl(0.015, 0.015, 0.05, M.porcBase), -0.27, 0.48, -0.27));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'lamp_street', name: 'Уличный фонарь', icon: '🏮', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(cyl(0.15, 0.2, 0.15, M.metalDark), 0, 0.075, 0));
+      g.add(pos(cyl(0.2, 0.22, 0.05, M.metalDark), 0, 0.025, 0));
+      g.add(pos(cyl(0.06, 0.08, 3.0, M.metalDark), 0, 1.65, 0));
+      g.add(pos(cyl(0.09, 0.09, 0.05, M.metalMid), 0, 1.5, 0));
+      g.add(pos(box(0.04, 0.04, 0.3, M.metalDark), 0, 3.2, 0.15));
+      g.add(pos(box(0.04, 0.2, 0.04, M.metalDark), 0, 3.1, 0.28));
+      g.add(pos(cyl(0.15, 0.15, 0.3, M.glass, 16), 0, 3.35, 0.28));
+      g.add(pos(cyl(0.08, 0.15, 0.08, M.glass, 16), 0, 3.54, 0.28));
+      g.add(pos(cyl(0.15, 0.08, 0.08, M.glass, 16), 0, 3.16, 0.28));
+      g.add(pos(cyl(0.06, 0.1, 0.05, M.metalDark), 0, 3.6, 0.28));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'torch_wall', name: 'Настенный факел', icon: '🔥', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(0.12, 0.15, 0.03, M.metalDark), 0, 0.3, 0));
+      g.add(pos(box(0.04, 0.04, 0.15, M.metalDark), 0, 0.32, 0.09));
+      g.add(pos(box(0.04, 0.12, 0.04, M.metalDark), 0, 0.26, 0.14));
+      g.add(pos(cyl(0.025, 0.03, 0.4, M.woodDark), 0, 0.52, 0.14));
+      g.add(pos(cyl(0.04, 0.035, 0.08, M.fabricKhaki), 0, 0.72, 0.14));
+      g.add(pos(box(0.06, 0.08, 0.06, M.warning), 0, 0.8, 0.14));
+      g.add(pos(box(0.05, 0.07, 0.05, M.danger), 0, 0.87, 0.14));
+      g.add(pos(box(0.03, 0.05, 0.03, M.warning), 0, 0.93, 0.14));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'neon_sign', name: 'Неоновая вывеска', icon: '💡', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(box(1.0, 0.04, 0.04, M.metalDark), 0, 0.52, 0));
+      g.add(pos(box(1.0, 0.04, 0.04, M.metalDark), 0, 0.0, 0));
+      g.add(pos(box(0.04, 0.52, 0.04, M.metalDark), -0.5, 0.26, 0));
+      g.add(pos(box(0.04, 0.52, 0.04, M.metalDark), 0.5, 0.26, 0));
+      g.add(pos(box(0.9, 0.42, 0.02, M.screenGlow), 0, 0.26, 0.01));
+      g.add(pos(box(0.06, 0.06, 0.08, M.metalDark), -0.35, 0.5, -0.05));
+      g.add(pos(box(0.06, 0.06, 0.08, M.metalDark), 0.35, 0.5, -0.05));
+      g.add(pos(box(0.06, 0.06, 0.08, M.metalDark), -0.35, 0.04, -0.05));
+      g.add(pos(box(0.06, 0.06, 0.08, M.metalDark), 0.35, 0.04, -0.05));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'spotlight_tripod', name: 'Прожектор на треноге', icon: '🔦', category: 'items',
+    create: () => {
+      const g = new THREE.Group();
+      g.add(pos(cyl(0.025, 0.03, 1.4, M.metalDark), 0, 0.65, 0.35));
+      g.add(pos(cyl(0.025, 0.03, 1.4, M.metalDark), -0.3, 0.65, -0.18));
+      g.add(pos(cyl(0.025, 0.03, 1.4, M.metalDark), 0.3, 0.65, -0.18));
+      g.add(pos(box(0.05, 0.02, 0.05, M.metalDark), 0, 0.01, 0.5));
+      g.add(pos(box(0.05, 0.02, 0.05, M.metalDark), -0.42, 0.01, -0.25));
+      g.add(pos(box(0.05, 0.02, 0.05, M.metalDark), 0.42, 0.01, -0.25));
+      g.add(pos(cyl(0.05, 0.05, 0.1, M.metalMid), 0, 1.3, 0));
+      g.add(pos(cyl(0.1, 0.08, 0.3, M.metalDark), 0, 1.35, 0.15));
+      g.add(pos(cyl(0.11, 0.11, 0.03, M.lensGlass, 16), 0, 1.35, 0.32));
+      g.add(pos(box(0.12, 0.02, 0.04, M.metalMid), 0, 1.46, 0.15));
+      g.add(pos(box(0.02, 0.06, 0.02, M.metalMid), -0.05, 1.43, 0.15));
+      g.add(pos(box(0.02, 0.06, 0.02, M.metalMid), 0.05, 1.43, 0.15));
+      return mergeGroup(g);
+    }
+  },
 ];
 
 function createGeometryForShape(shape: VoxelShape): THREE.BufferGeometry {
