@@ -11,7 +11,7 @@ function App() {
 
   const handleStartMultiplayer = (client: MultiplayerClient) => {
     setMultiplayerClient(client);
-    setAppMode('editor');
+    setAppMode('multiplayer_play');
   };
 
   if (appMode === 'editor' || appMode === 'multiplayer_play') {

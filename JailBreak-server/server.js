@@ -71,9 +71,31 @@ console.log(`JailBreak Server v0.9.0`);
 console.log(`WebSocket server listening on port ${PORT}`);
 console.log(`Tick rate: ${TICK_RATE} Hz`);
 
+// Ping all clients every 10 seconds to detect dead connections
+const pingInterval = setInterval(() => {
+  for (const [id, player] of players) {
+    if (player.ws.isAlive === false) {
+      // Client didn't respond to last ping - terminate
+      console.log(`Player timed out: ${player.nickname} (${id})`);
+      player.ws.terminate();
+      return;
+    }
+    player.ws.isAlive = false;
+    player.ws.ping();
+  }
+}, 10000);
+
+// Clean up ping interval on shutdown
+wss.on('close', () => {
+  clearInterval(pingInterval);
+});
+
 wss.on('connection', (ws, req) => {
   const ip = req.socket.remoteAddress;
   console.log(`New connection from ${ip}`);
+
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
 
   let playerId = null;
 
@@ -227,6 +249,7 @@ const tickInterval = setInterval(() => {
 process.on('SIGINT', () => {
   console.log('\nShutting down server...');
   clearInterval(tickInterval);
+  clearInterval(pingInterval);
   wss.close(() => {
     console.log('Server closed');
     process.exit(0);
@@ -236,6 +259,7 @@ process.on('SIGINT', () => {
 process.on('SIGTERM', () => {
   console.log('\nShutting down server...');
   clearInterval(tickInterval);
+  clearInterval(pingInterval);
   wss.close(() => {
     console.log('Server closed');
     process.exit(0);

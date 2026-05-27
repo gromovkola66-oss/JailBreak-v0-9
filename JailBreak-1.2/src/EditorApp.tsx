@@ -18,6 +18,7 @@ import { LockerState } from './game/LockerSystem';
 import { RARITY_COLORS } from './game/ItemDefs';
 import { CharacterModel } from './game/CharacterModel';
 import { MultiplayerClient } from './game/multiplayer';
+import testMapData from './editor/maps/test-map.json';
 
 // 10 prison-themed CSS wallpapers (simple reliable gradients)
 const TERMINAL_WALLPAPERS: { background: string }[] = [
@@ -161,7 +162,7 @@ export const EditorApp = ({ onBackToGame, multiplayerClient }: EditorAppProps) =
   const savedMapRef = useRef<MapData | null>(null);
   const characterModelRef = useRef<CharacterModel | null>(null);
 
-  const [mode, setMode] = useState<EditorMode>('editing');
+  const [mode, setMode] = useState<EditorMode>(multiplayerClient ? 'playtesting' : 'editing');
   const [objectTypes, setObjectTypes] = useState<EditorObjectType[]>([]);
   const [selectedType, setSelectedType] = useState<EditorObjectType | null>(null);
   const [selectedObject, setSelectedObject] = useState<PlacedObject | null>(null);
@@ -287,6 +288,14 @@ export const EditorApp = ({ onBackToGame, multiplayerClient }: EditorAppProps) =
 
   // Current theme config
   const thCfg = THEME_CONFIGS[terminalTheme];
+
+  // === AUTO-START MULTIPLAYER PLAYTEST ===
+  useEffect(() => {
+    if (!multiplayerClient) return;
+    // When multiplayer is active, auto-start playtesting as prisoner
+    startPlaytest('prisoner');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // === EDITOR ===
   useEffect(() => {
@@ -757,13 +766,14 @@ export const EditorApp = ({ onBackToGame, multiplayerClient }: EditorAppProps) =
     setMode('playtesting');
 
     setTimeout(() => {
-      if (!playtestContainerRef.current || !savedMapRef.current) {
-        console.error('[EditorApp] ABORT: container=', !!playtestContainerRef.current, 'mapData=', !!savedMapRef.current);
+      const mapData = multiplayerClient ? (testMapData as unknown as MapData) : savedMapRef.current;
+      if (!playtestContainerRef.current || !mapData) {
+        console.error('[EditorApp] ABORT: container=', !!playtestContainerRef.current, 'mapData=', !!mapData);
         return;
       }
-      console.log('[EditorApp] Creating PlaytestMode with', savedMapRef.current.objects.length, 'objects');
+      console.log('[EditorApp] Creating PlaytestMode with', mapData.objects.length, 'objects');
 
-      const pt = new PlaytestMode(playtestContainerRef.current, savedMapRef.current, team);
+      const pt = new PlaytestMode(playtestContainerRef.current, mapData, team);
       playtestRef.current = pt;
 
       pt.onStatsUpdate = (fps, pos) => {
