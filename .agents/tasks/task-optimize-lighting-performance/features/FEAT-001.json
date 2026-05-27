@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Optimize lighting performance in editor and playtest by: (1) disabling castShadow on lights in editor preview, (2) adding light-specific quality settings with max shadow-casting lights per preset, (3) implementing distance-based shadow culling in PlaytestMode with a per-frame update that enables shadows only on the N-closest lights to camera, (4) reducing the intensity/distance multipliers in PlaytestMode to prevent over-bright washed-out scenes.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1 - QualitySettings.ts: Add light-specific settings to QualityConfig interface and PRESETS: maxShadowLights (max lights that can cast shadows simultaneously: low=0, medium=2, high=4), pointLightShadowMapSize (low=0, medium=256, high=512), spotLightShadowMapSize (low=0, medium=512, high=1024), lightShadowDistance (max distance from camera for a light to cast shadows: low=0, medium=20, high=40). Add a new exported function configurePointLightShadow(light, distance?) and configureSpotLightShadow(light, distance?) that sets shadow map sizes and bias per quality. Export an updateLightShadows(lights: THREE.Light[], cameraPosition: THREE.Vector3) function that: sorts lights by distance to camera, enables castShadow on the closest N (maxShadowLights) that are within lightShadowDistance, disables castShadow on all others.",
     "Step 2 - EditorObjects.ts: In each lighting category object create() function (light_ceiling, light_wall, light_floor, light_spot, light_red, light_neon), after creating the PointLight/SpotLight, explicitly set light.castShadow = false. This prevents the editor from computing shadow maps for placed lights. The lights still illuminate the scene in the editor viewport but without the expensive shadow pass.",
@@ -23,5 +23,5 @@
     "Run npm run build from the game folder to confirm successful Vite build"
   ],
   "blocked_reason": null,
-  "findings": "Implementation completed successfully. TypeScript type-check and Vite build both pass cleanly. All 6 editor lights have castShadow=false. PlaytestMode uses configurePointLightShadow/configureSpotLightShadow for shadow setup and updateLightShadows for per-frame culling."
+  "findings": "Review fixes implemented successfully. (1) Replaced per-frame candidates array allocation with module-level Map-based distance cache and in-place sorting. (2) Added light.castShadow=true in both configurePointLightShadow and configureSpotLightShadow when quality permits. (3) Added light.distance=(light.distance||10)*1.5 for SpotLights matching PointLight behavior. (4) Added this.placedLights=[] in stop() method. TypeScript type-check and Vite build both pass cleanly."
 }
