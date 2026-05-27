@@ -204,13 +204,10 @@ export class Combat {
     this.notifyStateChange();
   }
 
-  // Give weapon without triggering onWeaponPickedUp callback (used by PlaytestMode)
-  equipWeaponSilent(weaponType: WeaponType = 'ak47') {
-    if (this.weapon) return;
-    this.weapon = new Weapon(this.team, weaponType);
-    this.camera.add(this.weapon.group);
-    this.hands.setVisible(false);
-    this.notifyStateChange();
+  // Store a weapon for pickup (creates Weapon in storedWeapon, ready for takeOutWeapon to activate)
+  storeWeaponForPickup(weaponType: WeaponType = 'ak47') {
+    if (this.weapon || this.storedWeapon) return;
+    this.storedWeapon = new Weapon(this.team, weaponType);
   }
 
   // Public getter for storedWeapon

@@ -668,44 +668,45 @@ export class PlaytestMode {
     const playerPos = this.controller.camera.position;
     const pickupRange = 2;
 
-    // Check for nearby dropped weapons first
-    if (!this.combat.weapon && !this.combat.getStoredWeapon()) {
-      for (let i = 0; i < this.combat.droppedWeapons.length; i++) {
-        const droppedWeapon = this.combat.droppedWeapons[i];
-        const dx = playerPos.x - droppedWeapon.position.x;
-        const dz = playerPos.z - droppedWeapon.position.z;
-        const distance = Math.sqrt(dx * dx + dz * dz);
-        if (distance < pickupRange) {
-          // Remove from scene and array
-          this.scene.remove(droppedWeapon);
-          this.combat.droppedWeapons.splice(i, 1);
+    // Check for nearby dropped weapons
+    for (let i = 0; i < this.combat.droppedWeapons.length; i++) {
+      const droppedWeapon = this.combat.droppedWeapons[i];
+      const dx = playerPos.x - droppedWeapon.position.x;
+      const dz = playerPos.z - droppedWeapon.position.z;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+      if (distance < pickupRange) {
+        // Can't carry two weapons - skip if already have one
+        if (this.combat.weapon || this.combat.getStoredWeapon()) break;
 
-          const weaponType = droppedWeapon.userData.weaponType || 'ak47';
+        const weaponType = droppedWeapon.userData.weaponType || 'ak47';
 
-          // Equip weapon silently (without triggering onWeaponPickedUp callback)
-          this.combat.equipWeaponSilent(weaponType);
+        // Remove from scene and array
+        this.scene.remove(droppedWeapon);
+        this.combat.droppedWeapons.splice(i, 1);
 
-          // Add to inventory
-          const weaponName = this.combat.weapon!.stats.name;
-          let itemId = 'weapon_ak47';
-          let icon = '\u{1F52B}';
-          if (weaponName === 'SPAS-12') { itemId = 'weapon_shotgun'; }
-          else if (weaponName === 'Makarov PM') { itemId = 'weapon_pistol'; }
-          else if (weaponName === 'Taser') { itemId = 'weapon_taser'; icon = '\u26A1'; }
-          const weaponItem = { id: itemId, name: weaponName, icon, type: 'weapon' as const, quantity: 1 };
-          this.inventory.addItem(weaponItem);
-          this.inventory.addNotification(weaponItem);
+        // Store weapon in combat (put it in storedWeapon so takeOutWeapon can retrieve it)
+        this.combat.storeWeaponForPickup(weaponType);
 
-          // Auto-equip the weapon slot in hotbar
-          const state = this.inventory.getState();
-          const weaponIdx = state.slots.findIndex(s => s?.id === itemId);
-          if (weaponIdx >= 0 && weaponIdx <= 3) {
-            this.inventory.setHotbarIndex(weaponIdx);
-          }
+        // Add weapon to inventory
+        const weaponName = this.combat.getStoredWeapon()!.stats.name;
+        let itemId = 'weapon_ak47';
+        let icon = '\u{1F52B}';
+        if (weaponName === 'SPAS-12') { itemId = 'weapon_shotgun'; }
+        else if (weaponName === 'Makarov PM') { itemId = 'weapon_pistol'; }
+        else if (weaponName === 'Taser') { itemId = 'weapon_taser'; icon = '\u26A1'; }
+        const weaponItem = { id: itemId, name: weaponName, icon, type: 'weapon' as const, quantity: 1 };
+        this.inventory.addItem(weaponItem);
+        this.inventory.addNotification(weaponItem);
 
-          soundSystem.playPickup();
-          return true;
+        // Equip the weapon slot - this triggers onEquip which calls takeOutWeapon()
+        const state = this.inventory.getState();
+        const weaponIdx = state.slots.findIndex(s => s?.id === itemId);
+        if (weaponIdx >= 0) {
+          this.inventory.equipSlot(weaponIdx);
         }
+
+        soundSystem.playPickup();
+        return true;
       }
     }
 
