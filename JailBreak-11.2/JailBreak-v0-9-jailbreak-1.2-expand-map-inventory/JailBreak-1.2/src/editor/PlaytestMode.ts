@@ -669,12 +669,14 @@ export class PlaytestMode {
     const pickupRange = 2;
 
     // Check for nearby dropped weapons
+    console.log('[PICKUP] droppedWeapons count:', this.combat.droppedWeapons.length);
     for (let i = 0; i < this.combat.droppedWeapons.length; i++) {
       const droppedWeapon = this.combat.droppedWeapons[i];
       const dx = playerPos.x - droppedWeapon.position.x;
       const dz = playerPos.z - droppedWeapon.position.z;
       const distance = Math.sqrt(dx * dx + dz * dz);
       if (distance < pickupRange) {
+        console.log('[PICKUP] weapon in range! type:', droppedWeapon.userData.weaponType, 'hasWeapon:', !!this.combat.weapon, 'hasStored:', !!this.combat.getStoredWeapon());
         // Can't carry two weapons - skip if already have one
         if (this.combat.weapon || this.combat.getStoredWeapon()) break;
 
@@ -695,24 +697,30 @@ export class PlaytestMode {
 
         // Add weapon to inventory first
         const weaponItem = { id: info.id, name: info.name, icon: info.icon, type: 'weapon' as const, quantity: 1 };
-        this.inventory.addItem(weaponItem);
+        const added = this.inventory.addItem(weaponItem);
+        console.log('[PICKUP] addItem result:', added, 'itemId:', info.id);
         this.inventory.addNotification(weaponItem);
 
         // Store weapon in combat storedWeapon
         this.combat.storeWeaponForPickup(weaponType);
+        console.log('[PICKUP] after storeWeaponForPickup - storedWeapon:', !!this.combat.getStoredWeapon());
 
         // Find the slot and equip it (triggers onEquip -> takeOutWeapon)
         const state = this.inventory.getState();
         const weaponIdx = state.slots.findIndex(s => s?.id === info.id);
+        console.log('[PICKUP] weaponIdx in inventory:', weaponIdx);
         if (weaponIdx >= 0) {
           this.inventory.equipSlot(weaponIdx);
         }
 
         // Fallback: if weapon still not in hands after equipSlot chain, force it
+        console.log('[PICKUP] after equipSlot - weapon:', !!this.combat.weapon, 'storedWeapon:', !!this.combat.getStoredWeapon());
         if (!this.combat.weapon && this.combat.getStoredWeapon()) {
+          console.log('[PICKUP] FALLBACK: forcing takeOutWeapon');
           this.combat.takeOutWeapon();
         }
 
+        console.log('[PICKUP] DONE - weapon in hands:', !!this.combat.weapon);
         soundSystem.playPickup();
         return true;
       }
