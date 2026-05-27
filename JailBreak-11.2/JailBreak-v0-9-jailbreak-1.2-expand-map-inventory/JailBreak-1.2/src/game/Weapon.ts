@@ -90,15 +90,16 @@ export class Weapon {
     this.leftHand = new THREE.Group();
     this.rightHand = new THREE.Group();
 
+    // Create muzzleFlash BEFORE buildGunForType because buildPistol/buildTaser reference it
+    this.muzzleFlash = new THREE.PointLight(0xffaa00, 0, 3);
+    this.muzzleFlash.position.set(0, 0.02, -0.7);
+    this.group.add(this.muzzleFlash);
+
     this.buildGunForType();
     this.buildHands(team);
 
     this.group.position.set(0.18, -0.18, -0.38);
     this.originalPosition = this.group.position.clone();
-
-    this.muzzleFlash = new THREE.PointLight(0xffaa00, 0, 3);
-    this.muzzleFlash.position.set(0, 0.02, -0.7);
-    this.group.add(this.muzzleFlash);
 
     const flashSize = weaponType === 'shotgun' ? 0.24 : weaponType === 'pistol' ? 0.08 : weaponType === 'taser' ? 0 : 0.12;
     if (flashSize > 0) {
