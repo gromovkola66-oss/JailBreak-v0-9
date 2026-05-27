@@ -48,6 +48,10 @@ export class PlaytestMode {
   private rentalDoorColliders: Map<string, THREE.Box3[]> = new Map();
   private inTerminalMode = false;
 
+  // Armory locker
+  private armoryLockerPositions: THREE.Vector3[] = [];
+  private armoryOpen = false;
+
   // Terrain & Water
   private terrainSystem: TerrainSystem | null = null;
   private waterSystem: WaterSystem | null = null;
@@ -104,6 +108,7 @@ export class PlaytestMode {
   public onDeathStateChange?: (state: { isDead: boolean; respawnCountdown: number }) => void;
   public onLockerUpdate?: (state: LockerState | null) => void;
   public onLockerAccessDenied?: () => void;
+  public onArmoryOpen?: () => void;
 
   private frameCount = 0;
   private fpsTime = 0;
@@ -602,6 +607,11 @@ export class PlaytestMode {
       if (this.lockerSystem.isOpen()) {
         return;
       }
+      // If armory is open, close it
+      if (this.armoryOpen) {
+        this.armoryClose();
+        return;
+      }
       // All other E interactions require pointer lock
       if (document.pointerLockElement === null) return;
       if (this.cameraSystem.terminalHighlighted) {
@@ -644,6 +654,21 @@ export class PlaytestMode {
             document.exitPointerLock();
           }
           return;
+        }
+      }
+      // Armory locker interaction
+      {
+        const playerPos = this.controller.camera.position;
+        for (const lockerPos of this.armoryLockerPositions) {
+          const dx = playerPos.x - lockerPos.x;
+          const dz = playerPos.z - lockerPos.z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          if (dist < 2.5) {
+            this.armoryOpen = true;
+            this.onArmoryOpen?.();
+            document.exitPointerLock();
+            return;
+          }
         }
       }
       // Rental door interaction (use cached result from animate loop)
@@ -962,6 +987,19 @@ export class PlaytestMode {
         const lockerPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
         const lockerId = `locker_${objData.id}`;
         this.lockerSystem.registerLocker(lockerId, objData.groupId || 0, lockerPos);
+        continue;
+      }
+
+      // Оружейный шкаф — регистрируем позицию для взаимодействия
+      if (objData.type === 'armory_locker') {
+        const obj = objType.create();
+        obj.userData.__interactive = true;
+        obj.position.set(objData.position.x, objData.position.y, objData.position.z);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        this.scene.add(obj);
+        obj.updateMatrixWorld(true);
+        this.addColliders(obj);
+        this.armoryLockerPositions.push(new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z));
         continue;
       }
 
@@ -1691,6 +1729,53 @@ export class PlaytestMode {
 
   lockerClose(): void {
     this.lockerSystem.close();
+  }
+
+  // === Armory methods ===
+  armoryTakeItem(itemId: string): boolean {
+    if (itemId === 'weapon_ak47') {
+      // AK-47 is not in ITEM_DEFS, handle via combat system
+      if (this.combat.weapon || this.combat.getStoredWeapon()) return false;
+      const weaponItem = { id: 'weapon_ak47', name: 'AK-47', icon: '\u{1F52B}', type: 'weapon' as const, quantity: 1 };
+      this.inventory.addItem(weaponItem);
+      this.inventory.addNotification(weaponItem);
+      this.combat.storeWeaponForPickup('ak47');
+      const state = this.inventory.getState();
+      const weaponIdx = state.slots.findIndex(s => s?.id === 'weapon_ak47');
+      if (weaponIdx >= 0) this.inventory.equipSlot(weaponIdx);
+      if (!this.combat.weapon && this.combat.getStoredWeapon()) this.combat.takeOutWeapon();
+      return true;
+    }
+    // Check if it's a weapon type from ITEM_DEFS
+    const def = ITEM_DEFS[itemId];
+    if (!def) return false;
+    if (def.type === 'weapon') {
+      if (this.combat.weapon || this.combat.getStoredWeapon()) return false;
+      const weaponItem = { id: def.id, name: def.name, icon: def.icon, type: 'weapon' as const, quantity: 1 };
+      this.inventory.addItem(weaponItem);
+      this.inventory.addNotification(weaponItem);
+      const weaponTypeMap: Record<string, string> = { 'weapon_shotgun': 'shotgun', 'weapon_pistol': 'pistol', 'weapon_taser': 'taser' };
+      const wType = weaponTypeMap[itemId];
+      if (wType) {
+        this.combat.storeWeaponForPickup(wType);
+        const state = this.inventory.getState();
+        const weaponIdx = state.slots.findIndex(s => s?.id === itemId);
+        if (weaponIdx >= 0) this.inventory.equipSlot(weaponIdx);
+        if (!this.combat.weapon && this.combat.getStoredWeapon()) this.combat.takeOutWeapon();
+      }
+      return true;
+    }
+    // Non-weapon items
+    const added = this.inventory.addItem(def);
+    if (added) {
+      this.inventory.addNotification({ id: def.id, name: def.name, icon: def.icon, type: def.type, quantity: 1, rarity: def.rarity, category: def.category });
+    }
+    return added;
+  }
+
+  armoryClose(): void {
+    this.armoryOpen = false;
+    document.body.requestPointerLock();
   }
 
   dispose() {

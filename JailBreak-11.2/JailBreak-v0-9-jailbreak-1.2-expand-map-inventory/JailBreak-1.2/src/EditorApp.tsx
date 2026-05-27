@@ -214,6 +214,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [ptLockerAccessDenied, setPtLockerAccessDenied] = useState(false);
   const [lockerMoneyInput, setLockerMoneyInput] = useState('');
 
+  // Armory state
+  const [ptArmoryOpen, setPtArmoryOpen] = useState(false);
+  const ptArmoryOpenRef = useRef(false);
+
   // Drag-over slot highlight
   const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
 
@@ -272,6 +276,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
 
   // === Keep locker state ref in sync ===
   useEffect(() => { ptLockerStateRef.current = ptLockerState; }, [ptLockerState]);
+  useEffect(() => { ptArmoryOpenRef.current = ptArmoryOpen; }, [ptArmoryOpen]);
 
   // Current theme config
   const thCfg = THEME_CONFIGS[terminalTheme];
@@ -339,6 +344,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         e.preventDefault();
         e.stopPropagation();
         playtestRef.current.lockerClose();
+        return;
+      }
+      // Close armory with Escape or E
+      if ((e.code === 'Escape' || e.code === 'KeyE') && playtestRef.current && ptArmoryOpenRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        playtestRef.current.armoryClose();
+        setPtArmoryOpen(false);
         return;
       }
     };
@@ -784,6 +797,10 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
         setTimeout(() => setPtLockerAccessDenied(false), 2500);
       };
 
+      pt.onArmoryOpen = () => {
+        setPtArmoryOpen(true);
+      };
+
       pt.onWalletUpdate = (state) => {
         setPtWallet(prev => {
           if (prev && state.balance > prev.balance) {
@@ -842,6 +859,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     setPtLockerState(null);
     setPtLockerAccessDenied(false);
     setLockerMoneyInput('');
+    setPtArmoryOpen(false);
     setMinimizedApps([]);
     setWindowPositions({});
     setSavedScreenshots([]);
@@ -2723,6 +2741,82 @@ Press any key to restart...`}
                 {/* Footer hints */}
                 <div className="p-3 border-t border-white/10 text-center text-gray-500 text-xs">
                   {'\u041b\u041a\u041c'} - {'\u0437\u0430\u0431\u0440\u0430\u0442\u044c'} | {'\u041f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0438\u0437 \u0438\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044f'} | Esc/E - {'\u0437\u0430\u043a\u0440\u044b\u0442\u044c'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Armory UI */}
+          {ptArmoryOpen && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto z-40"
+              onClick={() => { playtestRef.current?.armoryClose(); setPtArmoryOpen(false); }}>
+              <div
+                className="w-[700px] max-w-[95vw] max-h-[85vh] rounded-2xl border border-white/10 overflow-hidden flex flex-col"
+                style={{
+                  animation: 'lockerFadeIn 0.2s ease',
+                  background: 'rgba(15, 15, 25, 0.9)',
+                  backdropFilter: 'blur(20px)',
+                  boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{'\uD83D\uDD2B'}</span>
+                    <div>
+                      <div className="text-white font-bold">{'\u041e\u0440\u0443\u0436\u0435\u0439\u043d\u044b\u0439 \u0448\u043a\u0430\u0444'}</div>
+                      <div className="text-gray-400 text-xs">{'\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043f\u0440\u0435\u0434\u043c\u0435\u0442'}</div>
+                    </div>
+                  </div>
+                  <button
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-700 hover:bg-red-600 text-gray-300 hover:text-white transition-colors cursor-pointer"
+                    onClick={() => { playtestRef.current?.armoryClose(); setPtArmoryOpen(false); }}
+                  >
+                    &#x2715;
+                  </button>
+                </div>
+
+                {/* Items grid */}
+                <div className="p-4 overflow-y-auto flex-1">
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { id: 'weapon_ak47', name: 'AK-47', icon: '\uD83D\uDD2B' },
+                      { id: 'weapon_shotgun', name: 'SPAS-12', icon: '\uD83D\uDD2B' },
+                      { id: 'weapon_pistol', name: 'Makarov PM', icon: '\uD83D\uDD2B' },
+                      { id: 'weapon_taser', name: 'Taser', icon: '\u26A1' },
+                      { id: 'item_baton', name: '\u0414\u0443\u0431\u0438\u043d\u043a\u0430', icon: '\uD83C\uDFCF' },
+                      { id: 'item_shiv', name: '\u0417\u0430\u0442\u043e\u0447\u043a\u0430', icon: '\uD83D\uDDE1\uFE0F' },
+                      { id: 'item_shield', name: '\u0429\u0438\u0442', icon: '\uD83D\uDEE1\uFE0F' },
+                      { id: 'item_vest', name: '\u0411\u0440\u043e\u043d\u0435\u0436\u0438\u043b\u0435\u0442', icon: '\uD83E\uDDBA' },
+                      { id: 'item_medkit', name: '\u0410\u043f\u0442\u0435\u0447\u043a\u0430', icon: '\uD83D\uDC8A' },
+                    ].map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:scale-[1.02]"
+                        style={{
+                          background: 'linear-gradient(180deg, rgba(40,40,55,0.8) 0%, rgba(20,20,30,0.9) 100%)',
+                          border: '2px solid rgba(255,255,255,0.1)',
+                        }}
+                      >
+                        <span className="text-2xl">{item.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-white text-sm font-medium truncate">{item.name}</div>
+                        </div>
+                        <button
+                          className="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                          onClick={() => { playtestRef.current?.armoryTakeItem(item.id); }}
+                        >
+                          {'\u0412\u0437\u044f\u0442\u044c'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Footer hints */}
+                <div className="p-3 border-t border-white/10 text-center text-gray-500 text-xs">
+                  Esc/E - {'\u0437\u0430\u043a\u0440\u044b\u0442\u044c'}
                 </div>
               </div>
             </div>

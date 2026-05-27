@@ -2821,6 +2821,39 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
   },
 
   {
+    id: 'armory_locker', name: '\u041e\u0440\u0443\u0436\u0435\u0439\u043d\u044b\u0439 \u0448\u043a\u0430\u0444', icon: '\uD83D\uDD2B', category: 'scripts',
+    create: () => {
+      const g = new THREE.Group();
+      // Корпус шкафа (широкий, тёмный металл)
+      g.add(pos(box(1.2, 2.0, 0.5, M.metalDark), 0, 1.0, 0));
+      // Левая дверная панель
+      g.add(pos(box(0.54, 1.9, 0.04, M.metalMid), -0.28, 1.0, 0.24));
+      // Правая дверная панель
+      g.add(pos(box(0.54, 1.9, 0.04, M.metalMid), 0.28, 1.0, 0.24));
+      // Левая ручка
+      g.add(pos(box(0.03, 0.14, 0.04, M.chrome), -0.04, 1.0, 0.27));
+      // Правая ручка
+      g.add(pos(box(0.03, 0.14, 0.04, M.chrome), 0.04, 1.0, 0.27));
+      // Эмблема (звезда/щит - ромб жёлтого цвета)
+      g.add(pos(box(0.15, 0.15, 0.02, M.warning), 0, 1.5, 0.27));
+      g.add(pos(box(0.08, 0.08, 0.02, M.warning), 0, 1.5, 0.28));
+      // Вентиляционные щели наверху
+      for (let i = 0; i < 5; i++) {
+        g.add(pos(box(0.5, 0.015, 0.02, M.metalDark), 0, 1.8 + i * 0.035, 0.26));
+      }
+      // Разделительная линия между дверями
+      g.add(pos(box(0.02, 1.9, 0.02, M.metalDark), 0, 1.0, 0.25));
+      // Ножки
+      g.add(pos(box(0.1, 0.05, 0.1, M.metalDark), -0.5, 0.025, -0.18));
+      g.add(pos(box(0.1, 0.05, 0.1, M.metalDark), 0.5, 0.025, -0.18));
+      g.add(pos(box(0.1, 0.05, 0.1, M.metalDark), -0.5, 0.025, 0.18));
+      g.add(pos(box(0.1, 0.05, 0.1, M.metalDark), 0.5, 0.025, 0.18));
+      g.userData.scriptType = 'armory_locker';
+      return mergeGroup(g);
+    }
+  },
+
+  {
     id: 'money_bag', name: '\u041c\u0435\u0448\u043e\u043a \u0434\u0435\u043d\u0435\u0433 (1000\u20bd)', icon: '\uD83D\uDCB0', category: 'scripts',
     create: () => {
       const g = new THREE.Group();
