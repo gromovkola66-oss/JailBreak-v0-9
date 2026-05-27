@@ -442,6 +442,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     }
   }, [ptDeathState?.isDead]);
 
+  // Close armory panel when player dies
+  useEffect(() => {
+    if (ptDeathState?.isDead && ptArmoryOpen) {
+      playtestRef.current?.armoryClose();
+      setPtArmoryOpen(false);
+    }
+  }, [ptDeathState?.isDead]);
+
   // CharacterModel for inventory panel - show/hide and render when inventory opens
   useEffect(() => {
     if (!ptInventory?.isOpen) {

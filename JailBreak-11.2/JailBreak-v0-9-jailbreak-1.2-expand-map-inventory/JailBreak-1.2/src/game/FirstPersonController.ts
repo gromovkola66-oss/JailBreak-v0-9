@@ -18,7 +18,7 @@ export class FirstPersonController {
 
   private walkSpeed = 4.5;
   private sprintSpeed = 8;
-  private crouchSpeed = 4;
+  private crouchSpeed = 2.5;
   private jumpForce = 8;
   private gravity = 25;
   private standHeight = 1.7;
