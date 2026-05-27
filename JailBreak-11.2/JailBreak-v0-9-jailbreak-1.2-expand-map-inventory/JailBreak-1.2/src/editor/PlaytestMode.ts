@@ -668,6 +668,47 @@ export class PlaytestMode {
     const playerPos = this.controller.camera.position;
     const pickupRange = 2;
 
+    // Check for nearby dropped weapons first
+    if (!this.combat.weapon && !this.combat.getStoredWeapon()) {
+      for (let i = 0; i < this.combat.droppedWeapons.length; i++) {
+        const droppedWeapon = this.combat.droppedWeapons[i];
+        const dx = playerPos.x - droppedWeapon.position.x;
+        const dz = playerPos.z - droppedWeapon.position.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        if (distance < pickupRange) {
+          // Remove from scene and array
+          this.scene.remove(droppedWeapon);
+          this.combat.droppedWeapons.splice(i, 1);
+
+          const weaponType = droppedWeapon.userData.weaponType || 'ak47';
+
+          // Equip weapon silently (without triggering onWeaponPickedUp callback)
+          this.combat.equipWeaponSilent(weaponType);
+
+          // Add to inventory
+          const weaponName = this.combat.weapon!.stats.name;
+          let itemId = 'weapon_ak47';
+          let icon = '\u{1F52B}';
+          if (weaponName === 'SPAS-12') { itemId = 'weapon_shotgun'; }
+          else if (weaponName === 'Makarov PM') { itemId = 'weapon_pistol'; }
+          else if (weaponName === 'Taser') { itemId = 'weapon_taser'; icon = '\u26A1'; }
+          const weaponItem = { id: itemId, name: weaponName, icon, type: 'weapon' as const, quantity: 1 };
+          this.inventory.addItem(weaponItem);
+          this.inventory.addNotification(weaponItem);
+
+          // Auto-equip the weapon slot in hotbar
+          const state = this.inventory.getState();
+          const weaponIdx = state.slots.findIndex(s => s?.id === itemId);
+          if (weaponIdx >= 0 && weaponIdx <= 3) {
+            this.inventory.setHotbarIndex(weaponIdx);
+          }
+
+          soundSystem.playPickup();
+          return true;
+        }
+      }
+    }
+
     // Check physics-dropped items from combat system first
     const pickedUp = this.combat.tryPickupItem(this.controller.camera);
     if (pickedUp) {

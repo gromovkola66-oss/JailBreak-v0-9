@@ -204,6 +204,20 @@ export class Combat {
     this.notifyStateChange();
   }
 
+  // Give weapon without triggering onWeaponPickedUp callback (used by PlaytestMode)
+  equipWeaponSilent(weaponType: WeaponType = 'ak47') {
+    if (this.weapon) return;
+    this.weapon = new Weapon(this.team, weaponType);
+    this.camera.add(this.weapon.group);
+    this.hands.setVisible(false);
+    this.notifyStateChange();
+  }
+
+  // Public getter for storedWeapon
+  getStoredWeapon(): Weapon | null {
+    return this.storedWeapon;
+  }
+
   private setupInput() {
     document.addEventListener('mousedown', this.boundMouseDown);
     document.addEventListener('mouseup', this.boundMouseUp);
@@ -246,9 +260,6 @@ export class Combat {
     if (document.pointerLockElement === null) return;
     
     switch (event.code) {
-      case 'KeyE':
-        this.tryPickupWeapon();
-        break;
       case 'KeyG':
         if (this.weapon || this.storedWeapon) {
           this.dropWeapon();
@@ -663,36 +674,6 @@ export class Combat {
     
     this.scene.add(weaponGroup);
     this.droppedWeapons.push(weaponGroup);
-  }
-
-  private tryPickupWeapon() {
-    if (this.weapon || this.storedWeapon || this.isDead) return;
-    
-    const playerPos = this.camera.position;
-    const pickupRange = 2;
-    
-    for (let i = 0; i < this.droppedWeapons.length; i++) {
-      const droppedWeapon = this.droppedWeapons[i];
-      const dx = playerPos.x - droppedWeapon.position.x;
-      const dz = playerPos.z - droppedWeapon.position.z;
-      const distance = Math.sqrt(dx * dx + dz * dz);
-      
-      if (distance < pickupRange) {
-        this.scene.remove(droppedWeapon);
-        this.droppedWeapons.splice(i, 1);
-
-        const storedType: WeaponType = droppedWeapon.userData.weaponType || 'ak47';
-        this.weapon = new Weapon(this.team, storedType);
-        this.camera.add(this.weapon.group);
-        
-        this.hands.setVisible(false);
-        soundSystem.playPickup();
-        
-        this.notifyStateChange();
-        this.onWeaponPickedUp?.(this.weapon.stats.name);
-        return;
-      }
-    }
   }
 
   private dropWeapon() {
