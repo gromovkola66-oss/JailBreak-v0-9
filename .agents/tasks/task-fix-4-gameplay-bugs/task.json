@@ -1,7 +1,14 @@
 {
   "task_id": "task-fix-4-gameplay-bugs",
   "task_description": "Fix 4 gameplay bugs: 1) Regular bars falsely triggering rental menu for prisoners due to Y-axis proximity, 2) Garage doors opening downward instead of upward, 3) Door frame and wall-with-door-frame objects blocking passage due to merged collision boxes, 4) Terrain size always resetting to 200 when entering playtest mode",
-  "status": "in_progress",
+  "status": "completed",
   "feature_order": ["FEAT-001"],
-  "blocked_reason": null
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "skipped",
+    "docker_build": "skipped",
+    "summary": "Vite build succeeds. TypeScript has 1 pre-existing error (WeaponType mismatch at line 1797 that exists in unmodified code). All 4 fixes verified in source. Zip repackaged."
+  }
 }
