@@ -68,7 +68,7 @@
     {"id": "obj_057", "type": "weapon_shotgun", "position": {"x": 33.5, "y": 1.2, "z": 4}},
     {"id": "obj_058", "type": "weapon_pistol", "position": {"x": 33.5, "y": 1.2, "z": 5}},
     {"id": "obj_059", "type": "weapon_taser", "position": {"x": 33.5, "y": 1.2, "z": 6}},
-    {"id": "obj_060", "type": "spawn_guard", "position": {"x": 36, "y": 0, "z": 4}},
+    {"id": "obj_060", "type": "spawn_guard", "position": {"x": 36, "y": 1.7, "z": 4}},
     {"id": "obj_061", "type": "camera", "position": {"x": 32, "y": 3.5, "z": 10}, "rotation": 3.1416},
     {"id": "obj_062", "type": "camera", "position": {"x": 38, "y": 3.5, "z": 10}, "rotation": 3.1416},
 
@@ -98,13 +98,13 @@
     {"id": "obj_084", "type": "floor", "position": {"x": 4, "y": 0, "z": 14}},
     {"id": "obj_085", "type": "floor", "position": {"x": 4, "y": 0, "z": 18}},
 
-    {"id": "obj_086", "type": "spawn_prisoner", "position": {"x": 4, "y": 0, "z": 6}},
+    {"id": "obj_086", "type": "spawn_prisoner", "position": {"x": 4, "y": 1.7, "z": 6}},
 
     {"id": "obj_087", "type": "camera", "position": {"x": 20, "y": 3.5, "z": 0}, "rotation": 3.1416},
     {"id": "obj_088", "type": "camera", "position": {"x": 20, "y": 3.5, "z": 40}, "rotation": 0},
 
-    {"id": "obj_089", "type": "spawn_prisoner", "position": {"x": 20, "y": 0, "z": 20}},
-    {"id": "obj_090", "type": "spawn_guard", "position": {"x": 24, "y": 0, "z": 24}},
+    {"id": "obj_089", "type": "spawn_prisoner", "position": {"x": 20, "y": 1.7, "z": 20}},
+    {"id": "obj_090", "type": "spawn_guard", "position": {"x": 24, "y": 1.7, "z": 24}},
 
     {"id": "obj_091", "type": "wall", "position": {"x": 34, "y": 0, "z": 32}},
     {"id": "obj_092", "type": "wall", "position": {"x": 38, "y": 0, "z": 32}},
@@ -112,7 +112,7 @@
     {"id": "obj_094", "type": "wall", "position": {"x": 32, "y": 0, "z": 38}, "rotation": 1.5708},
     {"id": "obj_095", "type": "stairs_straight", "position": {"x": 36, "y": 0, "z": 34}},
     {"id": "obj_096", "type": "camera", "position": {"x": 36, "y": 7, "z": 36}},
-    {"id": "obj_097", "type": "spawn_guard", "position": {"x": 36, "y": 4, "z": 36}},
+    {"id": "obj_097", "type": "spawn_guard", "position": {"x": 36, "y": 5.7, "z": 36}},
 
     {"id": "obj_098", "type": "fence_metal", "position": {"x": 12, "y": 0, "z": 20}},
     {"id": "obj_099", "type": "fence_metal", "position": {"x": 16, "y": 0, "z": 20}},
