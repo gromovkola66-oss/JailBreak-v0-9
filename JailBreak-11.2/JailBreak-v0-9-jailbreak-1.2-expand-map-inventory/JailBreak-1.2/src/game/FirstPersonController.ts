@@ -16,8 +16,8 @@ export class FirstPersonController {
   private euler = new THREE.Euler(0, 0, 0, 'YXZ');
   private readonly PI_2 = Math.PI / 2;
 
-  private walkSpeed = 8;
-  private sprintSpeed = 14;
+  private walkSpeed = 4.5;
+  private sprintSpeed = 8;
   private crouchSpeed = 4;
   private jumpForce = 8;
   private gravity = 25;
