@@ -15,6 +15,7 @@ interface EditorUIProps {
   multiSelectCount: number;
   terrainMode: boolean;
   terrainBrush: { type: string; radius: number; strength: number; paintMaterial: number };
+  transformMode: string;
   onSelectType: (typeId: string | null) => void;
   onToggleGrid: () => void;
   onToggleMove: () => void;
@@ -32,6 +33,7 @@ interface EditorUIProps {
   onUpdateLabel?: (label: string) => void;
   onToggleTerrainMode: () => void;
   onTerrainBrushChange: (brush: { type: string; radius: number; strength: number; paintMaterial: number }) => void;
+  onTransformModeChange: (mode: string) => void;
   terrainSize: number;
   onTerrainResize: (size: number) => void;
 }
@@ -40,12 +42,12 @@ export const EditorUI = ({
   objectTypes, selectedType, selectedObject, objectCount,
   gridEnabled, moveModeEnabled, placementY,
   canUndo, canRedo, multiSelectCount,
-  terrainMode, terrainBrush,
+  terrainMode, terrainBrush, transformMode,
   onSelectType, onToggleGrid, onToggleMove,
   onExport, onImport, onClear, onDelete, onRotate, onDuplicate,
   onUndo, onRedo, onBackToGame, onPlaytest,
   onUpdateGroupId, onUpdateLabel,
-  onToggleTerrainMode, onTerrainBrushChange,
+  onToggleTerrainMode, onTerrainBrushChange, onTransformModeChange,
   terrainSize, onTerrainResize,
 }: EditorUIProps) => {
   const [showImport, setShowImport] = useState(false);
@@ -93,6 +95,13 @@ export const EditorUI = ({
           {/* Height */}
           <div className="bg-gray-800 rounded px-2 py-1 text-xs text-gray-300 flex items-center gap-1" title="Высота (PgUp/PgDown)">
             Y: <span className="text-yellow-300 font-mono font-bold">{placementY.toFixed(1)}</span>
+          </div>
+          <div className="h-6 w-px bg-gray-600 mx-1" />
+          {/* Transform Mode */}
+          <div className="flex items-center gap-0.5">
+            <button onClick={() => onTransformModeChange('move')} className={`px-2 py-1.5 rounded text-xs transition ${transformMode === 'move' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`} title="Перемещение (T)">T</button>
+            <button onClick={() => onTransformModeChange('rotate')} className={`px-2 py-1.5 rounded text-xs transition ${transformMode === 'rotate' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`} title="Вращение (R)">R</button>
+            <button onClick={() => onTransformModeChange('scale')} className={`px-2 py-1.5 rounded text-xs transition ${transformMode === 'scale' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`} title="Масштаб (F)">F</button>
           </div>
           <div className="h-6 w-px bg-gray-600 mx-1" />
           <button onClick={onClear} className="px-2.5 py-1.5 bg-red-700 hover:bg-red-600 text-white rounded text-xs transition">🗑️</button>

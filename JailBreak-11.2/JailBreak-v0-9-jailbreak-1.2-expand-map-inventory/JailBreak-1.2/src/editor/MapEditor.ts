@@ -18,6 +18,9 @@ export interface PlacedObject {
   rotationX?: number;
   rotationZ?: number;
   scale?: number;
+  scaleX?: number;
+  scaleY?: number;
+  scaleZ?: number;
   groupId?: number;
   label?: string;
 }
@@ -79,6 +82,10 @@ export class MapEditor {
 
   // Y height
   private placementY = 0.1;
+
+  // Transform mode
+  private transformMode: 'move' | 'scale' | 'rotate' = 'move';
+  public onTransformModeChange?: (mode: 'move' | 'scale' | 'rotate') => void;
 
   // Terrain mode
   private terrainSystem: TerrainSystem;
@@ -162,6 +169,15 @@ export class MapEditor {
     this.onHeightChanged?.(this.placementY);
   }
   adjustPlacementY(delta: number) { this.setPlacementY(this.placementY + delta); }
+
+  // === TRANSFORM MODE ===
+  getTransformMode(): 'move' | 'scale' | 'rotate' { return this.transformMode; }
+  setTransformMode(mode: 'move' | 'scale' | 'rotate') {
+    if (this.transformMode === mode) return;
+    this.transformMode = mode;
+    this.onTransformModeChange?.(mode);
+    if (this.selectedObject) this.createGizmo();
+  }
 
   // === TERRAIN MODE ===
   setTerrainMode(on: boolean) {
@@ -482,10 +498,15 @@ export class MapEditor {
     d.rotation = Math.round(THREE.MathUtils.radToDeg(obj.rotation.y));
     d.rotationX = Math.round(THREE.MathUtils.radToDeg(obj.rotation.x));
     d.rotationZ = Math.round(THREE.MathUtils.radToDeg(obj.rotation.z));
+    if (obj.scale.x !== 1 || obj.scale.y !== 1 || obj.scale.z !== 1) {
+      d.scaleX = Math.round(obj.scale.x * 100) / 100;
+      d.scaleY = Math.round(obj.scale.y * 100) / 100;
+      d.scaleZ = Math.round(obj.scale.z * 100) / 100;
+    }
     this.onSelectionChanged?.({ ...d });
   }
 
-  // === GIZMO (3 оси — XYZ стрелки) ===
+  // === GIZMO (3 modes: move/scale/rotate) ===
   private createGizmo() {
     this.removeGizmo();
     if (!this.selectedObject) return;
@@ -493,34 +514,79 @@ export class MapEditor {
     this.gizmoGroup = new THREE.Group();
     this.gizmoGroup.userData.isGizmo = true;
 
-    const makeArrow = (color: number, axis: 'x' | 'y' | 'z') => {
-      const mat = new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true, opacity: 0.8 });
-      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2.5, 8), mat);
-      shaft.position.y = 1.25;
-      const head = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.4, 8), mat);
-      head.position.y = 2.7;
-
-      const group = new THREE.Group();
-      group.add(shaft, head);
-
-      if (axis === 'x') group.rotation.z = -Math.PI / 2;
-      if (axis === 'z') group.rotation.x = Math.PI / 2;
-
-      group.traverse(c => {
-        c.userData.isGizmo = true;
-        c.userData.gizmoAxis = axis;
-      });
-
-      return group;
-    };
-
-    this.gizmoGroup.add(makeArrow(0xff4444, 'x')); // красная — X
-    this.gizmoGroup.add(makeArrow(0x44ff44, 'y')); // зелёная — Y (высота)
-    this.gizmoGroup.add(makeArrow(0x4444ff, 'z')); // синяя — Z
+    if (this.transformMode === 'move') {
+      this.gizmoGroup.add(this.makeArrow(0xff4444, 'x'));
+      this.gizmoGroup.add(this.makeArrow(0x44ff44, 'y'));
+      this.gizmoGroup.add(this.makeArrow(0x4444ff, 'z'));
+    } else if (this.transformMode === 'scale') {
+      this.gizmoGroup.add(this.makeScaleHandle(0xff4444, 'x'));
+      this.gizmoGroup.add(this.makeScaleHandle(0x44ff44, 'y'));
+      this.gizmoGroup.add(this.makeScaleHandle(0x4444ff, 'z'));
+    } else if (this.transformMode === 'rotate') {
+      this.gizmoGroup.add(this.makeRotateRing(0xff4444, 'x'));
+      this.gizmoGroup.add(this.makeRotateRing(0x44ff44, 'y'));
+      this.gizmoGroup.add(this.makeRotateRing(0x4444ff, 'z'));
+    }
 
     this.gizmoGroup.position.copy(this.selectedObject.position);
     this.gizmoGroup.renderOrder = 9999;
     this.scene.add(this.gizmoGroup);
+  }
+
+  private makeArrow(color: number, axis: 'x' | 'y' | 'z') {
+    const mat = new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true, opacity: 0.8 });
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2.5, 8), mat);
+    shaft.position.y = 1.25;
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.4, 8), mat);
+    head.position.y = 2.7;
+
+    const group = new THREE.Group();
+    group.add(shaft, head);
+
+    if (axis === 'x') group.rotation.z = -Math.PI / 2;
+    if (axis === 'z') group.rotation.x = Math.PI / 2;
+
+    group.traverse(c => {
+      c.userData.isGizmo = true;
+      c.userData.gizmoAxis = axis;
+    });
+
+    return group;
+  }
+
+  private makeScaleHandle(color: number, axis: 'x' | 'y' | 'z') {
+    const mat = new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true, opacity: 0.8 });
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8), mat);
+    shaft.position.y = 1.25;
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.25), mat);
+    cube.position.y = 2.7;
+
+    const group = new THREE.Group();
+    group.add(shaft, cube);
+
+    if (axis === 'x') group.rotation.z = -Math.PI / 2;
+    if (axis === 'z') group.rotation.x = Math.PI / 2;
+
+    group.traverse(c => {
+      c.userData.isGizmo = true;
+      c.userData.gizmoAxis = axis;
+    });
+
+    return group;
+  }
+
+  private makeRotateRing(color: number, axis: 'x' | 'y' | 'z') {
+    const mat = new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true, opacity: 0.8 });
+    const torus = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.05, 32, 64), mat);
+
+    if (axis === 'x') { torus.rotation.y = Math.PI / 2; torus.rotation.z = Math.PI / 2; }
+    if (axis === 'z') { torus.rotation.x = Math.PI / 2; }
+    // Y ring needs no rotation (lies in XZ plane)
+
+    torus.userData.isGizmo = true;
+    torus.userData.gizmoAxis = axis;
+
+    return torus;
   }
 
   private removeGizmo() {
@@ -561,20 +627,56 @@ export class MapEditor {
   private handleGizmoDrag(e: MouseEvent) {
     if (!this.isDraggingGizmo || !this.activeGizmoAxis || !this.selectedObject || !this.gizmoGroup) return;
 
+    const axis = this.activeGizmoAxis;
+
+    if (this.transformMode === 'scale') {
+      const delta = (e.movementX || 0) * 0.01;
+      const data = this.placedObjectsData.find(d => d.id === this.selectedObject!.userData.editorId);
+      if (!data) return;
+      if (axis === 'x') {
+        this.selectedObject.scale.x = Math.max(0.1, Math.min(10, this.selectedObject.scale.x + delta));
+        data.scaleX = Math.round(this.selectedObject.scale.x * 100) / 100;
+      } else if (axis === 'y') {
+        this.selectedObject.scale.y = Math.max(0.1, Math.min(10, this.selectedObject.scale.y + delta));
+        data.scaleY = Math.round(this.selectedObject.scale.y * 100) / 100;
+      } else {
+        this.selectedObject.scale.z = Math.max(0.1, Math.min(10, this.selectedObject.scale.z + delta));
+        data.scaleZ = Math.round(this.selectedObject.scale.z * 100) / 100;
+      }
+      this.onSelectionChanged?.({ ...data });
+      return;
+    }
+
+    if (this.transformMode === 'rotate') {
+      const delta = (e.movementX || 0) * 0.01;
+      const data = this.placedObjectsData.find(d => d.id === this.selectedObject!.userData.editorId);
+      if (!data) return;
+      if (axis === 'x') {
+        this.selectedObject.rotation.x += delta;
+        data.rotationX = Math.round(THREE.MathUtils.radToDeg(this.selectedObject.rotation.x));
+      } else if (axis === 'y') {
+        this.selectedObject.rotation.y += delta;
+        data.rotation = Math.round(THREE.MathUtils.radToDeg(this.selectedObject.rotation.y));
+      } else {
+        this.selectedObject.rotation.z += delta;
+        data.rotationZ = Math.round(THREE.MathUtils.radToDeg(this.selectedObject.rotation.z));
+      }
+      this.onSelectionChanged?.({ ...data });
+      return;
+    }
+
+    // Move mode (default)
+    this.raycaster.setFromCamera(this.mouse, this.editorCamera.camera);
     const r = this.renderer.domElement.getBoundingClientRect();
     this.mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
     this.mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
     this.raycaster.setFromCamera(this.mouse, this.editorCamera.camera);
 
-    const axis = this.activeGizmoAxis;
-
     if (axis === 'y') {
-      // Y — от движения мыши вверх/вниз
       const dy = -(e.movementY || 0) * 0.03;
       this.selectedObject.position.y += dy;
       if (this.gridEnabled) this.selectedObject.position.y = Math.round(this.selectedObject.position.y * 4) / 4;
     } else {
-      // X и Z — проецируем луч на горизонтальную плоскость
       const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -this.selectedObject.position.y);
       const pt = new THREE.Vector3();
       if (this.raycaster.ray.intersectPlane(plane, pt)) {
@@ -591,6 +693,12 @@ export class MapEditor {
   }
 
   private stopGizmoDrag() {
+    if (this.isDraggingGizmo && this.selectedObject) {
+      const data = this.placedObjectsData.find(d => d.id === this.selectedObject!.userData.editorId);
+      if (data && (this.transformMode === 'scale' || this.transformMode === 'rotate')) {
+        this.pushHistory({ action: this.transformMode === 'scale' ? 'move' : 'rotate', data: { ...data }, prevData: { ...data } });
+      }
+    }
     this.isDraggingGizmo = false;
     this.activeGizmoAxis = null;
   }
@@ -843,6 +951,13 @@ export class MapEditor {
     pruneShadowCasters(obj);
     obj.position.set(data.position.x, data.position.y, data.position.z);
     obj.rotation.y = THREE.MathUtils.degToRad(data.rotation);
+    if (data.rotationX) obj.rotation.x = THREE.MathUtils.degToRad(data.rotationX);
+    if (data.rotationZ) obj.rotation.z = THREE.MathUtils.degToRad(data.rotationZ);
+    if (data.scaleX || data.scaleY || data.scaleZ) {
+      obj.scale.set(data.scaleX ?? data.scale ?? 1, data.scaleY ?? data.scale ?? 1, data.scaleZ ?? data.scale ?? 1);
+    } else if (data.scale) {
+      obj.scale.setScalar(data.scale);
+    }
     obj.userData.editorId = data.id;
     obj.userData.objectType = data.type;
     this.scene.add(obj);
@@ -857,12 +972,23 @@ export class MapEditor {
     obj.rotation.y = THREE.MathUtils.degToRad(data.rotation);
     if (data.rotationX !== undefined) obj.rotation.x = THREE.MathUtils.degToRad(data.rotationX);
     if (data.rotationZ !== undefined) obj.rotation.z = THREE.MathUtils.degToRad(data.rotationZ);
+    if (data.scaleX || data.scaleY || data.scaleZ) {
+      obj.scale.set(data.scaleX ?? data.scale ?? 1, data.scaleY ?? data.scale ?? 1, data.scaleZ ?? data.scale ?? 1);
+    } else if (data.scale) {
+      obj.scale.setScalar(data.scale);
+    } else {
+      obj.scale.set(1, 1, 1);
+    }
     const d = this.placedObjectsData.find(x => x.id === data.id);
     if (d) {
       d.position = { ...data.position };
       d.rotation = data.rotation;
       d.rotationX = data.rotationX;
       d.rotationZ = data.rotationZ;
+      d.scaleX = data.scaleX;
+      d.scaleY = data.scaleY;
+      d.scaleZ = data.scaleZ;
+      d.scale = data.scale;
     }
   }
 
@@ -882,16 +1008,23 @@ export class MapEditor {
     }
 
     switch (e.code) {
+      case 'KeyT':
+        if (this.selectedObject && !this.selectedObjectType) this.setTransformMode('move');
+        break;
       case 'KeyR':
-        if (this.selectedObject && !this.selectedObjectType) this.rotateSelected();
-        else {
+        if (this.selectedObject && !this.selectedObjectType) {
+          if (this.transformMode === 'rotate') {
+            this.rotateSelected();
+          } else {
+            this.setTransformMode('rotate');
+          }
+        } else {
           this.currentRotation = (this.currentRotation + 90) % 360;
           if (this.ghostObject) this.ghostObject.rotation.y = THREE.MathUtils.degToRad(this.currentRotation);
         }
         break;
       case 'KeyF':
-        // Наклон вперёд (ось X)
-        if (this.selectedObject && !this.selectedObjectType) this.rotateSelectedAxis('x', 15);
+        if (this.selectedObject && !this.selectedObjectType) this.setTransformMode('scale');
         break;
       case 'KeyV':
         // Наклон вбок (ось Z)
@@ -947,7 +1080,11 @@ export class MapEditor {
       obj.rotation.y = THREE.MathUtils.degToRad(d.rotation);
       if (d.rotationX) obj.rotation.x = THREE.MathUtils.degToRad(d.rotationX);
       if (d.rotationZ) obj.rotation.z = THREE.MathUtils.degToRad(d.rotationZ);
-      if (d.scale) obj.scale.setScalar(d.scale);
+      if (d.scaleX || d.scaleY || d.scaleZ) {
+        obj.scale.set(d.scaleX ?? d.scale ?? 1, d.scaleY ?? d.scale ?? 1, d.scaleZ ?? d.scale ?? 1);
+      } else if (d.scale) {
+        obj.scale.setScalar(d.scale);
+      }
       obj.userData.editorId = d.id;
       obj.userData.objectType = d.type;
       this.scene.add(obj);

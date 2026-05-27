@@ -176,6 +176,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const [terrainBrush, setTerrainBrush] = useState({ type: 'raise', radius: 5, strength: 0.5, paintMaterial: 0 });
   const [terrainSize, setTerrainSize] = useState(200);
 
+  // Transform mode state
+  const [transformMode, setTransformMode] = useState<string>('move');
+
   // Playtest state
   const [ptFps, setPtFps] = useState(0);
   const [ptPos, setPtPos] = useState<THREE.Vector3 | null>(null);
@@ -304,6 +307,7 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
     editor.onTerrainModeChanged = (mode: boolean) => setTerrainMode(mode);
     editor.onTerrainBrushChanged = (brush: { type: string; radius: number; strength: number; paintMaterial: number }) => setTerrainBrush(brush);
     editor.onTerrainResized = (size: number) => setTerrainSize(size);
+    editor.onTransformModeChange = (mode) => setTransformMode(mode);
 
     // Восстанавливаем карту если есть сохранение
     if (savedMapRef.current) {
@@ -1004,6 +1008,9 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   const handleTerrainResize = useCallback((size: number) => {
     editorRef.current?.resizeTerrain(size);
   }, []);
+  const handleTransformModeChange = useCallback((mode: string) => {
+    editorRef.current?.setTransformMode(mode as 'move' | 'scale' | 'rotate');
+  }, []);
   const handleDuplicate = useCallback(() => { editorRef.current?.duplicateSelected(); }, []);
   const handleUndo = useCallback(() => { editorRef.current?.undo(); }, []);
   const handleRedo = useCallback(() => { editorRef.current?.redo(); }, []);
@@ -1073,6 +1080,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
           onTerrainBrushChange={handleTerrainBrushChange}
           terrainSize={terrainSize}
           onTerrainResize={handleTerrainResize}
+          transformMode={transformMode}
+          onTransformModeChange={handleTransformModeChange}
         />
       )}
 
