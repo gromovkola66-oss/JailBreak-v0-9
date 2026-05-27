@@ -322,6 +322,22 @@ export class FirstPersonController {
       }
     }
 
+    // Persistent ceiling overlap ejection (handles spawn/teleport inside ceiling)
+    const headYAfter = this.camera.position.y + 0.2;
+    for (const collider of this.colliders) {
+      if (this.camera.position.x + 0.3 > collider.min.x &&
+          this.camera.position.x - 0.3 < collider.max.x &&
+          this.camera.position.z + 0.3 > collider.min.z &&
+          this.camera.position.z - 0.3 < collider.max.z) {
+        if (headYAfter > collider.min.y && headYAfter < collider.max.y &&
+            collider.min.y > (this.camera.position.y - this.currentHeight) + 1.0) {
+          this.camera.position.y = collider.min.y - 0.2;
+          if (this.velocity.y > 0) this.velocity.y = 0;
+          break;
+        }
+      }
+    }
+
     // Skip ground/landing logic while climbing (velocity controlled externally)
     if (this.climbing) {
       // Ceiling check only

@@ -1488,7 +1488,17 @@ export class PlaytestMode {
       this.raycaster.set(this.controller.camera.position, camDir);
       this.raycaster.far = 0.7;
       const intersects = this.raycaster.intersectObjects(this.scene.children, true);
-      const wallDist = intersects.length > 0 ? intersects[0].distance : 999;
+      // Filter out intersections with camera children (hands, held items)
+      const cam = this.controller.camera;
+      const filteredIntersects = intersects.filter(hit => {
+        let obj: THREE.Object3D | null = hit.object;
+        while (obj) {
+          if (obj === cam) return false;
+          obj = obj.parent;
+        }
+        return true;
+      });
+      const wallDist = filteredIntersects.length > 0 ? filteredIntersects[0].distance : 999;
       this.hands.setWallProximity(wallDist);
 
       this.hands.update(delta);
