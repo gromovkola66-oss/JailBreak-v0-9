@@ -1,92 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getQuality, setQuality, type Quality } from '../game/QualitySettings';
 
 interface MainMenuProps {
   onOpenEditor: () => void;
 }
 
-// === CUTSCENE FRAMES ===
-const cutsceneFrames = [
-  { title: 'Глава 1: Прибытие', text: 'Автобус останавливается у ворот тюрьмы строгого режима...' },
-  { title: 'Регистрация', text: 'Отпечатки пальцев, фото, оранжевая роба...' },
-  { title: 'Камера №47', text: 'Холодные стены, жёсткая койка, тусклый свет...' },
-  { title: 'Первая ночь', text: 'Крики в коридоре, лязг замков, бессонница...' },
-  { title: 'Знакомства', text: 'На прогулке подходит человек: \"Хочешь выбраться?\"' },
-  { title: 'План', text: 'Каждую ночь, по кирпичику... Свобода ждёт.' },
-];
-
-// === CUTSCENE VIEWER ===
-const CutsceneViewer = ({ onClose }: { onClose: () => void }) => {
-  const [frameIndex, setFrameIndex] = useState(0);
-  const [opacity, setOpacity] = useState(1);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setOpacity(0);
-      timeoutRef.current = setTimeout(() => {
-        setFrameIndex(prev => (prev + 1) % cutsceneFrames.length);
-        setOpacity(1);
-      }, 500);
-    }, 4000);
-    return () => {
-      clearInterval(interval);
-      if (timeoutRef.current !== null) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  const goToPrev = () => {
-    setOpacity(0);
-    timeoutRef.current = setTimeout(() => {
-      setFrameIndex(p => (p - 1 + cutsceneFrames.length) % cutsceneFrames.length);
-      setOpacity(1);
-    }, 300);
-  };
-
-  const goToNext = () => {
-    setOpacity(0);
-    timeoutRef.current = setTimeout(() => {
-      setFrameIndex(p => (p + 1) % cutsceneFrames.length);
-      setOpacity(1);
-    }, 300);
-  };
-
-  const frame = cutsceneFrames[frameIndex];
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center"
-      style={{ background: 'radial-gradient(ellipse at center, #0a0a1a 0%, #000000 100%)' }}>
-      <button onClick={onClose}
-        className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition text-xl z-10">
-        ✕
-      </button>
-      <div className="flex items-center gap-4 absolute bottom-8">
-        <button onClick={goToPrev}
-          className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/70 rounded transition text-sm">
-          ← Назад
-        </button>
-        <span className="text-white/40 text-sm">{frameIndex + 1} / {cutsceneFrames.length}</span>
-        <button onClick={goToNext}
-          className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/70 rounded transition text-sm">
-          Далее →
-        </button>
-      </div>
-      <div className="text-center px-8 max-w-2xl" style={{ opacity, transition: 'opacity 0.5s ease' }}>
-        <h2 className="text-3xl font-bold text-white mb-6" style={{ textShadow: '0 0 20px rgba(100,150,255,0.4)' }}>
-          {frame.title}
-        </h2>
-        <p className="text-xl text-gray-300 leading-relaxed italic">
-          {frame.text}
-        </p>
-      </div>
-    </div>
-  );
-};
-
-// === SETTINGS PANEL (Win7 Window) ===
-const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
+/* ========== SETTINGS MODAL ========== */
+const SettingsModal = ({ onClose }: { onClose: () => void }) => {
   const [volume, setVolume] = useState(50);
   const [quality, setQualityState] = useState<Quality>(() => getQuality());
 
@@ -97,39 +17,26 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40" />
-      <div onClick={e => e.stopPropagation()}
-        style={{
-          animation: 'windowOpen 0.2s ease forwards',
-          borderRadius: 8,
-          border: '1px solid rgba(255,255,255,0.2)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-          overflow: 'hidden',
-          width: 550,
-          maxHeight: '85vh',
-        }}>
-        {/* Title bar */}
+      <div className="absolute inset-0 bg-black/50" />
+      <div onClick={e => e.stopPropagation()} style={{
+        width: 520, maxHeight: '85vh', borderRadius: 12,
+        background: 'rgba(10,10,26,0.85)', backdropFilter: 'blur(24px)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: '0 16px 64px rgba(0,0,0,0.6)',
+        overflow: 'hidden',
+      }}>
         <div style={{
-          background: 'linear-gradient(180deg, rgba(80,130,200,0.85) 0%, rgba(40,80,140,0.9) 100%)',
-          backdropFilter: 'blur(20px)',
-          padding: '8px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(255,255,255,0.15)',
+          padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(255,255,255,0.03)',
         }}>
-          <span className="text-white text-sm font-medium">Панель управления - Настройки</span>
-          <div className="flex gap-1">
-            <button className="w-6 h-5 flex items-center justify-center text-white/70 hover:bg-white/20 rounded-sm text-xs">─</button>
-            <button className="w-6 h-5 flex items-center justify-center text-white/70 hover:bg-white/20 rounded-sm text-xs">□</button>
-            <button onClick={onClose} className="w-6 h-5 flex items-center justify-center text-white hover:bg-red-500 rounded-sm text-xs">✕</button>
-          </div>
+          <span className="text-white font-semibold text-sm">Настройки</span>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition text-lg">✕</button>
         </div>
-        {/* Body */}
-        <div style={{ background: 'rgba(20,20,35,0.92)', backdropFilter: 'blur(10px)', padding: 24, overflowY: 'auto', maxHeight: 'calc(85vh - 40px)' }}>
+        <div style={{ padding: 24, overflowY: 'auto', maxHeight: 'calc(85vh - 50px)' }}>
           {/* Sound */}
           <div className="mb-6">
-            <h3 className="text-sm font-bold text-blue-300 mb-3 uppercase tracking-wider">Звук</h3>
+            <h3 className="text-xs font-bold text-blue-400 mb-3 uppercase tracking-wider">Звук</h3>
             <div className="bg-black/30 rounded-lg p-4">
               <div className="flex justify-between mb-2">
                 <span className="text-gray-300 text-sm">Громкость</span>
@@ -139,39 +46,27 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
                 className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500" />
             </div>
           </div>
-
           {/* Graphics */}
           <div className="mb-6">
-            <h3 className="text-sm font-bold text-green-300 mb-3 uppercase tracking-wider">Графика</h3>
+            <h3 className="text-xs font-bold text-green-400 mb-3 uppercase tracking-wider">Графика</h3>
             <div className="bg-black/30 rounded-lg p-4">
               <span className="text-gray-300 text-sm block mb-3">Качество</span>
               <div className="grid grid-cols-3 gap-2">
                 {(['low', 'medium', 'high'] as const).map(q => (
                   <button key={q} onClick={() => changeQuality(q)}
                     className={`py-2 rounded text-sm font-medium transition-all ${quality === q
-                      ? 'bg-green-600 text-white shadow-lg'
-                      : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
+                      ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
                     {q === 'low' ? 'Низкое' : q === 'medium' ? 'Среднее' : 'Высокое'}
                   </button>
                 ))}
               </div>
-              <div className="text-xs text-gray-500 mt-2 leading-relaxed">
-                {quality === 'low' && 'Для слабых ноутбуков: тени отключены, без сглаживания.'}
-                {quality === 'medium' && 'Сбалансированный режим: тени 1024, умеренная плотность.'}
-                {quality === 'high' && 'Максимум: тени 2048, ретина-плотность.'}
-              </div>
             </div>
           </div>
-
           {/* Controls */}
-          <div className="mb-4">
-            <h3 className="text-sm font-bold text-yellow-300 mb-3 uppercase tracking-wider">Управление</h3>
+          <div>
+            <h3 className="text-xs font-bold text-yellow-400 mb-3 uppercase tracking-wider">Управление</h3>
             <div className="bg-black/30 rounded-lg p-4 space-y-2">
-              {[
-                ['WASD', 'Движение'], ['Мышь', 'Обзор'], ['SPACE', 'Прыжок'],
-                ['ЛКМ', 'Атака / Стрельба'], ['E', 'Подобрать / Взаимодействие'],
-                ['G', 'Выбросить оружие'], ['R', 'Перезарядка'], ['M', 'Меню охраны'],
-              ].map(([key, desc]) => (
+              {[['WASD','Движение'],['Мышь','Обзор'],['SPACE','Прыжок'],['ЛКМ','Атака / Стрельба'],['E','Взаимодействие'],['G','Выбросить оружие'],['R','Перезарядка']].map(([key, desc]) => (
                 <div key={key} className="flex items-center justify-between py-1 border-b border-gray-700/50 last:border-0">
                   <kbd className="bg-gray-700 text-yellow-300 px-2 py-0.5 rounded text-xs font-mono">{key}</kbd>
                   <span className="text-gray-300 text-sm">{desc}</span>
@@ -185,274 +80,367 @@ const SettingsPanel = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-// === SERVERS PANEL (Win7 Window) ===
-const ServersPanel = ({ onClose }: { onClose: () => void }) => (
+/* ========== SERVERS MODAL ========== */
+const ServersModal = ({ onClose }: { onClose: () => void }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-    <div className="absolute inset-0 bg-black/40" />
-    <div onClick={e => e.stopPropagation()}
-      style={{
-        animation: 'windowOpen 0.2s ease forwards',
-        borderRadius: 8,
-        border: '1px solid rgba(255,255,255,0.2)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-        overflow: 'hidden',
-        width: 480,
-      }}>
-      {/* Title bar */}
+    <div className="absolute inset-0 bg-black/50" />
+    <div onClick={e => e.stopPropagation()} style={{
+      width: 440, borderRadius: 12,
+      background: 'rgba(10,10,26,0.85)', backdropFilter: 'blur(24px)',
+      border: '1px solid rgba(255,255,255,0.1)',
+      boxShadow: '0 16px 64px rgba(0,0,0,0.6)',
+      overflow: 'hidden',
+    }}>
       <div style={{
-        background: 'linear-gradient(180deg, rgba(80,130,200,0.85) 0%, rgba(40,80,140,0.9) 100%)',
-        backdropFilter: 'blur(20px)',
-        padding: '8px 12px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottom: '1px solid rgba(255,255,255,0.15)',
+        padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        background: 'rgba(255,255,255,0.03)',
       }}>
-        <span className="text-white text-sm font-medium">Серверы - JailBreak Online</span>
-        <div className="flex gap-1">
-          <button className="w-6 h-5 flex items-center justify-center text-white/70 hover:bg-white/20 rounded-sm text-xs">─</button>
-          <button className="w-6 h-5 flex items-center justify-center text-white/70 hover:bg-white/20 rounded-sm text-xs">□</button>
-          <button onClick={onClose} className="w-6 h-5 flex items-center justify-center text-white hover:bg-red-500 rounded-sm text-xs">✕</button>
-        </div>
+        <span className="text-white font-semibold text-sm">Серверы</span>
+        <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition text-lg">✕</button>
       </div>
-      {/* Body */}
-      <div style={{ background: 'rgba(20,20,35,0.92)', backdropFilter: 'blur(10px)', padding: 32, textAlign: 'center' }}>
+      <div style={{ padding: 32, textAlign: 'center' }}>
         <div className="text-4xl mb-4">🌐</div>
-        <h2 className="text-xl font-bold text-white mb-2">Мультиплеер</h2>
-        <p className="text-gray-400 mb-6 text-sm">Находится в разработке</p>
-        <div className="bg-black/30 rounded-lg p-4 mb-6">
-          <p className="text-gray-500 text-sm">Список серверов появится здесь в будущих обновлениях.</p>
-        </div>
-        <button onClick={onClose} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm font-medium transition">
-          Закрыть
-        </button>
+        <h2 className="text-lg font-bold text-white mb-2">Мультиплеер</h2>
+        <p className="text-gray-400 text-sm mb-6">Находится в разработке. Список серверов появится в будущих обновлениях.</p>
+        <button onClick={onClose} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition">Закрыть</button>
       </div>
     </div>
   </div>
 );
 
-// === START MENU ===
-const StartMenu = ({ onClose, onOpenEditor, onOpenServers, onOpenSettings }: {
-  onClose: () => void;
-  onOpenEditor: () => void;
-  onOpenServers: () => void;
-  onOpenSettings: () => void;
-}) => {
-  const items = [
-    { icon: '📁', label: 'Редактор карт', action: onOpenEditor },
-    { icon: '🌐', label: 'Серверы', action: onOpenServers },
-    { icon: '⚙️', label: 'Настройки', action: onOpenSettings },
-  ];
+/* ========== SCENE COMPONENTS (pure CSS art) ========== */
 
-  return (
-    <>
-      <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="fixed z-50" style={{
-        bottom: 52,
-        left: 4,
-        width: 380,
-        animation: 'startMenuOpen 0.2s ease forwards',
-        borderRadius: 8,
-        border: '1px solid rgba(255,255,255,0.15)',
-        boxShadow: '0 -8px 40px rgba(0,0,0,0.6)',
-        overflow: 'hidden',
-      }}>
-        {/* Header with user */}
-        <div style={{
-          background: 'linear-gradient(180deg, rgba(50,100,180,0.9) 0%, rgba(30,70,140,0.95) 100%)',
-          backdropFilter: 'blur(20px)',
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-        }}>
-          <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-xl">👤</div>
-          <div>
-            <div className="text-white text-sm font-medium">Заключённый</div>
-            <div className="text-white/50 text-xs">JailBreak v1.2</div>
-          </div>
-        </div>
-        {/* Two columns */}
-        <div style={{ background: 'rgba(15,15,30,0.92)', backdropFilter: 'blur(20px)', display: 'flex' }}>
-          {/* Left column */}
-          <div style={{ flex: 1, padding: '8px 4px', borderRight: '1px solid rgba(255,255,255,0.05)' }}>
-            {items.map(item => (
-              <button key={item.label} onClick={() => { item.action(); onClose(); }}
-                className="w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-blue-600/40 rounded transition text-sm">
-                <span className="text-lg">{item.icon}</span>
-                <span className="text-white/90">{item.label}</span>
-              </button>
-            ))}
-            <div className="border-t border-gray-700/50 my-2 mx-3" />
-            <button onClick={() => window.close()}
-              className="w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-red-600/40 rounded transition text-sm">
-              <span className="text-lg">🚪</span>
-              <span className="text-red-300">Выход</span>
-            </button>
-          </div>
-          {/* Right column */}
-          <div style={{ width: 160, padding: '8px 4px', background: 'rgba(0,0,0,0.2)' }}>
-            <button className="w-full text-left px-3 py-2 hover:bg-white/5 rounded transition text-sm text-white/60">
-              Все программы →
-            </button>
-            <div className="border-t border-gray-700/50 my-2 mx-3" />
-            <div className="px-3 py-1">
-              <div className="text-xs text-gray-500">Система</div>
-              <div className="text-xs text-gray-400 mt-1">React + Vite</div>
-              <div className="text-xs text-gray-400">TypeScript</div>
-            </div>
-          </div>
-        </div>
+const ScenePrison = () => (
+  <div className="scene-prison absolute inset-0 overflow-hidden">
+    {/* Night sky */}
+    <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #0a0a2e 0%, #1a1a4a 40%, #111833 100%)' }} />
+    {/* Stars */}
+    {Array.from({ length: 30 }, (_, i) => (
+      <div key={i} className="star absolute rounded-full bg-white" style={{
+        width: i % 3 === 0 ? 2 : 1, height: i % 3 === 0 ? 2 : 1,
+        left: `${(i * 37 + 13) % 100}%`, top: `${(i * 23 + 7) % 55}%`,
+        opacity: 0.4 + (i % 5) * 0.12,
+        animation: `twinkle ${2 + (i % 3)}s ease-in-out ${(i % 7) * 0.5}s infinite`,
+      }} />
+    ))}
+    {/* Moon */}
+    <div className="absolute" style={{
+      width: 60, height: 60, borderRadius: '50%', top: '8%', right: '12%',
+      background: 'radial-gradient(circle at 40% 40%, #f5f5dc, #c8c8a0)',
+      boxShadow: '0 0 30px rgba(245,245,220,0.3), 0 0 60px rgba(245,245,220,0.15)',
+    }} />
+    {/* Prison building */}
+    <div className="absolute bottom-0 left-0 right-0" style={{ height: '40%' }}>
+      <div className="absolute bottom-0 left-[10%] w-[80%] h-[85%]" style={{ background: '#0d0d1a', borderRadius: '2px 2px 0 0' }}>
+        {/* Windows */}
+        {Array.from({ length: 12 }, (_, i) => (
+          <div key={i} className="absolute" style={{
+            width: 12, height: 16,
+            left: `${10 + (i % 6) * 15}%`, top: `${20 + Math.floor(i / 6) * 35}%`,
+            background: i % 3 === 0 ? '#f59e0b' : '#664400',
+            opacity: i % 3 === 0 ? 0.8 : 0.4,
+            animation: i % 4 === 0 ? `windowBlink ${3 + i % 5}s ease-in-out ${i * 0.7}s infinite` : 'none',
+            boxShadow: i % 3 === 0 ? '0 0 8px rgba(245,158,11,0.4)' : 'none',
+          }} />
+        ))}
       </div>
-    </>
-  );
-};
+      {/* Guard tower */}
+      <div className="absolute bottom-0 right-[8%]" style={{ width: 40, height: '95%', background: '#0a0a15' }}>
+        <div className="absolute top-0 left-[-8px] right-[-8px] h-[20%]" style={{ background: '#0f0f20', borderRadius: '2px 2px 0 0' }} />
+      </div>
+    </div>
+    {/* Searchlight */}
+    <div className="absolute" style={{
+      width: 0, height: 0, top: '15%', right: '10%',
+      borderLeft: '40px solid transparent', borderRight: '40px solid transparent',
+      borderTop: '200px solid rgba(255,255,200,0.06)',
+      transformOrigin: 'top center',
+      animation: 'searchlight 6s ease-in-out infinite',
+    }} />
+    {/* Ground */}
+    <div className="absolute bottom-0 left-0 right-0 h-[6%]" style={{ background: '#080810' }} />
+  </div>
+);
 
-// === MAIN MENU ===
+const SceneEscape = () => (
+  <div className="scene-escape absolute inset-0 overflow-hidden">
+    {/* Dark background */}
+    <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #0a0a1a 0%, #1a1020 50%, #0d0d1a 100%)' }} />
+    {/* Fence pattern */}
+    <div className="absolute inset-0" style={{
+      backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(100,100,100,0.1) 20px, rgba(100,100,100,0.1) 21px),
+        repeating-linear-gradient(-45deg, transparent, transparent 20px, rgba(100,100,100,0.1) 20px, rgba(100,100,100,0.1) 21px)`,
+    }} />
+    {/* Alarm text */}
+    <div className="absolute top-[8%] left-0 right-0 text-center" style={{ animation: 'alarmBlink 1s step-end infinite' }}>
+      <span style={{ color: '#ef4444', fontSize: 28, fontWeight: 'bold', letterSpacing: 8, textShadow: '0 0 20px rgba(239,68,68,0.6)' }}>
+        ТРЕВОГА
+      </span>
+    </div>
+    {/* Alarm lights */}
+    <div className="absolute top-[5%] left-[15%] w-4 h-4 rounded-full" style={{ background: '#ef4444', animation: 'alarmPulse 1.5s ease-in-out infinite', boxShadow: '0 0 20px #ef4444' }} />
+    <div className="absolute top-[5%] right-[15%] w-4 h-4 rounded-full" style={{ background: '#ef4444', animation: 'alarmPulse 1.5s ease-in-out 0.75s infinite', boxShadow: '0 0 20px #ef4444' }} />
+    {/* Figure climbing */}
+    <div className="absolute" style={{ left: '50%', top: '35%', animation: 'climbFigure 8s ease-in-out infinite' }}>
+      {/* Head */}
+      <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#1a1a1a', margin: '0 auto 2px' }} />
+      {/* Body */}
+      <div style={{ width: 10, height: 24, background: '#1a1a1a', margin: '0 auto', borderRadius: 2 }} />
+      {/* Arms */}
+      <div style={{ position: 'absolute', top: 16, left: -8, width: 8, height: 3, background: '#1a1a1a', transform: 'rotate(-45deg)' }} />
+      <div style={{ position: 'absolute', top: 16, right: -8, width: 8, height: 3, background: '#1a1a1a', transform: 'rotate(45deg)' }} />
+      {/* Legs */}
+      <div style={{ position: 'absolute', bottom: -10, left: 0, width: 4, height: 12, background: '#1a1a1a', transform: 'rotate(-10deg)' }} />
+      <div style={{ position: 'absolute', bottom: -10, right: 0, width: 4, height: 12, background: '#1a1a1a', transform: 'rotate(10deg)' }} />
+    </div>
+    {/* Searchlight beams */}
+    <div className="absolute" style={{
+      width: 0, height: 0, top: '10%', left: '5%',
+      borderLeft: '30px solid transparent', borderRight: '30px solid transparent',
+      borderTop: '250px solid rgba(255,255,200,0.04)',
+      transformOrigin: 'top center',
+      animation: 'searchlight2 5s ease-in-out infinite',
+    }} />
+    <div className="absolute" style={{
+      width: 0, height: 0, top: '5%', right: '20%',
+      borderLeft: '25px solid transparent', borderRight: '25px solid transparent',
+      borderTop: '220px solid rgba(255,255,200,0.04)',
+      transformOrigin: 'top center',
+      animation: 'searchlight3 7s ease-in-out 1s infinite',
+    }} />
+  </div>
+);
+
+const SceneChase = () => (
+  <div className="scene-chase absolute inset-0 overflow-hidden">
+    {/* Forest background */}
+    <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #050a05 0%, #0a1a0a 40%, #0d1a10 100%)' }} />
+    {/* Trees (dark vertical shapes) */}
+    {Array.from({ length: 8 }, (_, i) => (
+      <div key={i} className="absolute bottom-0" style={{
+        left: `${5 + i * 12}%`, width: 18 + (i % 3) * 6, height: `${50 + (i % 4) * 10}%`,
+        background: `linear-gradient(180deg, #0a150a ${30 + i * 5}%, #050a05 100%)`,
+        borderRadius: '4px 4px 0 0',
+        opacity: 0.7 + (i % 3) * 0.1,
+      }} />
+    ))}
+    {/* Running figure */}
+    <div className="absolute bottom-[20%]" style={{ animation: 'runFigure 12s linear infinite' }}>
+      <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#111', margin: '0 auto 2px' }} />
+      <div style={{ width: 8, height: 20, background: '#111', margin: '0 auto', borderRadius: 2 }} />
+    </div>
+    {/* Flashlight beams from behind */}
+    <div className="absolute" style={{
+      left: 0, top: '30%', width: '50%', height: 60,
+      background: 'linear-gradient(90deg, rgba(255,255,200,0.08) 0%, transparent 100%)',
+      transform: 'rotate(5deg)',
+    }} />
+    <div className="absolute" style={{
+      left: 0, top: '45%', width: '45%', height: 50,
+      background: 'linear-gradient(90deg, rgba(255,255,200,0.06) 0%, transparent 100%)',
+      transform: 'rotate(-3deg)',
+    }} />
+    {/* Rain */}
+    {Array.from({ length: 40 }, (_, i) => (
+      <div key={i} className="absolute" style={{
+        width: 1, height: 20 + (i % 3) * 8,
+        left: `${(i * 2.5) % 100}%`, top: `-${(i * 13) % 30}%`,
+        background: 'rgba(200,220,255,0.15)',
+        animation: `rain ${0.6 + (i % 4) * 0.15}s linear ${(i % 10) * 0.1}s infinite`,
+      }} />
+    ))}
+    {/* Fog at bottom */}
+    <div className="absolute bottom-0 left-0 right-0 h-[20%]" style={{
+      background: 'linear-gradient(180deg, transparent 0%, rgba(200,220,200,0.08) 100%)',
+    }} />
+  </div>
+);
+
+const SceneFreedom = () => (
+  <div className="scene-freedom absolute inset-0 overflow-hidden">
+    {/* Sunrise gradient */}
+    <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #0a1a3a 0%, #1a2a5a 25%, #4a3a2a 55%, #f59e0b 85%, #f97316 100%)' }} />
+    {/* Sun */}
+    <div className="absolute" style={{
+      width: 80, height: 80, borderRadius: '50%',
+      bottom: '18%', left: '50%', transform: 'translateX(-50%)',
+      background: 'radial-gradient(circle, #fbbf24 0%, #f59e0b 60%, transparent 100%)',
+      boxShadow: '0 0 60px rgba(251,191,36,0.5), 0 0 120px rgba(245,158,11,0.3)',
+      animation: 'sunPulse 4s ease-in-out infinite',
+    }} />
+    {/* Light rays */}
+    {Array.from({ length: 7 }, (_, i) => (
+      <div key={i} className="absolute" style={{
+        bottom: '22%', left: '50%', width: 3, height: '35%',
+        background: 'linear-gradient(0deg, rgba(251,191,36,0.15) 0%, transparent 100%)',
+        transformOrigin: 'bottom center',
+        transform: `translateX(-50%) rotate(${(i - 3) * 15}deg)`,
+        opacity: 0.6 + (i % 3) * 0.15,
+      }} />
+    ))}
+    {/* Hill */}
+    <div className="absolute bottom-0 left-[30%] right-[30%] h-[22%]" style={{
+      background: '#0a0a0a', borderRadius: '50% 50% 0 0',
+    }} />
+    {/* Figure on hill */}
+    <div className="absolute" style={{ bottom: '20%', left: '50%', transform: 'translateX(-50%)' }}>
+      <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#0a0a0a', margin: '0 auto 2px' }} />
+      <div style={{ width: 8, height: 22, background: '#0a0a0a', margin: '0 auto', borderRadius: 2 }} />
+      <div style={{ position: 'absolute', top: 14, left: -6, width: 6, height: 3, background: '#0a0a0a', transform: 'rotate(-20deg)' }} />
+      <div style={{ position: 'absolute', top: 14, right: -6, width: 6, height: 3, background: '#0a0a0a', transform: 'rotate(20deg)' }} />
+    </div>
+    {/* Birds */}
+    {Array.from({ length: 5 }, (_, i) => (
+      <div key={i} className="absolute text-black/60" style={{
+        left: `${25 + i * 12}%`, top: `${15 + (i % 3) * 8}%`,
+        fontSize: 10 + i * 2,
+        animation: `birdFloat ${5 + i}s ease-in-out ${i * 0.8}s infinite`,
+      }}>^</div>
+    ))}
+  </div>
+);
+
+/* ========== MAIN MENU ========== */
 export const MainMenu = ({ onOpenEditor }: MainMenuProps) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showServers, setShowServers] = useState(false);
-  const [showCutscene, setShowCutscene] = useState(false);
-  const [showStartMenu, setShowStartMenu] = useState(false);
-  const [currentTime, setCurrentTime] = useState('');
+  const [activeScene, setActiveScene] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Clock
+  const scenes = [ScenePrison, SceneEscape, SceneChase, SceneFreedom];
+
   useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
+    intervalRef.current = setInterval(() => {
+      setActiveScene(prev => (prev + 1) % 4);
+    }, 5000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
   }, []);
 
-  const toggleStartMenu = useCallback(() => {
-    setShowStartMenu(prev => !prev);
-  }, []);
-
-  const desktopIcons = [
-    { icon: '📁', label: 'Редактор карт', action: onOpenEditor },
-    { icon: '🌐', label: 'Серверы', action: () => setShowServers(true) },
-    { icon: '⚙️', label: 'Настройки', action: () => setShowSettings(true) },
-    { icon: '🎬', label: 'JailBreak Story', action: () => setShowCutscene(true) },
+  const buttons = [
+    { icon: '\u{1F5FA}\uFE0F', label: 'Редактор карт', action: onOpenEditor },
+    { icon: '\u{1F310}', label: 'Серверы', action: () => setShowServers(true) },
+    { icon: '\u2699\uFE0F', label: 'Настройки', action: () => setShowSettings(true) },
+    { icon: '\u{1F6AA}', label: 'Выход', action: () => window.close() },
   ];
 
   return (
-    <div className="w-screen h-screen overflow-hidden relative select-none" style={{
-      background: 'linear-gradient(135deg, #1e3a5f 0%, #0d4e3a 25%, #2d5016 50%, #1a3a6b 75%, #0a1628 100%)',
-    }}>
-      {/* Aurora glow patches */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div style={{
-          position: 'absolute', width: '60%', height: '50%', top: '10%', left: '20%',
-          background: 'radial-gradient(ellipse, rgba(30,120,80,0.3) 0%, transparent 70%)',
-        }} />
-        <div style={{
-          position: 'absolute', width: '40%', height: '40%', bottom: '20%', left: '5%',
-          background: 'radial-gradient(ellipse, rgba(20,60,140,0.25) 0%, transparent 70%)',
-        }} />
-        <div style={{
-          position: 'absolute', width: '35%', height: '35%', top: '5%', right: '10%',
-          background: 'radial-gradient(ellipse, rgba(60,140,60,0.2) 0%, transparent 70%)',
-        }} />
-        <div style={{
-          position: 'absolute', width: '50%', height: '30%', bottom: '30%', right: '15%',
-          background: 'radial-gradient(ellipse, rgba(40,80,160,0.15) 0%, transparent 70%)',
-        }} />
-      </div>
-
-      {/* Desktop Icons */}
-      <div className="absolute top-4 left-4 z-10 grid gap-2" style={{ gridTemplateColumns: '1fr', paddingTop: 8 }}>
-        {desktopIcons.map(item => (
-          <button key={item.label} onClick={item.action}
-            className="desktop-icon flex flex-col items-center w-20 py-2 px-1 rounded hover:bg-blue-500/30 transition group cursor-pointer">
-            <span className="text-5xl mb-1 drop-shadow-lg group-hover:scale-110 transition-transform">{item.icon}</span>
-            <span className="text-white text-xs text-center leading-tight drop-shadow-md">{item.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Taskbar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30" style={{
-        height: 48,
-        background: 'rgba(0,0,0,0.65)',
-        backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(255,255,255,0.1)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 8px',
+    <div className="w-screen h-screen overflow-hidden relative select-none flex">
+      {/* LEFT PANEL */}
+      <div className="menu-left-panel relative z-10 flex flex-col justify-between" style={{
+        width: '37%', minWidth: 320,
+        background: 'rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(24px)',
+        borderRight: '1px solid rgba(255,255,255,0.1)',
+        padding: '40px 32px',
       }}>
-        {/* Start button */}
-        <button onClick={toggleStartMenu}
-          className="start-button relative flex items-center justify-center transition-all"
-          style={{
-            width: 48,
-            height: 38,
-            borderRadius: 20,
-            background: showStartMenu
-              ? 'linear-gradient(180deg, #3a8add 0%, #1a5a9d 100%)'
-              : 'linear-gradient(180deg, #2a6abb 0%, #164a8d 50%, #1a5a9d 100%)',
-            border: '1px solid rgba(255,255,255,0.3)',
-            boxShadow: showStartMenu
-              ? '0 0 12px rgba(60,140,255,0.6), inset 0 1px 0 rgba(255,255,255,0.3)'
-              : '0 0 8px rgba(60,140,255,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
-          }}>
-          <span className="text-white text-sm font-bold">&#9781;</span>
-        </button>
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <h1 style={{ fontSize: 48, fontWeight: 800, lineHeight: 1.1 }}>
+            <span style={{ color: '#3b82f6', textShadow: '0 0 20px rgba(59,130,246,0.4)' }}>Jail</span>
+            <span style={{ color: '#f97316', textShadow: '0 0 20px rgba(249,115,22,0.4)' }}>Break</span>
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">v1.2</p>
+        </div>
 
-        {/* Center area (pinned items indicator) */}
-        <div className="flex items-center gap-1">
-          {desktopIcons.map(item => (
-            <div key={item.label} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white/10 transition text-base cursor-pointer"
-              title={item.label} onClick={item.action}>
-              {item.icon}
-            </div>
+        {/* Buttons */}
+        <div className="flex-1 flex flex-col justify-center gap-3">
+          {buttons.map((btn) => (
+            <button key={btn.label} onClick={btn.action} className="menu-btn w-full flex items-center gap-4 px-5 text-left transition-all" style={{
+              height: 56, borderRadius: 12,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}>
+              <span className="text-xl">{btn.icon}</span>
+              <span className="text-white text-base font-medium">{btn.label}</span>
+            </button>
           ))}
         </div>
 
-        {/* Right side: volume + clock */}
-        <div className="flex items-center gap-3 pr-2">
-          <span className="text-white/70 text-sm cursor-default" title="Звук">🔊</span>
-          <span className="text-white/90 text-sm font-mono tracking-wide">{currentTime}</span>
+        {/* Footer */}
+        <div className="text-center">
+          <p className="text-gray-600 text-xs">&copy; JailBreak 2024</p>
         </div>
       </div>
 
-      {/* Start Menu */}
-      {showStartMenu && (
-        <StartMenu
-          onClose={() => setShowStartMenu(false)}
-          onOpenEditor={onOpenEditor}
-          onOpenServers={() => setShowServers(true)}
-          onOpenSettings={() => setShowSettings(true)}
-        />
-      )}
+      {/* RIGHT PANEL - Animated Scenes */}
+      <div className="relative flex-1" style={{ background: '#0a0a1a' }}>
+        {scenes.map((SceneComponent, i) => (
+          <div key={i} className="absolute inset-0" style={{
+            opacity: activeScene === i ? 1 : 0,
+            transition: 'opacity 1.5s ease',
+            pointerEvents: 'none',
+          }}>
+            <SceneComponent />
+          </div>
+        ))}
+      </div>
 
-      {/* Panels */}
-      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
-      {showServers && <ServersPanel onClose={() => setShowServers(false)} />}
-      {showCutscene && <CutsceneViewer onClose={() => setShowCutscene(false)} />}
+      {/* Modals */}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showServers && <ServersModal onClose={() => setShowServers(false)} />}
 
-      {/* Animation styles */}
+      {/* Animation Keyframes */}
       <style>{`
-        @keyframes windowOpen {
-          from { transform: scale(0.95); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.9; }
         }
-        @keyframes startMenuOpen {
-          from { transform: translateY(10px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
+        @keyframes windowBlink {
+          0%, 40%, 100% { opacity: 0.8; background: #f59e0b; }
+          50%, 60% { opacity: 0.2; background: #664400; }
         }
-        .desktop-icon {
-          border: 1px solid transparent;
+        @keyframes searchlight {
+          0%, 100% { transform: rotate(-30deg); }
+          50% { transform: rotate(30deg); }
         }
-        .desktop-icon:hover {
-          border: 1px solid rgba(100,160,255,0.4);
+        @keyframes searchlight2 {
+          0%, 100% { transform: rotate(10deg); }
+          50% { transform: rotate(50deg); }
         }
-        .start-button:hover {
-          box-shadow: 0 0 16px rgba(60,140,255,0.7), inset 0 1px 0 rgba(255,255,255,0.4) !important;
+        @keyframes searchlight3 {
+          0%, 100% { transform: rotate(-10deg); }
+          50% { transform: rotate(-40deg); }
+        }
+        @keyframes alarmBlink {
+          0%, 49% { opacity: 1; }
+          50%, 100% { opacity: 0.2; }
+        }
+        @keyframes alarmPulse {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 20px #ef4444; }
+          50% { transform: scale(1.3); box-shadow: 0 0 40px #ef4444, 0 0 60px rgba(239,68,68,0.4); }
+        }
+        @keyframes climbFigure {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-20px); }
+        }
+        @keyframes runFigure {
+          0% { left: 85%; }
+          100% { left: -10%; }
+        }
+        @keyframes rain {
+          0% { transform: translateY(-100%); opacity: 0.6; }
+          100% { transform: translateY(800px); opacity: 0; }
+        }
+        @keyframes sunPulse {
+          0%, 100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 60px rgba(251,191,36,0.5), 0 0 120px rgba(245,158,11,0.3); }
+          50% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 80px rgba(251,191,36,0.6), 0 0 150px rgba(245,158,11,0.4); }
+        }
+        @keyframes birdFloat {
+          0%, 100% { transform: translate(0, 0); }
+          25% { transform: translate(10px, -5px); }
+          50% { transform: translate(20px, 0); }
+          75% { transform: translate(10px, 5px); }
+        }
+        .menu-btn:hover {
+          background: rgba(255,255,255,0.1) !important;
+          border-color: rgba(255,255,255,0.2) !important;
+          transform: translateX(4px);
+        }
+        .menu-btn {
+          transition: all 0.2s ease;
         }
       `}</style>
     </div>
