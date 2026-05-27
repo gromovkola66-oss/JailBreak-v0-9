@@ -71,6 +71,7 @@ export class MapEditor {
   private activeGizmoAxis: 'x' | 'y' | 'z' | null = null;
   private isDraggingGizmo = false;
   private gizmoDragStart = new THREE.Vector3();
+  private gizmoDragPrevData: PlacedObject | null = null;
 
   // Undo/Redo
   private undoStack: HistoryEntry[] = [];
@@ -577,7 +578,7 @@ export class MapEditor {
 
   private makeRotateRing(color: number, axis: 'x' | 'y' | 'z') {
     const mat = new THREE.MeshBasicMaterial({ color, depthTest: false, transparent: true, opacity: 0.8 });
-    const torus = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.05, 32, 64), mat);
+    const torus = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.1, 32, 64), mat);
 
     if (axis === 'x') { torus.rotation.y = Math.PI / 2; torus.rotation.z = Math.PI / 2; }
     if (axis === 'z') { torus.rotation.x = Math.PI / 2; }
@@ -619,6 +620,9 @@ export class MapEditor {
       this.activeGizmoAxis = hit.userData.gizmoAxis || null;
       this.isDraggingGizmo = true;
       this.gizmoDragStart.copy(hits[0].point);
+      // Capture pre-drag snapshot for undo
+      const data = this.placedObjectsData.find(d => d.id === this.selectedObject!.userData.editorId);
+      this.gizmoDragPrevData = data ? { ...data } : null;
       return true;
     }
     return false;
@@ -666,7 +670,6 @@ export class MapEditor {
     }
 
     // Move mode (default)
-    this.raycaster.setFromCamera(this.mouse, this.editorCamera.camera);
     const r = this.renderer.domElement.getBoundingClientRect();
     this.mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
     this.mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
@@ -695,12 +698,13 @@ export class MapEditor {
   private stopGizmoDrag() {
     if (this.isDraggingGizmo && this.selectedObject) {
       const data = this.placedObjectsData.find(d => d.id === this.selectedObject!.userData.editorId);
-      if (data && (this.transformMode === 'scale' || this.transformMode === 'rotate')) {
-        this.pushHistory({ action: this.transformMode === 'scale' ? 'move' : 'rotate', data: { ...data }, prevData: { ...data } });
+      if (data && (this.transformMode === 'scale' || this.transformMode === 'rotate') && this.gizmoDragPrevData) {
+        this.pushHistory({ action: this.transformMode === 'scale' ? 'move' : 'rotate', data: { ...data }, prevData: { ...this.gizmoDragPrevData } });
       }
     }
     this.isDraggingGizmo = false;
     this.activeGizmoAxis = null;
+    this.gizmoDragPrevData = null;
   }
 
   // === DELETE ===
@@ -951,9 +955,9 @@ export class MapEditor {
     pruneShadowCasters(obj);
     obj.position.set(data.position.x, data.position.y, data.position.z);
     obj.rotation.y = THREE.MathUtils.degToRad(data.rotation);
-    if (data.rotationX) obj.rotation.x = THREE.MathUtils.degToRad(data.rotationX);
-    if (data.rotationZ) obj.rotation.z = THREE.MathUtils.degToRad(data.rotationZ);
-    if (data.scaleX || data.scaleY || data.scaleZ) {
+    if (data.rotationX !== undefined) obj.rotation.x = THREE.MathUtils.degToRad(data.rotationX);
+    if (data.rotationZ !== undefined) obj.rotation.z = THREE.MathUtils.degToRad(data.rotationZ);
+    if (data.scaleX !== undefined || data.scaleY !== undefined || data.scaleZ !== undefined) {
       obj.scale.set(data.scaleX ?? data.scale ?? 1, data.scaleY ?? data.scale ?? 1, data.scaleZ ?? data.scale ?? 1);
     } else if (data.scale) {
       obj.scale.setScalar(data.scale);
@@ -972,7 +976,7 @@ export class MapEditor {
     obj.rotation.y = THREE.MathUtils.degToRad(data.rotation);
     if (data.rotationX !== undefined) obj.rotation.x = THREE.MathUtils.degToRad(data.rotationX);
     if (data.rotationZ !== undefined) obj.rotation.z = THREE.MathUtils.degToRad(data.rotationZ);
-    if (data.scaleX || data.scaleY || data.scaleZ) {
+    if (data.scaleX !== undefined || data.scaleY !== undefined || data.scaleZ !== undefined) {
       obj.scale.set(data.scaleX ?? data.scale ?? 1, data.scaleY ?? data.scale ?? 1, data.scaleZ ?? data.scale ?? 1);
     } else if (data.scale) {
       obj.scale.setScalar(data.scale);
@@ -1024,7 +1028,13 @@ export class MapEditor {
         }
         break;
       case 'KeyF':
-        if (this.selectedObject && !this.selectedObjectType) this.setTransformMode('scale');
+        if (this.selectedObject && !this.selectedObjectType) {
+          if (e.shiftKey && this.transformMode === 'move') {
+            this.rotateSelectedAxis('x', 15);
+          } else {
+            this.setTransformMode('scale');
+          }
+        }
         break;
       case 'KeyV':
         // Наклон вбок (ось Z)
@@ -1078,9 +1088,9 @@ export class MapEditor {
       pruneShadowCasters(obj);
       obj.position.set(d.position.x, d.position.y, d.position.z);
       obj.rotation.y = THREE.MathUtils.degToRad(d.rotation);
-      if (d.rotationX) obj.rotation.x = THREE.MathUtils.degToRad(d.rotationX);
-      if (d.rotationZ) obj.rotation.z = THREE.MathUtils.degToRad(d.rotationZ);
-      if (d.scaleX || d.scaleY || d.scaleZ) {
+      if (d.rotationX !== undefined) obj.rotation.x = THREE.MathUtils.degToRad(d.rotationX);
+      if (d.rotationZ !== undefined) obj.rotation.z = THREE.MathUtils.degToRad(d.rotationZ);
+      if (d.scaleX !== undefined || d.scaleY !== undefined || d.scaleZ !== undefined) {
         obj.scale.set(d.scaleX ?? d.scale ?? 1, d.scaleY ?? d.scale ?? 1, d.scaleZ ?? d.scale ?? 1);
       } else if (d.scale) {
         obj.scale.setScalar(d.scale);

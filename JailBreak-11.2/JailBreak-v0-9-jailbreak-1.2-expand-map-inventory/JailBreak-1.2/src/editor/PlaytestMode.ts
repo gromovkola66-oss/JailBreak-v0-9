@@ -1134,9 +1134,9 @@ export class PlaytestMode {
       const obj = objType.create();
       obj.position.set(objData.position.x, objData.position.y, objData.position.z);
       obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
-      if (objData.rotationX) obj.rotation.x = THREE.MathUtils.degToRad(objData.rotationX);
-      if (objData.rotationZ) obj.rotation.z = THREE.MathUtils.degToRad(objData.rotationZ);
-      if (objData.scaleX || objData.scaleY || objData.scaleZ) {
+      if (objData.rotationX !== undefined) obj.rotation.x = THREE.MathUtils.degToRad(objData.rotationX);
+      if (objData.rotationZ !== undefined) obj.rotation.z = THREE.MathUtils.degToRad(objData.rotationZ);
+      if (objData.scaleX !== undefined || objData.scaleY !== undefined || objData.scaleZ !== undefined) {
         obj.scale.set(objData.scaleX ?? objData.scale ?? 1, objData.scaleY ?? objData.scale ?? 1, objData.scaleZ ?? objData.scale ?? 1);
       } else if (objData.scale) {
         obj.scale.setScalar(objData.scale);
