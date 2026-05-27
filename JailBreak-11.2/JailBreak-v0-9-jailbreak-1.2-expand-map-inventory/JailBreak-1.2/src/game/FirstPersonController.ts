@@ -78,7 +78,6 @@ export class FirstPersonController {
 
   setColliders(colliders: THREE.Box3[]) {
     this.colliders = colliders;
-    console.log('[FPC] setColliders called, count:', colliders.length);
   }
 
   /** Initialize prevFeetY to current feet position - call after setting spawn position */
@@ -168,8 +167,6 @@ export class FirstPersonController {
     }
   }
 
-  private _collisionLogCount = 0;
-
   private checkCollision(newPosition: THREE.Vector3): boolean {
     const h = this.currentHeight;
     // Small feet clearance to avoid z-fighting with floor seams but catch real objects
@@ -185,10 +182,6 @@ export class FirstPersonController {
       // not block horizontal movement (player is walking on it).
       if (collider.max.y <= feetY + 0.1) continue;
       if (playerBox.intersectsBox(collider)) {
-        if (this._collisionLogCount < 3) {
-          console.log('[FPC] COLLISION DETECTED with collider:', collider.min.toArray(), collider.max.toArray());
-          this._collisionLogCount++;
-        }
         return true;
       }
     }

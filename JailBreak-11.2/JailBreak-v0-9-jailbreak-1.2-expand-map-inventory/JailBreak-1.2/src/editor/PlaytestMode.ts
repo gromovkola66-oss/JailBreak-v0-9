@@ -699,10 +699,6 @@ export class PlaytestMode {
     const pickupRange = 2;
 
     // Check for nearby dropped weapons
-    if (this.combat.droppedWeapons.length === 0) {
-      // DEBUG: show on-screen alert only once per E press if no weapons exist
-      document.title = 'NO WEAPONS IN ARRAY';
-    }
     for (let i = 0; i < this.combat.droppedWeapons.length; i++) {
       const droppedWeapon = this.combat.droppedWeapons[i];
       const dx = playerPos.x - droppedWeapon.position.x;
@@ -711,11 +707,8 @@ export class PlaytestMode {
       if (distance < pickupRange) {
         // Can't carry two weapons - skip if already have one
         if (this.combat.weapon || this.combat.getStoredWeapon()) {
-          document.title = 'BLOCKED: already have weapon';
           break;
         }
-
-        document.title = 'PICKING UP: ' + (droppedWeapon.userData.weaponType || 'ak47');
 
         const weaponType = droppedWeapon.userData.weaponType || 'ak47';
 
@@ -1287,7 +1280,9 @@ export class PlaytestMode {
         }
       }
       this.controller.camera.position.y = bestFloorY + 1.7;
-      this.spawnPoint.y = bestFloorY + 1.7;
+      if (this.spawnPoint) {
+        this.spawnPoint.y = bestFloorY + 1.7;
+      }
       this.controller.initFeetPosition();
     } else {
       this.spawnPoint = new THREE.Vector3(0, 1.7, 0);
@@ -1385,7 +1380,7 @@ export class PlaytestMode {
           // Teleport to random spawn point
           const respawnPoint = this.spawnPoints.length > 0
             ? this.spawnPoints[Math.floor(Math.random() * this.spawnPoints.length)]
-            : this.spawnPoint;
+            : (this.spawnPoint ?? new THREE.Vector3(0, 1.7, 0));
           if (respawnPoint) {
             this.controller.camera.position.copy(respawnPoint);
             this.controller.initFeetPosition();
