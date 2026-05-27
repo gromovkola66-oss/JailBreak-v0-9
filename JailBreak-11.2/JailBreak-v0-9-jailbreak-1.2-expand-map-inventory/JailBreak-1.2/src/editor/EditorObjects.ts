@@ -3737,6 +3737,438 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       return mergeGroup(g);
     }
   },
+  // ============ ДЕКОРАТИВНЫЕ КОЛОННЫ И АРКИ ============
+  {
+    id: 'column_doric', name: 'Колонна дорическая', icon: '🏛️', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Base
+      g.add(pos(box(0.7, 0.15, 0.7, M.conc2), 0, 0.075, 0));
+      g.add(pos(box(0.55, 0.1, 0.55, M.conc1), 0, 0.2, 0));
+      // Shaft
+      g.add(pos(cyl(0.3, 0.32, 3.0, M.conc1, 16), 0, 1.75, 0));
+      // Fluting (kannelures)
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const rx = Math.cos(angle) * 0.3;
+        const rz = Math.sin(angle) * 0.3;
+        g.add(pos(box(0.04, 2.8, 0.02, M.conc3), rx, 1.75, rz));
+      }
+      // Capital
+      g.add(pos(box(0.6, 0.1, 0.6, M.conc2), 0, 3.3, 0));
+      g.add(pos(box(0.65, 0.08, 0.65, M.conc1), 0, 3.4, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'column_corinthian', name: 'Колонна коринфская', icon: '🏛️', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Tiered base
+      g.add(pos(box(0.6, 0.1, 0.6, M.conc2), 0, 0.05, 0));
+      g.add(pos(box(0.5, 0.08, 0.5, M.conc1), 0, 0.14, 0));
+      g.add(pos(box(0.4, 0.06, 0.4, M.conc2), 0, 0.21, 0));
+      // Shaft
+      g.add(pos(cyl(0.22, 0.24, 3.2, M.conc1, 16), 0, 1.85, 0));
+      // Acanthus leaf capital
+      g.add(pos(cyl(0.24, 0.22, 0.3, M.conc2, 12), 0, 3.6, 0));
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const rx = Math.cos(angle) * 0.28;
+        const rz = Math.sin(angle) * 0.28;
+        g.add(pos(box(0.08, 0.25, 0.04, M.conc3), rx, 3.55, rz));
+      }
+      for (let i = 0; i < 4; i++) {
+        const angle = ((i + 0.5) / 4) * Math.PI * 2;
+        const rx = Math.cos(angle) * 0.2;
+        const rz = Math.sin(angle) * 0.2;
+        g.add(pos(box(0.06, 0.15, 0.03, M.conc2), rx, 3.75, rz));
+      }
+      // Top plate
+      g.add(pos(box(0.55, 0.08, 0.55, M.conc1), 0, 3.9, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'column_twisted', name: 'Колонна витая', icon: '🌀', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Base
+      g.add(pos(box(0.6, 0.15, 0.6, M.conc2), 0, 0.075, 0));
+      g.add(pos(box(0.5, 0.1, 0.5, M.conc1), 0, 0.2, 0));
+      // Twisted shaft segments
+      for (let i = 0; i < 12; i++) {
+        const y = 0.35 + i * 0.25;
+        const angle = (i / 12) * Math.PI * 3;
+        const rx = Math.cos(angle) * 0.06;
+        const rz = Math.sin(angle) * 0.06;
+        g.add(pos(cyl(0.2, 0.2, 0.28, M.conc1, 10), rx, y, rz));
+      }
+      // Capital
+      g.add(pos(box(0.55, 0.1, 0.55, M.conc2), 0, 3.4, 0));
+      g.add(pos(box(0.6, 0.08, 0.6, M.conc1), 0, 3.5, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'column_broken', name: 'Колонна сломанная', icon: '🧱', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Base
+      g.add(pos(box(0.7, 0.15, 0.7, M.conc2), 0, 0.075, 0));
+      // Broken shaft (short)
+      g.add(pos(cyl(0.3, 0.32, 1.5, M.conc1, 12), 0, 0.95, 0));
+      // Jagged top edge
+      g.add(pos(box(0.2, 0.15, 0.15, M.conc3), 0.1, 1.8, 0.05));
+      g.add(pos(box(0.15, 0.2, 0.12, M.conc1), -0.1, 1.85, -0.08));
+      g.add(pos(box(0.12, 0.1, 0.18, M.conc2), 0.15, 1.75, -0.1));
+      // Debris at base
+      g.add(pos(box(0.3, 0.2, 0.25, M.conc1), 0.5, 0.1, 0.3));
+      g.add(pos(box(0.25, 0.15, 0.2, M.conc3), -0.4, 0.075, 0.5));
+      g.add(pos(box(0.2, 0.12, 0.3, M.conc2), 0.3, 0.06, -0.4));
+      g.add(pos(box(0.35, 0.1, 0.15, M.concDirty), -0.3, 0.05, -0.3));
+      g.add(pos(box(0.15, 0.18, 0.15, M.conc1), 0.6, 0.09, -0.2));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'column_double', name: 'Двойная колонна', icon: '🏛️', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Shared base platform
+      g.add(pos(box(1.2, 0.12, 0.6, M.conc2), 0, 0.06, 0));
+      // Left column
+      g.add(pos(cyl(0.15, 0.17, 3.2, M.conc1, 12), -0.4, 1.72, 0));
+      // Right column
+      g.add(pos(cyl(0.15, 0.17, 3.2, M.conc1, 12), 0.4, 1.72, 0));
+      // Connecting beam at top
+      g.add(pos(box(1.1, 0.2, 0.35, M.conc2), 0, 3.42, 0));
+      g.add(pos(box(1.2, 0.1, 0.4, M.conc3), 0, 3.57, 0));
+      // Small capitals
+      g.add(pos(box(0.35, 0.08, 0.35, M.conc2), -0.4, 3.3, 0));
+      g.add(pos(box(0.35, 0.08, 0.35, M.conc2), 0.4, 3.3, 0));
+      // Column bases
+      g.add(pos(cyl(0.18, 0.18, 0.08, M.conc3, 12), -0.4, 0.16, 0));
+      g.add(pos(cyl(0.18, 0.18, 0.08, M.conc3, 12), 0.4, 0.16, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'column_chains', name: 'Колонна с цепями', icon: '⛓️', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Base
+      g.add(pos(box(0.6, 0.12, 0.6, M.conc2), 0, 0.06, 0));
+      // Shaft
+      g.add(pos(cyl(0.25, 0.27, 3.2, M.conc1, 12), 0, 1.72, 0));
+      // Capital
+      g.add(pos(box(0.55, 0.1, 0.55, M.conc2), 0, 3.37, 0));
+      // Brackets
+      g.add(pos(box(0.12, 0.06, 0.08, M.metalDark), 0.28, 3.0, 0));
+      g.add(pos(box(0.12, 0.06, 0.08, M.metalDark), -0.28, 3.0, 0));
+      // Chain links (right side)
+      for (let i = 0; i < 8; i++) {
+        const y = 2.9 - i * 0.2;
+        const xOff = (i % 2 === 0) ? 0.32 : 0.36;
+        g.add(pos(box(0.04, 0.12, 0.03, M.metalMid), xOff, y, 0));
+      }
+      // Chain links (left side)
+      for (let i = 0; i < 8; i++) {
+        const y = 2.9 - i * 0.2;
+        const xOff = (i % 2 === 0) ? -0.32 : -0.36;
+        g.add(pos(box(0.04, 0.12, 0.03, M.metalMid), xOff, y, 0));
+      }
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'arch_round', name: 'Круглая арка', icon: '🌉', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Left pillar
+      g.add(pos(box(0.4, 3.0, 0.4, M.conc1), -1.5, 1.5, 0));
+      g.add(pos(box(0.5, 0.12, 0.5, M.conc2), -1.5, 3.06, 0));
+      // Right pillar
+      g.add(pos(box(0.4, 3.0, 0.4, M.conc1), 1.5, 1.5, 0));
+      g.add(pos(box(0.5, 0.12, 0.5, M.conc2), 1.5, 3.06, 0));
+      // Semicircular arch (12 voussoirs)
+      for (let i = 0; i <= 12; i++) {
+        const angle = (i / 12) * Math.PI;
+        const x = Math.cos(angle) * 1.5;
+        const y = Math.sin(angle) * 1.5 + 3.0;
+        g.add(pos(box(0.3, 0.25, 0.4, M.conc2), -x, y, 0));
+      }
+      // Keystone
+      g.add(pos(box(0.2, 0.35, 0.45, M.conc3), 0, 4.5, 0));
+      // Base molding
+      g.add(pos(box(0.5, 0.1, 0.5, M.conc3), -1.5, 0.05, 0));
+      g.add(pos(box(0.5, 0.1, 0.5, M.conc3), 1.5, 0.05, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'arch_pointed', name: 'Стрельчатая арка', icon: '⛪', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Left pillar
+      g.add(pos(box(0.4, 3.0, 0.4, M.conc1), -1.5, 1.5, 0));
+      // Right pillar
+      g.add(pos(box(0.4, 3.0, 0.4, M.conc1), 1.5, 1.5, 0));
+      // Left curve (8 blocks curving up and inward to point)
+      for (let i = 0; i < 8; i++) {
+        const t = i / 7;
+        const x = -1.5 + t * 1.5;
+        const y = 3.0 + Math.sin(t * Math.PI * 0.5) * 1.8;
+        g.add(pos(box(0.25, 0.22, 0.4, M.conc2), x, y, 0));
+      }
+      // Right curve (8 blocks curving up and inward to point)
+      for (let i = 0; i < 8; i++) {
+        const t = i / 7;
+        const x = 1.5 - t * 1.5;
+        const y = 3.0 + Math.sin(t * Math.PI * 0.5) * 1.8;
+        g.add(pos(box(0.25, 0.22, 0.4, M.conc2), x, y, 0));
+      }
+      // Pointed keystone at top
+      g.add(pos(box(0.2, 0.3, 0.42, M.conc3), 0, 4.8, 0));
+      // Base moldings
+      g.add(pos(box(0.5, 0.1, 0.5, M.conc3), -1.5, 0.05, 0));
+      g.add(pos(box(0.5, 0.1, 0.5, M.conc3), 1.5, 0.05, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'arch_horseshoe', name: 'Подковообразная арка', icon: '🕌', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Left pillar
+      g.add(pos(box(0.4, 2.5, 0.4, M.conc1), -1.4, 1.25, 0));
+      // Right pillar
+      g.add(pos(box(0.4, 2.5, 0.4, M.conc1), 1.4, 1.25, 0));
+      // Horseshoe arch (extends past semicircle, curving inward)
+      for (let i = 0; i <= 14; i++) {
+        const angle = -0.3 + (i / 14) * (Math.PI + 0.6);
+        const x = Math.cos(angle) * 1.4;
+        const y = Math.sin(angle) * 1.4 + 2.5;
+        g.add(pos(box(0.25, 0.2, 0.4, M.conc2), -x, y, 0));
+      }
+      // Keystone
+      g.add(pos(box(0.2, 0.3, 0.42, M.conc3), 0, 3.9, 0));
+      // Base molding
+      g.add(pos(box(0.5, 0.1, 0.5, M.conc3), -1.4, 0.05, 0));
+      g.add(pos(box(0.5, 0.1, 0.5, M.conc3), 1.4, 0.05, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'arch_ruined', name: 'Разрушенная арка', icon: '🏚️', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Left pillar (intact)
+      g.add(pos(box(0.4, 3.0, 0.4, M.conc1), -1.5, 1.5, 0));
+      // Right pillar (partially broken)
+      g.add(pos(box(0.4, 2.4, 0.4, M.conc1), 1.5, 1.2, 0));
+      g.add(pos(box(0.2, 0.15, 0.2, M.conc3), 1.6, 2.5, 0.1));
+      // Partial arch (some pieces missing)
+      for (let i = 0; i <= 12; i++) {
+        if (i === 5 || i === 6 || i === 9) continue; // Missing pieces
+        const angle = (i / 12) * Math.PI;
+        const x = Math.cos(angle) * 1.5;
+        const y = Math.sin(angle) * 1.5 + 3.0;
+        g.add(pos(box(0.28, 0.23, 0.38, M.conc2), -x, y, 0));
+      }
+      // Debris at base
+      g.add(pos(box(0.3, 0.2, 0.25, M.conc2), 0.5, 0.1, 0.4));
+      g.add(pos(box(0.25, 0.15, 0.2, M.conc1), -0.3, 0.075, 0.5));
+      g.add(pos(box(0.2, 0.18, 0.22, M.conc3), 0.8, 0.09, -0.3));
+      g.add(pos(box(0.28, 0.12, 0.18, M.concDirty), -0.6, 0.06, -0.4));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'wall_relief', name: 'Стена с барельефом', icon: '🖼️', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Main wall
+      g.add(pos(box(4, 4, 0.3, M.conc1), 0, 2, 0));
+      // Frame border
+      g.add(pos(box(3.2, 0.1, 0.08, M.conc3), 0, 3.4, 0.19));
+      g.add(pos(box(3.2, 0.1, 0.08, M.conc3), 0, 0.6, 0.19));
+      g.add(pos(box(0.1, 2.9, 0.08, M.conc3), -1.55, 2.0, 0.19));
+      g.add(pos(box(0.1, 2.9, 0.08, M.conc3), 1.55, 2.0, 0.19));
+      // Interior geometric pattern
+      g.add(pos(box(0.8, 0.8, 0.12, M.conc2), 0, 2.0, 0.21));
+      g.add(pos(box(0.5, 1.2, 0.08, M.conc3), -0.8, 2.0, 0.19));
+      g.add(pos(box(0.5, 1.2, 0.08, M.conc3), 0.8, 2.0, 0.19));
+      g.add(pos(box(1.0, 0.4, 0.1, M.conc2), 0, 2.8, 0.2));
+      g.add(pos(box(1.0, 0.4, 0.1, M.conc2), 0, 1.2, 0.2));
+      g.add(pos(box(0.3, 0.3, 0.15, M.conc3), 0, 2.0, 0.22));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'wall_niche', name: 'Стена с нишей', icon: '🚪', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Main wall
+      g.add(pos(box(4, 4, 0.3, M.conc1), 0, 2, 0));
+      // Niche interior (recessed, darker)
+      g.add(pos(box(1.2, 2.0, 0.15, M.concDirty), 0, 2.2, -0.07));
+      // Frame around niche
+      g.add(pos(box(0.1, 2.2, 0.06, M.conc3), -0.65, 2.2, 0.17));
+      g.add(pos(box(0.1, 2.2, 0.06, M.conc3), 0.65, 2.2, 0.17));
+      g.add(pos(box(1.4, 0.1, 0.06, M.conc3), 0, 3.3, 0.17));
+      g.add(pos(box(1.4, 0.1, 0.06, M.conc3), 0, 1.1, 0.17));
+      // Shelf inside niche
+      g.add(pos(box(1.1, 0.06, 0.12, M.conc2), 0, 2.0, -0.02));
+      // Arch top of niche
+      g.add(pos(box(1.0, 0.12, 0.06, M.conc2), 0, 3.2, 0.17));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'wall_lattice', name: 'Решётчатая перегородка', icon: '🔲', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Outer frame
+      g.add(pos(box(3.0, 0.1, 0.08, M.metalDark), 0, 0.05, 0));
+      g.add(pos(box(3.0, 0.1, 0.08, M.metalDark), 0, 3.0, 0));
+      g.add(pos(box(0.1, 3.0, 0.08, M.metalDark), -1.5, 1.5, 0));
+      g.add(pos(box(0.1, 3.0, 0.08, M.metalDark), 1.5, 1.5, 0));
+      // Diagonal bars (one direction)
+      for (let i = -2; i <= 2; i++) {
+        g.add(pos(box(0.04, 4.2, 0.03, M.bars), i * 0.6, 1.5, 0));
+      }
+      // Diagonal bars (other direction) - crossed
+      for (let i = -2; i <= 2; i++) {
+        g.add(pos(box(4.2, 0.04, 0.03, M.bars), 0, 0.6 + i * 0.6 + 1.5, 0));
+      }
+      // Diamond pattern diagonals
+      for (let i = 0; i < 5; i++) {
+        const offset = -1.2 + i * 0.6;
+        g.add(pos(box(0.03, 0.85, 0.02, M.metalMid), offset, 1.5, 0.02));
+      }
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'wall_rosette', name: 'Стена с розеткой', icon: '🌸', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Main wall
+      g.add(pos(box(4, 4, 0.3, M.conc1), 0, 2, 0));
+      // Central rosette - radial pattern
+      g.add(pos(cyl(0.15, 0.15, 0.12, M.conc3, 12), 0, 2.0, 0.21));
+      // Petals (12 small boxes radiating out)
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const rx = Math.cos(angle) * 0.4;
+        const ry = Math.sin(angle) * 0.4;
+        g.add(pos(box(0.12, 0.2, 0.08, M.conc2), rx, 2.0 + ry, 0.2));
+      }
+      // Outer ring of smaller elements
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const rx = Math.cos(angle) * 0.75;
+        const ry = Math.sin(angle) * 0.75;
+        g.add(pos(box(0.08, 0.08, 0.1, M.conc3), rx, 2.0 + ry, 0.2));
+      }
+      // Corner accents
+      g.add(pos(box(0.2, 0.2, 0.06, M.conc2), -1.5, 3.5, 0.18));
+      g.add(pos(box(0.2, 0.2, 0.06, M.conc2), 1.5, 3.5, 0.18));
+      g.add(pos(box(0.2, 0.2, 0.06, M.conc2), -1.5, 0.5, 0.18));
+      g.add(pos(box(0.2, 0.2, 0.06, M.conc2), 1.5, 0.5, 0.18));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'gate_prison', name: 'Ворота тюремные', icon: '🚧', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Thick side posts
+      g.add(pos(box(0.3, 3.5, 0.3, M.metalDark), -1.5, 1.75, 0));
+      g.add(pos(box(0.3, 3.5, 0.3, M.metalDark), 1.5, 1.75, 0));
+      // Top beam
+      g.add(pos(box(3.3, 0.25, 0.3, M.metalDark), 0, 3.6, 0));
+      // Bottom beam
+      g.add(pos(box(3.3, 0.15, 0.2, M.metalDark), 0, 0.08, 0));
+      // Vertical bars
+      for (let i = -4; i <= 4; i++) {
+        g.add(pos(cyl(0.04, 0.04, 3.3, M.barsThick), i * 0.3, 1.75, 0));
+      }
+      // Horizontal cross bars
+      g.add(pos(box(2.7, 0.08, 0.08, M.metalMid), 0, 1.2, 0));
+      g.add(pos(box(2.7, 0.08, 0.08, M.metalMid), 0, 2.4, 0));
+      // Rivets on posts
+      for (const x of [-1.5, 1.5]) {
+        for (const y of [0.5, 1.5, 2.5, 3.2]) {
+          g.add(pos(cyl(0.04, 0.04, 0.04, M.metalLight, 8), x, y, 0.17));
+        }
+      }
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'gate_wrought', name: 'Ворота кованые', icon: '🏰', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Frame
+      g.add(pos(box(0.12, 3.5, 0.08, M.metalDark), -1.5, 1.75, 0));
+      g.add(pos(box(0.12, 3.5, 0.08, M.metalDark), 1.5, 1.75, 0));
+      g.add(pos(box(3.12, 0.12, 0.08, M.metalDark), 0, 3.5, 0));
+      g.add(pos(box(3.12, 0.1, 0.08, M.metalDark), 0, 0.05, 0));
+      // Vertical bars
+      for (let i = -4; i <= 4; i++) {
+        g.add(pos(box(0.04, 3.3, 0.04, M.metalMid), i * 0.3, 1.75, 0));
+      }
+      // Decorative scroll curls at top (C-shapes with small boxes)
+      for (let s = -1; s <= 1; s += 2) {
+        const cx = s * 0.6;
+        g.add(pos(box(0.15, 0.04, 0.04, M.metalDark), cx, 3.2, 0));
+        g.add(pos(box(0.04, 0.12, 0.04, M.metalDark), cx + s * 0.07, 3.14, 0));
+        g.add(pos(box(0.1, 0.04, 0.04, M.metalDark), cx + s * 0.03, 3.08, 0));
+        g.add(pos(box(0.04, 0.1, 0.04, M.metalDark), cx - s * 0.02, 3.14, 0));
+      }
+      // Center scroll
+      g.add(pos(box(0.2, 0.04, 0.04, M.metalDark), 0, 3.3, 0));
+      g.add(pos(box(0.04, 0.1, 0.04, M.metalDark), -0.08, 3.24, 0));
+      g.add(pos(box(0.04, 0.1, 0.04, M.metalDark), 0.08, 3.24, 0));
+      // Horizontal rail
+      g.add(pos(box(2.8, 0.06, 0.06, M.metalMid), 0, 1.0, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'fence_wrought', name: 'Забор кованый', icon: '⚜️', category: 'walls',
+    create: () => {
+      const g = new THREE.Group();
+      // Bottom rail
+      g.add(pos(box(4.0, 0.06, 0.06, M.metalDark), 0, 0.15, 0));
+      // Top rail
+      g.add(pos(box(4.0, 0.06, 0.06, M.metalDark), 0, 1.5, 0));
+      // Vertical bars with pointed tips
+      for (let i = -5; i <= 5; i++) {
+        const x = i * 0.36;
+        g.add(pos(box(0.04, 1.3, 0.04, M.metalMid), x, 0.8, 0));
+        // Spear tip (diamond shape)
+        g.add(pos(box(0.07, 0.1, 0.07, M.metalDark), x, 1.55, 0));
+        g.add(pos(box(0.04, 0.06, 0.04, M.metalDark), x, 1.63, 0));
+      }
+      // Decorative scroll between some bars
+      for (let i = -2; i <= 2; i++) {
+        const x = i * 0.72;
+        g.add(pos(box(0.12, 0.03, 0.03, M.metalDark), x, 0.5, 0));
+        g.add(pos(box(0.03, 0.08, 0.03, M.metalDark), x - 0.05, 0.45, 0));
+        g.add(pos(box(0.03, 0.08, 0.03, M.metalDark), x + 0.05, 0.45, 0));
+      }
+      // End posts
+      g.add(pos(box(0.08, 1.6, 0.08, M.metalDark), -2.0, 0.8, 0));
+      g.add(pos(box(0.08, 1.6, 0.08, M.metalDark), 2.0, 0.8, 0));
+      // Post caps
+      g.add(pos(box(0.12, 0.06, 0.12, M.metalLight), -2.0, 1.63, 0));
+      g.add(pos(box(0.12, 0.06, 0.12, M.metalLight), 2.0, 1.63, 0));
+      return mergeGroup(g);
+    }
+  },
 ];
 
 function createGeometryForShape(shape: VoxelShape): THREE.BufferGeometry {
