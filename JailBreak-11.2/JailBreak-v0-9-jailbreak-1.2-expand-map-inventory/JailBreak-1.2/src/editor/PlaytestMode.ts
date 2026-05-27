@@ -22,6 +22,9 @@ import {
   getRendererOptions,
   isFogEnabled,
   pruneShadowCasters,
+  configurePointLightShadow,
+  configureSpotLightShadow,
+  updateLightShadows,
 } from '../game/QualitySettings';
 import { DayNightCycle } from '../game/DayNightCycle';
 
@@ -49,6 +52,7 @@ export class PlaytestMode {
   private terrainSystem: TerrainSystem | null = null;
   private waterSystem: WaterSystem | null = null;
   private waterDamageAccumulator = 0;
+  private placedLights: THREE.Light[] = [];
 
   private isRunning = false;
   private prevTime = 0;
@@ -1195,14 +1199,14 @@ export class PlaytestMode {
           const worldPos = new THREE.Vector3();
           node.getWorldPosition(worldPos);
           light.position.copy(worldPos);
-          // Disable shadows for performance (many placed lights kill FPS)
-          light.castShadow = false;
           // Increase intensity so lights actually illuminate rooms
           if (light instanceof THREE.PointLight) {
-            light.intensity *= 3;
-            light.distance = Math.max(light.distance, 14);
+            light.intensity *= 2;
+            light.distance = (light.distance || 10) * 1.5;
+            configurePointLightShadow(light);
           } else if (light instanceof THREE.SpotLight) {
-            light.intensity *= 2.5;
+            light.intensity *= 2;
+            configureSpotLightShadow(light);
           }
           extractedLights.push(light);
         }
@@ -1213,6 +1217,7 @@ export class PlaytestMode {
     for (const light of extractedLights) {
       this.scene.add(light);
     }
+    this.placedLights = extractedLights;
 
     // Спавн
     if (spawnPoint) {
@@ -1490,6 +1495,11 @@ export class PlaytestMode {
 
     // Keep sky dome centered on camera
     this.skyMesh.position.copy(this.controller.camera.position);
+
+    // Update light shadow culling based on camera proximity
+    if (this.placedLights.length > 0) {
+      updateLightShadows(this.placedLights, this.controller.camera.position);
+    }
 
     // Render
     if (this.inTerminalMode && this.cameraSystem.selectedCameraIndex !== null) {

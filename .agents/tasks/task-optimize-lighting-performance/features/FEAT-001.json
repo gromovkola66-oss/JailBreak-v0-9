@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Optimize lighting performance in editor and playtest by: (1) disabling castShadow on lights in editor preview, (2) adding light-specific quality settings with max shadow-casting lights per preset, (3) implementing distance-based shadow culling in PlaytestMode with a per-frame update that enables shadows only on the N-closest lights to camera, (4) reducing the intensity/distance multipliers in PlaytestMode to prevent over-bright washed-out scenes.",
+  "status": "in_progress",
+  "steps": [
+    "Step 1 - QualitySettings.ts: Add light-specific settings to QualityConfig interface and PRESETS: maxShadowLights (max lights that can cast shadows simultaneously: low=0, medium=2, high=4), pointLightShadowMapSize (low=0, medium=256, high=512), spotLightShadowMapSize (low=0, medium=512, high=1024), lightShadowDistance (max distance from camera for a light to cast shadows: low=0, medium=20, high=40). Add a new exported function configurePointLightShadow(light, distance?) and configureSpotLightShadow(light, distance?) that sets shadow map sizes and bias per quality. Export an updateLightShadows(lights: THREE.Light[], cameraPosition: THREE.Vector3) function that: sorts lights by distance to camera, enables castShadow on the closest N (maxShadowLights) that are within lightShadowDistance, disables castShadow on all others.",
+    "Step 2 - EditorObjects.ts: In each lighting category object create() function (light_ceiling, light_wall, light_floor, light_spot, light_red, light_neon), after creating the PointLight/SpotLight, explicitly set light.castShadow = false. This prevents the editor from computing shadow maps for placed lights. The lights still illuminate the scene in the editor viewport but without the expensive shadow pass.",
+    "Step 3 - PlaytestMode.ts: In the light extraction section (where extracted lights are processed), reduce the intensity multiplier from *3 to *2 for PointLight and from *2.5 to *2 for SpotLight. Remove the Math.max(light.distance, 14) override - instead just multiply distance by 1.5 (light.distance *= 1.5) so it extends range without forcing all lights to 14m. Instead of unconditionally setting castShadow=false, call the new configurePointLightShadow/configureSpotLightShadow from QualitySettings to set proper shadow parameters. Store the extracted lights array as a class property (private placedLights: THREE.Light[] = []).",
+    "Step 4 - PlaytestMode.ts: In the animate() loop (inside the game logic section, before the render call), call updateLightShadows(this.placedLights, this.controller.camera.position) from QualitySettings. This performs per-frame distance-based shadow culling so only the closest N lights cast shadows at any given time. This keeps the shadow pass cost bounded regardless of how many lights are placed on the map."
+  ],
+  "acceptance_criteria": [
+    "TypeScript compiles without errors (npx tsc --noEmit passes)",
+    "Vite build succeeds (npm run build passes)",
+    "QualitySettings.ts exports updateLightShadows function accepting lights array and camera position",
+    "EditorObjects.ts light objects all have castShadow = false on their light instances",
+    "PlaytestMode.ts stores extracted lights in a class property and calls updateLightShadows each frame",
+    "PlaytestMode.ts uses reduced intensity multipliers (*2 instead of *3 for PointLight, *2 instead of *2.5 for SpotLight)",
+    "Low quality preset sets maxShadowLights to 0 (no light shadows), medium to 2, high to 4"
+  ],
+  "verification": [
+    "Run npx tsc --noEmit from the game folder to confirm type safety",
+    "Run npm run build from the game folder to confirm successful Vite build"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

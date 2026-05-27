@@ -36,6 +36,14 @@ export interface QualityConfig {
   shadowCasterMinSize: number;
   /** Scene fog. Cheap, but disabling on 'low' saves a per-fragment add. */
   fogEnabled: boolean;
+  /** Max lights that cast shadows simultaneously. */
+  maxShadowLights: number;
+  /** Shadow map size for point lights. */
+  pointLightShadowMapSize: number;
+  /** Shadow map size for spot lights. */
+  spotLightShadowMapSize: number;
+  /** Max distance from camera for a light to cast shadows. */
+  lightShadowDistance: number;
 }
 
 const PRESETS: Record<Quality, QualityConfig> = {
@@ -47,6 +55,10 @@ const PRESETS: Record<Quality, QualityConfig> = {
     shadowType: THREE.BasicShadowMap,
     shadowCasterMinSize: Number.POSITIVE_INFINITY, // all casters disabled anyway
     fogEnabled: false,
+    maxShadowLights: 0,
+    pointLightShadowMapSize: 0,
+    spotLightShadowMapSize: 0,
+    lightShadowDistance: 0,
   },
   medium: {
     antialias: true,
@@ -56,6 +68,10 @@ const PRESETS: Record<Quality, QualityConfig> = {
     shadowType: THREE.PCFShadowMap, // hard edges but cheaper than PCFSoft
     shadowCasterMinSize: 0.3,
     fogEnabled: true,
+    maxShadowLights: 2,
+    pointLightShadowMapSize: 256,
+    spotLightShadowMapSize: 512,
+    lightShadowDistance: 20,
   },
   high: {
     antialias: true,
@@ -65,6 +81,10 @@ const PRESETS: Record<Quality, QualityConfig> = {
     shadowType: THREE.PCFSoftShadowMap,
     shadowCasterMinSize: 0.1,
     fogEnabled: true,
+    maxShadowLights: 4,
+    pointLightShadowMapSize: 512,
+    spotLightShadowMapSize: 1024,
+    lightShadowDistance: 40,
   },
 };
 
@@ -179,4 +199,71 @@ export function pruneShadowCasters(root: THREE.Object3D): void {
 /** Whether scene-level fog should be applied this preset. */
 export function isFogEnabled(): boolean {
   return getConfig().fogEnabled;
+}
+
+/** Configure shadow parameters for a PointLight per quality preset. */
+export function configurePointLightShadow(light: THREE.PointLight): void {
+  const c = getConfig();
+  if (!c.shadowsEnabled || c.maxShadowLights === 0) {
+    light.castShadow = false;
+    return;
+  }
+  light.shadow.mapSize.set(c.pointLightShadowMapSize, c.pointLightShadowMapSize);
+  light.shadow.bias = -0.002;
+  light.shadow.camera.near = 0.5;
+  light.shadow.camera.far = light.distance || 20;
+}
+
+/** Configure shadow parameters for a SpotLight per quality preset. */
+export function configureSpotLightShadow(light: THREE.SpotLight): void {
+  const c = getConfig();
+  if (!c.shadowsEnabled || c.maxShadowLights === 0) {
+    light.castShadow = false;
+    return;
+  }
+  light.shadow.mapSize.set(c.spotLightShadowMapSize, c.spotLightShadowMapSize);
+  light.shadow.bias = -0.002;
+  light.shadow.camera.near = 0.5;
+  light.shadow.camera.far = light.distance || 20;
+}
+
+/**
+ * Per-frame distance-based shadow culling. Enables castShadow on the N
+ * closest lights to the camera (where N = maxShadowLights for current quality)
+ * and disables it on all others. Lights beyond lightShadowDistance never cast.
+ */
+export function updateLightShadows(lights: THREE.Light[], cameraPosition: THREE.Vector3): void {
+  const c = getConfig();
+  if (!c.shadowsEnabled || c.maxShadowLights === 0) {
+    for (const light of lights) {
+      light.castShadow = false;
+    }
+    return;
+  }
+
+  // Compute distances (squared to avoid sqrt)
+  const maxDist = c.lightShadowDistance;
+  const maxDistSq = maxDist * maxDist;
+
+  const candidates: { light: THREE.Light; distSq: number }[] = [];
+  for (const light of lights) {
+    const dx = light.position.x - cameraPosition.x;
+    const dy = light.position.y - cameraPosition.y;
+    const dz = light.position.z - cameraPosition.z;
+    const distSq = dx * dx + dy * dy + dz * dz;
+    if (distSq <= maxDistSq) {
+      candidates.push({ light, distSq });
+    } else {
+      light.castShadow = false;
+    }
+  }
+
+  // Sort by distance ascending
+  candidates.sort((a, b) => a.distSq - b.distSq);
+
+  // Enable shadows on closest N
+  const max = c.maxShadowLights;
+  for (let i = 0; i < candidates.length; i++) {
+    candidates[i].light.castShadow = i < max;
+  }
 }
