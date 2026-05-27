@@ -1,0 +1,22 @@
+{
+  "project_type": "Vite + React + TypeScript + Three.js game with Tailwind CSS",
+  "language": "TypeScript/TSX",
+  "build_system": "Vite (npm scripts)",
+  "test_framework": "No test framework detected - verification via build only",
+  "build_command": "npm run build",
+  "test_command": "npm run build (no test suite, build is the verification)",
+  "verification_instructions": "Run npm run build from the game folder to ensure TypeScript compiles without errors and the bundle is produced successfully",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "cd JailBreak-11.2/JailBreak-v0-9-jailbreak-1.2-expand-map-inventory/JailBreak-1.2 && npm install",
+  "environment_constraints": "Must work within the game folder only. Three.js imports must be removed from MainMenu.tsx since the menu becomes pure CSS/HTML.",
+  "contribution_requirements": "Keep the same MainMenuProps interface: { onOpenEditor: () => void }. Keep QualitySettings import for settings panel. Remove all Three.js usage from the menu component.",
+  "key_patterns": "Components use React functional components with hooks. Tailwind CSS for styling with inline styles for animations. Existing Windows-style components (Minesweeper.tsx, Paint.tsx) already exist in the project with win7-inspired UI patterns. The app routes between 'menu' and 'editor' modes via App.tsx.",
+  "relevant_files": [
+    "src/components/MainMenu.tsx",
+    "src/App.tsx",
+    "src/game/QualitySettings.ts",
+    "src/components/Minesweeper.tsx",
+    "src/components/Paint.tsx"
+  ],
+  "directory_structure": "src/components/ - UI components (MainMenu, EditorUI, GuardMenu, Minesweeper, Paint); src/game/ - game systems (QualitySettings, Combat, etc.); src/editor/ - map editor code"
+}
