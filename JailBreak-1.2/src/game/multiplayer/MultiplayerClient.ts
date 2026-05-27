@@ -5,6 +5,16 @@ export interface PlayerData {
   nickname: string;
   position: { x: number; y: number; z: number };
   rotation: { x: number; y: number };
+  team?: 'guard' | 'prisoner' | null;
+  ping?: number;
+}
+
+export interface ServerInfo {
+  name: string;
+  map: string;
+  players: number;
+  maxPlayers: number;
+  ping: number;
 }
 
 export class MultiplayerClient {
@@ -19,6 +29,7 @@ export class MultiplayerClient {
   public onPlayerLeft?: (id: string) => void;
   public onPlayersUpdated?: (players: Map<string, PlayerData>) => void;
   public onChatMessage?: (nickname: string, text: string) => void;
+  public onWelcome?: (data: { id: string; players: PlayerData[] }) => void;
 
   get isConnected(): boolean {
     return this._isConnected;
@@ -32,8 +43,9 @@ export class MultiplayerClient {
     return this._players;
   }
 
-  connect(nickname: string): void {
-    this.ws = new WebSocket(SERVER_URL);
+  connect(nickname: string, serverUrl?: string): void {
+    const url = serverUrl || SERVER_URL;
+    this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
       this.ws!.send(JSON.stringify({ type: 'join', nickname }));
@@ -76,13 +88,76 @@ export class MultiplayerClient {
     }
   }
 
+  sendTeamSelection(team: 'guard' | 'prisoner'): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: 'select_team', team }));
+    }
+  }
+
+  static pingServer(url: string): Promise<ServerInfo> {
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+      let resolved = false;
+
+      const timeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          ws.close();
+          reject(new Error('Server ping timed out'));
+        }
+      }, 5000);
+
+      const ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: 'server_info' }));
+      };
+
+      ws.onmessage = (event: MessageEvent) => {
+        const msg = JSON.parse(event.data as string);
+        if (msg.type === 'server_info' && !resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          const ping = Date.now() - startTime;
+          ws.close();
+          resolve({
+            name: msg.name as string,
+            map: msg.map as string,
+            players: msg.players as number,
+            maxPlayers: msg.maxPlayers as number,
+            ping
+          });
+        }
+      };
+
+      ws.onerror = () => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          reject(new Error('Failed to connect to server'));
+        }
+      };
+
+      ws.onclose = () => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          reject(new Error('Connection closed before response'));
+        }
+      };
+    });
+  }
+
   private handleMessage(msg: Record<string, unknown>): void {
     switch (msg.type) {
-      case 'welcome':
+      case 'welcome': {
         this._playerId = msg.id as string;
         this._isConnected = true;
+        const players = msg.players as PlayerData[];
+        this.onWelcome?.({ id: msg.id as string, players });
         this.onConnected?.();
         break;
+      }
 
       case 'player_joined': {
         const player = msg.player as PlayerData;
@@ -121,6 +196,24 @@ export class MultiplayerClient {
         const nickname = msg.nickname as string;
         const text = msg.text as string;
         this.onChatMessage?.(nickname, text);
+        break;
+      }
+
+      case 'ping_check': {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({ type: 'pong_check', timestamp: msg.timestamp }));
+        }
+        break;
+      }
+
+      case 'player_team_changed': {
+        const id = msg.id as string;
+        const team = msg.team as 'guard' | 'prisoner';
+        const player = this._players.get(id);
+        if (player) {
+          player.team = team;
+          this.onPlayersUpdated?.(this._players);
+        }
         break;
       }
     }

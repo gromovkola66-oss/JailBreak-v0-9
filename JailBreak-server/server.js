@@ -58,7 +58,9 @@ function getPlayerList() {
       id: player.id,
       nickname: player.nickname,
       position: player.position,
-      rotation: player.rotation
+      rotation: player.rotation,
+      team: player.team,
+      ping: player.ping
     });
   }
   return list;
@@ -88,7 +90,17 @@ const pingInterval = setInterval(() => {
 // Clean up ping interval on shutdown
 wss.on('close', () => {
   clearInterval(pingInterval);
+  clearInterval(pingCheckInterval);
 });
+
+// Ping check for RTT measurement - every 5 seconds
+const pingCheckInterval = setInterval(() => {
+  for (const [id, player] of players) {
+    if (player.ws.readyState === 1) {
+      sendTo(player.ws, { type: 'ping_check', timestamp: Date.now() });
+    }
+  }
+}, 5000);
 
 wss.on('connection', (ws, req) => {
   const ip = req.socket.remoteAddress;
@@ -124,6 +136,8 @@ wss.on('connection', (ws, req) => {
           nickname: msg.nickname || 'Player',
           position: { x: 0, y: 0, z: 0 },
           rotation: { x: 0, y: 0 },
+          team: msg.team || null,
+          ping: 0,
           ws: ws
         };
         players.set(playerId, player);
@@ -209,6 +223,41 @@ wss.on('connection', (ws, req) => {
         break;
       }
 
+      case 'select_team': {
+        if (!playerId || !players.has(playerId)) return;
+        const team = msg.team;
+        if (team === 'guard' || team === 'prisoner') {
+          const player = players.get(playerId);
+          player.team = team;
+          broadcast({
+            type: 'player_team_changed',
+            id: playerId,
+            team: team
+          });
+        }
+        break;
+      }
+
+      case 'pong_check': {
+        if (!playerId || !players.has(playerId)) return;
+        const player = players.get(playerId);
+        if (msg.timestamp) {
+          player.ping = Date.now() - msg.timestamp;
+        }
+        break;
+      }
+
+      case 'server_info': {
+        sendTo(ws, {
+          type: 'server_info',
+          name: 'JailBreak Test',
+          map: 'Prison Compound Alpha',
+          players: players.size,
+          maxPlayers: 32
+        });
+        break;
+      }
+
       default:
         break;
     }
@@ -250,6 +299,7 @@ process.on('SIGINT', () => {
   console.log('\nShutting down server...');
   clearInterval(tickInterval);
   clearInterval(pingInterval);
+  clearInterval(pingCheckInterval);
   wss.close(() => {
     console.log('Server closed');
     process.exit(0);
@@ -260,6 +310,7 @@ process.on('SIGTERM', () => {
   console.log('\nShutting down server...');
   clearInterval(tickInterval);
   clearInterval(pingInterval);
+  clearInterval(pingCheckInterval);
   wss.close(() => {
     console.log('Server closed');
     process.exit(0);
