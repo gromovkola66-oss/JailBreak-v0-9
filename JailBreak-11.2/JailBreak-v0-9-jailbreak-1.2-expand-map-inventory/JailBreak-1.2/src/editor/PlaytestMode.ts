@@ -1206,6 +1206,7 @@ export class PlaytestMode {
             configurePointLightShadow(light);
           } else if (light instanceof THREE.SpotLight) {
             light.intensity *= 2;
+            light.distance = (light.distance || 10) * 1.5;
             configureSpotLightShadow(light);
           }
           extractedLights.push(light);
@@ -1297,6 +1298,7 @@ export class PlaytestMode {
 
   stop() {
     this.isRunning = false;
+    this.placedLights = [];
   }
 
   private animate() {

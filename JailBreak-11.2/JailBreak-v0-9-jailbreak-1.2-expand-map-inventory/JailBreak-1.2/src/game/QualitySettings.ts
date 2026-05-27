@@ -208,6 +208,7 @@ export function configurePointLightShadow(light: THREE.PointLight): void {
     light.castShadow = false;
     return;
   }
+  light.castShadow = true;
   light.shadow.mapSize.set(c.pointLightShadowMapSize, c.pointLightShadowMapSize);
   light.shadow.bias = -0.002;
   light.shadow.camera.near = 0.5;
@@ -221,6 +222,7 @@ export function configureSpotLightShadow(light: THREE.SpotLight): void {
     light.castShadow = false;
     return;
   }
+  light.castShadow = true;
   light.shadow.mapSize.set(c.spotLightShadowMapSize, c.spotLightShadowMapSize);
   light.shadow.bias = -0.002;
   light.shadow.camera.near = 0.5;
@@ -232,6 +234,9 @@ export function configureSpotLightShadow(light: THREE.SpotLight): void {
  * closest lights to the camera (where N = maxShadowLights for current quality)
  * and disables it on all others. Lights beyond lightShadowDistance never cast.
  */
+// Module-level scratch array to avoid per-frame allocations / GC pressure.
+const _distSqCache = new Map<THREE.Light, number>();
+
 export function updateLightShadows(lights: THREE.Light[], cameraPosition: THREE.Vector3): void {
   const c = getConfig();
   if (!c.shadowsEnabled || c.maxShadowLights === 0) {
@@ -241,29 +246,32 @@ export function updateLightShadows(lights: THREE.Light[], cameraPosition: THREE.
     return;
   }
 
-  // Compute distances (squared to avoid sqrt)
+  // Compute distances (squared to avoid sqrt) and store in a cache map
   const maxDist = c.lightShadowDistance;
   const maxDistSq = maxDist * maxDist;
 
-  const candidates: { light: THREE.Light; distSq: number }[] = [];
+  _distSqCache.clear();
   for (const light of lights) {
     const dx = light.position.x - cameraPosition.x;
     const dy = light.position.y - cameraPosition.y;
     const dz = light.position.z - cameraPosition.z;
     const distSq = dx * dx + dy * dy + dz * dz;
-    if (distSq <= maxDistSq) {
-      candidates.push({ light, distSq });
+    _distSqCache.set(light, distSq);
+  }
+
+  // Sort the input array in-place by distance
+  lights.sort((a, b) => (_distSqCache.get(a)! - _distSqCache.get(b)!));
+
+  // Enable shadows on closest N within range, disable on all others
+  const max = c.maxShadowLights;
+  let enabled = 0;
+  for (const light of lights) {
+    const distSq = _distSqCache.get(light)!;
+    if (enabled < max && distSq <= maxDistSq) {
+      light.castShadow = true;
+      enabled++;
     } else {
       light.castShadow = false;
     }
-  }
-
-  // Sort by distance ascending
-  candidates.sort((a, b) => a.distSq - b.distSq);
-
-  // Enable shadows on closest N
-  const max = c.maxShadowLights;
-  for (let i = 0; i < candidates.length; i++) {
-    candidates[i].light.castShadow = i < max;
   }
 }
