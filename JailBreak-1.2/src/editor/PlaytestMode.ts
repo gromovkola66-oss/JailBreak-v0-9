@@ -27,6 +27,9 @@ import {
   updateLightShadows,
 } from '../game/QualitySettings';
 import { DayNightCycle } from '../game/DayNightCycle';
+import { MultiplayerClient } from '../game/multiplayer/MultiplayerClient';
+import { RemotePlayerManager } from '../game/multiplayer/RemotePlayerManager';
+import { SEND_RATE_MS } from '../game/multiplayer/MultiplayerConstants';
 
 export class PlaytestMode {
   private scene: THREE.Scene;
@@ -95,6 +98,11 @@ export class PlaytestMode {
   private ambientLight: THREE.AmbientLight;
   private sunLight: THREE.DirectionalLight;
 
+  // Multiplayer
+  private multiplayerClient: MultiplayerClient | null = null;
+  private remotePlayerManager: RemotePlayerManager | null = null;
+  private lastPositionSendTime = 0;
+
   public onStatsUpdate?: (fps: number, pos: THREE.Vector3) => void;
   public onCombatUpdate?: (state: CombatState) => void;
   public onCameraSystemUpdate?: (state: CameraSystemState) => void;
@@ -110,6 +118,7 @@ export class PlaytestMode {
   public onLockerUpdate?: (state: LockerState | null) => void;
   public onLockerAccessDenied?: () => void;
   public onArmoryOpen?: () => void;
+  public onMultiplayerPlayersUpdate?: (count: number) => void;
 
   private frameCount = 0;
   private fpsTime = 0;
@@ -1332,6 +1341,35 @@ export class PlaytestMode {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
+  setMultiplayerClient(client: MultiplayerClient): void {
+    this.multiplayerClient = client;
+    this.remotePlayerManager = new RemotePlayerManager(this.scene);
+
+    // Wire callbacks
+    client.onPlayerJoined = (player) => {
+      this.remotePlayerManager?.addPlayer(player.id, player.nickname);
+      this.onMultiplayerPlayersUpdate?.(client.getPlayers().size);
+    };
+
+    client.onPlayerLeft = (id) => {
+      this.remotePlayerManager?.removePlayer(id);
+      this.onMultiplayerPlayersUpdate?.(client.getPlayers().size);
+    };
+
+    client.onPlayersUpdated = (players) => {
+      for (const [id, p] of players) {
+        this.remotePlayerManager?.updatePlayer(id, p.position, p.rotation);
+      }
+      this.onMultiplayerPlayersUpdate?.(players.size);
+    };
+
+    // Add already-connected players
+    for (const [id, p] of client.getPlayers()) {
+      this.remotePlayerManager.addPlayer(id, p.nickname);
+      this.remotePlayerManager.updatePlayer(id, p.position, p.rotation);
+    }
+  }
+
   start() {
     this.isRunning = true;
     this.prevTime = performance.now();
@@ -1559,6 +1597,21 @@ export class PlaytestMode {
       // Terminal raycast
       this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.controller.camera);
       this.cameraSystem.checkRaycast(this.raycaster);
+
+      // Multiplayer: send position and update remote players
+      if (this.multiplayerClient?.isConnected) {
+        const now = performance.now();
+        if (now - this.lastPositionSendTime >= SEND_RATE_MS) {
+          this.lastPositionSendTime = now;
+          const pos = this.controller.camera.position;
+          const euler = new THREE.Euler().setFromQuaternion(this.controller.camera.quaternion, 'YXZ');
+          this.multiplayerClient.sendPosition(
+            { x: pos.x, y: pos.y, z: pos.z },
+            { x: euler.x, y: euler.y }
+          );
+        }
+      }
+      this.remotePlayerManager?.update(delta);
       }
     }
 
@@ -1817,6 +1870,14 @@ export class PlaytestMode {
 
   dispose() {
     this.stop();
+    if (this.multiplayerClient) {
+      this.multiplayerClient.disconnect();
+      this.multiplayerClient = null;
+    }
+    if (this.remotePlayerManager) {
+      this.remotePlayerManager.dispose();
+      this.remotePlayerManager = null;
+    }
     if (this.terrainSystem) this.terrainSystem.dispose();
     if (this.waterSystem) this.waterSystem.dispose();
     this.scene.traverse((obj) => {
