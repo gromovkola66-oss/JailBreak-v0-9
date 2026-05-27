@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getQuality, setQuality, type Quality } from '../game/QualitySettings';
 
 interface MainMenuProps {
@@ -19,17 +19,39 @@ const cutsceneFrames = [
 const CutsceneViewer = ({ onClose }: { onClose: () => void }) => {
   const [frameIndex, setFrameIndex] = useState(0);
   const [opacity, setOpacity] = useState(1);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setOpacity(0);
-      setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         setFrameIndex(prev => (prev + 1) % cutsceneFrames.length);
         setOpacity(1);
       }, 500);
     }, 4000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, []);
+
+  const goToPrev = () => {
+    setOpacity(0);
+    timeoutRef.current = setTimeout(() => {
+      setFrameIndex(p => (p - 1 + cutsceneFrames.length) % cutsceneFrames.length);
+      setOpacity(1);
+    }, 300);
+  };
+
+  const goToNext = () => {
+    setOpacity(0);
+    timeoutRef.current = setTimeout(() => {
+      setFrameIndex(p => (p + 1) % cutsceneFrames.length);
+      setOpacity(1);
+    }, 300);
+  };
 
   const frame = cutsceneFrames[frameIndex];
 
@@ -41,12 +63,12 @@ const CutsceneViewer = ({ onClose }: { onClose: () => void }) => {
         ✕
       </button>
       <div className="flex items-center gap-4 absolute bottom-8">
-        <button onClick={() => { setOpacity(0); setTimeout(() => { setFrameIndex(p => (p - 1 + cutsceneFrames.length) % cutsceneFrames.length); setOpacity(1); }, 300); }}
+        <button onClick={goToPrev}
           className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/70 rounded transition text-sm">
           ← Назад
         </button>
         <span className="text-white/40 text-sm">{frameIndex + 1} / {cutsceneFrames.length}</span>
-        <button onClick={() => { setOpacity(0); setTimeout(() => { setFrameIndex(p => (p + 1) % cutsceneFrames.length); setOpacity(1); }, 300); }}
+        <button onClick={goToNext}
           className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/70 rounded transition text-sm">
           Далее →
         </button>
@@ -345,10 +367,7 @@ export const MainMenu = ({ onOpenEditor }: MainMenuProps) => {
       <div className="absolute top-4 left-4 z-10 grid gap-2" style={{ gridTemplateColumns: '1fr', paddingTop: 8 }}>
         {desktopIcons.map(item => (
           <button key={item.label} onClick={item.action}
-            className="flex flex-col items-center w-20 py-2 px-1 rounded hover:bg-blue-500/30 transition group cursor-pointer"
-            style={{ border: '1px solid transparent' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.border = '1px solid rgba(100,160,255,0.4)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.border = '1px solid transparent'; }}>
+            className="desktop-icon flex flex-col items-center w-20 py-2 px-1 rounded hover:bg-blue-500/30 transition group cursor-pointer">
             <span className="text-5xl mb-1 drop-shadow-lg group-hover:scale-110 transition-transform">{item.icon}</span>
             <span className="text-white text-xs text-center leading-tight drop-shadow-md">{item.label}</span>
           </button>
@@ -368,7 +387,7 @@ export const MainMenu = ({ onOpenEditor }: MainMenuProps) => {
       }}>
         {/* Start button */}
         <button onClick={toggleStartMenu}
-          className="relative flex items-center justify-center transition-all"
+          className="start-button relative flex items-center justify-center transition-all"
           style={{
             width: 48,
             height: 38,
@@ -380,9 +399,7 @@ export const MainMenu = ({ onOpenEditor }: MainMenuProps) => {
             boxShadow: showStartMenu
               ? '0 0 12px rgba(60,140,255,0.6), inset 0 1px 0 rgba(255,255,255,0.3)'
               : '0 0 8px rgba(60,140,255,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 0 16px rgba(60,140,255,0.7), inset 0 1px 0 rgba(255,255,255,0.4)'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = showStartMenu ? '0 0 12px rgba(60,140,255,0.6), inset 0 1px 0 rgba(255,255,255,0.3)' : '0 0 8px rgba(60,140,255,0.3), inset 0 1px 0 rgba(255,255,255,0.2)'; }}>
+          }}>
           <span className="text-white text-sm font-bold">&#9781;</span>
         </button>
 
@@ -427,6 +444,15 @@ export const MainMenu = ({ onOpenEditor }: MainMenuProps) => {
         @keyframes startMenuOpen {
           from { transform: translateY(10px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
+        }
+        .desktop-icon {
+          border: 1px solid transparent;
+        }
+        .desktop-icon:hover {
+          border: 1px solid rgba(100,160,255,0.4);
+        }
+        .start-button:hover {
+          box-shadow: 0 0 16px rgba(60,140,255,0.7), inset 0 1px 0 rgba(255,255,255,0.4) !important;
         }
       `}</style>
     </div>
