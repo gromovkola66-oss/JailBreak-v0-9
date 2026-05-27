@@ -100,11 +100,19 @@ export class MultiplayerClient {
 
       case 'state': {
         const players = msg.players as PlayerData[];
+        const newPlayers = new Map<string, PlayerData>();
         for (const p of players) {
           if (p.id !== this._playerId) {
-            this._players.set(p.id, p);
+            newPlayers.set(p.id, p);
           }
         }
+        // Notify about players that are no longer present
+        for (const id of this._players.keys()) {
+          if (!newPlayers.has(id)) {
+            this.onPlayerLeft?.(id);
+          }
+        }
+        this._players = newPlayers;
         this.onPlayersUpdated?.(this._players);
         break;
       }

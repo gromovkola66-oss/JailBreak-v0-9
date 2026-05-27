@@ -1363,6 +1363,13 @@ export class PlaytestMode {
       this.onMultiplayerPlayersUpdate?.(players.size);
     };
 
+    client.onDisconnected = () => {
+      this.remotePlayerManager?.dispose();
+      this.remotePlayerManager = null;
+      this.multiplayerClient = null;
+      this.onMultiplayerPlayersUpdate?.(0);
+    };
+
     // Add already-connected players
     for (const [id, p] of client.getPlayers()) {
       this.remotePlayerManager.addPlayer(id, p.nickname);
