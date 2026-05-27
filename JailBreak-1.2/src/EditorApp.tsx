@@ -19,6 +19,7 @@ import { LockerState } from './game/LockerSystem';
 import { RARITY_COLORS } from './game/ItemDefs';
 import { CharacterModel } from './game/CharacterModel';
 import { MultiplayerClient, PlayerData } from './game/multiplayer';
+import { getQuality, setQuality, type Quality } from './game/QualitySettings';
 import testMapData from './editor/maps/test-map.json';
 
 // 10 prison-themed CSS wallpapers (simple reliable gradients)
@@ -148,6 +149,71 @@ const THEME_CONFIGS: Record<TerminalTheme, ThemeConfig> = {
   },
 };
 
+/* ========== PAUSE MENU SETTINGS (inline, multiplayer ESC menu) ========== */
+const PauseMenuSettings = ({ onBack }: { onBack: () => void }) => {
+  const [volume, setVolume] = useState(50);
+  const [quality, setQualityLocal] = useState<Quality>(() => getQuality());
+
+  const changeQuality = (q: Quality) => {
+    setQualityLocal(q);
+    setQuality(q);
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-4 w-[480px]" style={{ animation: 'scaleIn 0.15s ease' }}>
+      <div className="flex items-center gap-3 mb-2 w-full">
+        <button onClick={onBack} className="text-gray-400 hover:text-white transition text-sm">{'\u2190'} {'\u041d\u0430\u0437\u0430\u0434'}</button>
+        <h2 className="text-white font-semibold text-lg flex-1 text-center">{'\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438'}</h2>
+        <div className="w-16" />
+      </div>
+      <div className="w-full rounded-xl overflow-hidden" style={{ background: 'rgba(10,10,26,0.85)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ padding: 20 }}>
+          {/* Sound */}
+          <div className="mb-5">
+            <h3 className="text-xs font-bold text-blue-400 mb-3 uppercase tracking-wider">{'\u0417\u0432\u0443\u043a'}</h3>
+            <div className="bg-black/30 rounded-lg p-4">
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-300 text-sm">{'\u0413\u0440\u043e\u043c\u043a\u043e\u0441\u0442\u044c'}</span>
+                <span className="text-white font-mono text-sm">{volume}%</span>
+              </div>
+              <input type="range" min="0" max="100" value={volume} onChange={e => setVolume(Number(e.target.value))}
+                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+            </div>
+          </div>
+          {/* Graphics */}
+          <div className="mb-5">
+            <h3 className="text-xs font-bold text-green-400 mb-3 uppercase tracking-wider">{'\u0413\u0440\u0430\u0444\u0438\u043a\u0430'}</h3>
+            <div className="bg-black/30 rounded-lg p-4">
+              <span className="text-gray-300 text-sm block mb-3">{'\u041a\u0430\u0447\u0435\u0441\u0442\u0432\u043e'}</span>
+              <div className="grid grid-cols-3 gap-2">
+                {(['low', 'medium', 'high'] as const).map(q => (
+                  <button key={q} onClick={() => changeQuality(q)}
+                    className={`py-2 rounded text-sm font-medium transition-all ${quality === q
+                      ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}>
+                    {q === 'low' ? '\u041d\u0438\u0437\u043a\u043e\u0435' : q === 'medium' ? '\u0421\u0440\u0435\u0434\u043d\u0435\u0435' : '\u0412\u044b\u0441\u043e\u043a\u043e\u0435'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Controls */}
+          <div>
+            <h3 className="text-xs font-bold text-yellow-400 mb-3 uppercase tracking-wider">{'\u0423\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435'}</h3>
+            <div className="bg-black/30 rounded-lg p-4 space-y-2">
+              {[['WASD','\u0414\u0432\u0438\u0436\u0435\u043d\u0438\u0435'],['\u041c\u044b\u0448\u044c','\u041e\u0431\u0437\u043e\u0440'],['SPACE','\u041f\u0440\u044b\u0436\u043e\u043a'],['\u041b\u041a\u041c','\u0410\u0442\u0430\u043a\u0430 / \u0421\u0442\u0440\u0435\u043b\u044c\u0431\u0430'],['E','\u0412\u0437\u0430\u0438\u043c\u043e\u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0435'],['G','\u0412\u044b\u0431\u0440\u043e\u0441\u0438\u0442\u044c \u043e\u0440\u0443\u0436\u0438\u0435'],['R','\u041f\u0435\u0440\u0435\u0437\u0430\u0440\u044f\u0434\u043a\u0430'],['Q','\u0422\u0430\u0431\u043b\u043e']].map(([key, desc]) => (
+                <div key={key} className="flex items-center justify-between py-1 border-b border-gray-700/50 last:border-0">
+                  <kbd className="bg-gray-700 text-yellow-300 px-2 py-0.5 rounded text-xs font-mono">{key}</kbd>
+                  <span className="text-gray-300 text-sm">{desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface EditorAppProps {
   onBackToGame: () => void;
   multiplayerClient?: MultiplayerClient | null;
@@ -269,6 +335,9 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
   const [mpPlayers, setMpPlayers] = useState<Map<string, PlayerData>>(new Map());
   // Scoreboard visibility (hold Q)
   const [scoreboardVisible, setScoreboardVisible] = useState(false);
+  // ESC pause menu (multiplayer only)
+  const [pauseMenuOpen, setPauseMenuOpen] = useState(false);
+  const [pauseMenuSettings, setPauseMenuSettings] = useState(false);
   // Camera rewind state
   const [rewindPlaying, setRewindPlaying] = useState(false);
   const [rewindFrame, setRewindFrame] = useState(0);
@@ -364,6 +433,19 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
       }
       if (e.code === 'KeyQ' && multiplayerClient) {
         setScoreboardVisible(true);
+      }
+      // ESC pause menu toggle (multiplayer only)
+      if (e.code === 'Escape' && multiplayerClient && !ptLockerStateRef.current && !ptArmoryOpenRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        setPauseMenuOpen(prev => {
+          if (!prev) {
+            document.exitPointerLock();
+            setPauseMenuSettings(false);
+          }
+          return !prev;
+        });
+        return;
       }
       // Close locker with Escape or E
       if ((e.code === 'Escape' || e.code === 'KeyE') && playtestRef.current && ptLockerStateRef.current) {
@@ -1231,6 +1313,55 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
             />
           )}
 
+          {/* ESC Pause Menu (multiplayer only) */}
+          {multiplayerClient && pauseMenuOpen && (
+            <div className="absolute inset-0 z-[60] flex items-center justify-center pointer-events-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+              {!pauseMenuSettings ? (
+                <div className="flex flex-col items-center gap-6" style={{ animation: 'scaleIn 0.15s ease' }}>
+                  <h1 className="text-4xl font-black text-white mb-2">
+                    <span className="text-blue-400">Jail</span><span className="text-orange-400">Break</span>
+                  </h1>
+                  <div className="text-gray-400 text-sm">
+                    JailBreak Test {'\u2022'} {mpPlayerCount} {mpPlayerCount === 1 ? '\u0438\u0433\u0440\u043e\u043a' : mpPlayerCount < 5 ? '\u0438\u0433\u0440\u043e\u043a\u0430' : '\u0438\u0433\u0440\u043e\u043a\u043e\u0432'}
+                  </div>
+                  <div className="flex flex-col gap-3 w-64 mt-4">
+                    <button
+                      onClick={() => {
+                        setPauseMenuOpen(false);
+                        playtestContainerRef.current?.requestPointerLock();
+                      }}
+                      className="w-full py-3 px-6 rounded-lg text-white font-semibold text-base transition-all hover:scale-105"
+                      style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', boxShadow: '0 4px 15px rgba(59,130,246,0.3)' }}
+                    >
+                      {'\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c'}
+                    </button>
+                    <button
+                      onClick={() => setPauseMenuSettings(true)}
+                      className="w-full py-3 px-6 rounded-lg text-white font-semibold text-base transition-all hover:scale-105"
+                      style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}
+                    >
+                      {'\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPauseMenuOpen(false);
+                        multiplayerClient.disconnect();
+                        onBackToGame();
+                      }}
+                      className="w-full py-3 px-6 rounded-lg text-white font-semibold text-base transition-all hover:scale-105"
+                      style={{ background: 'linear-gradient(135deg, #dc2626, #b91c1c)', boxShadow: '0 4px 15px rgba(220,38,38,0.3)' }}
+                    >
+                      {'\u041e\u0442\u043a\u043b\u044e\u0447\u0438\u0442\u044c\u0441\u044f'}
+                    </button>
+                  </div>
+                  <div className="text-gray-500 text-xs mt-4">ESC - {'\u0437\u0430\u043a\u0440\u044b\u0442\u044c'}</div>
+                </div>
+              ) : (
+                <PauseMenuSettings onBack={() => setPauseMenuSettings(false)} />
+              )}
+            </div>
+          )}
+
           {/* HP */}
           {ptLocked && ptCombat && (
             <div className="absolute bottom-4 left-4 flex flex-col gap-2 rounded-xl p-3" style={{ background: 'rgba(10,10,20,0.6)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -1273,7 +1404,7 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
           )}
 
           {/* Click to start */}
-          {!ptLocked && !ptInventory?.isOpen && !ptCameraState?.inTerminalMode && !ptDeathState?.isDead && (
+          {!ptLocked && !ptInventory?.isOpen && !ptCameraState?.inTerminalMode && !ptDeathState?.isDead && !pauseMenuOpen && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto">
               <div className="text-center text-white">
                 <h2 className="text-3xl font-bold mb-4">{multiplayerClient ? 'JailBreak' : '🧪 Тестирование карты'}</h2>
