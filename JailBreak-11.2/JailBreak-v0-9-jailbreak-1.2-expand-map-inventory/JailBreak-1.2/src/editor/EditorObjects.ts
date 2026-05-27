@@ -4632,7 +4632,363 @@ export const EDITOR_OBJECTS: EditorObjectType[] = [
       return mergeGroup(g);
     }
   },
+  // ===== BUILDING CATEGORY: Outdoor Structures, Ornaments, Security =====
+  {
+    id: 'fountain_large', name: 'Большой фонтан', icon: '⛲', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Wide pool base
+      g.add(pos(cyl(1.5, 1.5, 0.15, M.conc1, 24), 0, 0.075, 0));
+      // Pool wall ring
+      g.add(pos(cyl(1.5, 1.5, 0.4, M.conc2, 24), 0, 0.2, 0));
+      g.add(pos(cyl(1.35, 1.35, 0.42, M.sky, 24), 0, 0.2, 0));
+      // Water surface in pool
+      g.add(pos(cyl(1.3, 1.3, 0.02, M.glass, 24), 0, 0.38, 0));
+      // Central column
+      g.add(pos(cyl(0.15, 0.2, 1.5, M.conc3, 12), 0, 1.1, 0));
+      // Lower basin
+      g.add(pos(cyl(0.6, 0.5, 0.12, M.conc1, 16), 0, 0.85, 0));
+      g.add(pos(cyl(0.55, 0.55, 0.02, M.glass, 16), 0, 0.9, 0));
+      // Upper basin
+      g.add(pos(cyl(0.35, 0.3, 0.1, M.conc1, 16), 0, 1.55, 0));
+      g.add(pos(cyl(0.3, 0.3, 0.02, M.glass, 16), 0, 1.59, 0));
+      // Top finial
+      g.add(pos(cyl(0.06, 0.06, 0.3, M.conc2, 8), 0, 1.75, 0));
+      g.add(pos(cyl(0.1, 0.02, 0.1, M.conc3, 8), 0, 1.95, 0));
+      // Decorative rim details
+      g.add(pos(cyl(1.52, 1.52, 0.06, M.conc3, 24), 0, 0.4, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'gazebo', name: 'Беседка', icon: '🏠', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Base platform
+      g.add(pos(box(3.2, 0.1, 3.2, M.conc1), 0, 0.05, 0));
+      // 6 columns in hexagon pattern
+      const r = 1.4;
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        g.add(pos(cyl(0.08, 0.08, 2.8, M.conc2, 8), Math.cos(a) * r, 1.5, Math.sin(a) * r));
+      }
+      // Railings between columns (waist height)
+      for (let i = 0; i < 6; i++) {
+        const a1 = (i / 6) * Math.PI * 2;
+        const a2 = ((i + 1) / 6) * Math.PI * 2;
+        const mx = (Math.cos(a1) + Math.cos(a2)) * r / 2;
+        const mz = (Math.sin(a1) + Math.sin(a2)) * r / 2;
+        const dx = Math.cos(a2) * r - Math.cos(a1) * r;
+        const dz = Math.sin(a2) * r - Math.sin(a1) * r;
+        const len = Math.sqrt(dx * dx + dz * dz);
+        const rail = box(len, 0.06, 0.04, M.woodMid);
+        rail.position.set(mx, 0.7, mz);
+        rail.rotation.y = -Math.atan2(dz, dx);
+        rail.castShadow = true;
+        g.add(rail);
+      }
+      // Roof (flat, slightly overhanging)
+      g.add(pos(box(3.4, 0.12, 3.4, M.woodDark), 0, 2.96, 0));
+      g.add(pos(box(3.2, 0.06, 3.2, M.woodMid), 0, 2.87, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'bench_park', name: 'Скамейка парковая', icon: '🪑', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Metal side supports (left)
+      g.add(pos(box(0.05, 0.45, 0.4, M.metalDark), -0.7, 0.22, 0));
+      g.add(pos(box(0.05, 0.4, 0.05, M.metalDark), -0.7, 0.4, -0.18));
+      g.add(pos(box(0.05, 0.05, 0.3, M.metalDark), -0.7, 0.6, -0.05));
+      // Metal side supports (right)
+      g.add(pos(box(0.05, 0.45, 0.4, M.metalDark), 0.7, 0.22, 0));
+      g.add(pos(box(0.05, 0.4, 0.05, M.metalDark), 0.7, 0.4, -0.18));
+      g.add(pos(box(0.05, 0.05, 0.3, M.metalDark), 0.7, 0.6, -0.05));
+      // Seat slats (5 wooden planks)
+      for (let i = 0; i < 5; i++) {
+        g.add(pos(box(1.5, 0.03, 0.07, M.woodLight), 0, 0.44, -0.14 + i * 0.08));
+      }
+      // Backrest slats (5 wooden planks)
+      for (let i = 0; i < 5; i++) {
+        g.add(pos(box(1.5, 0.07, 0.025, M.woodLight), 0, 0.55 + i * 0.09, -0.2));
+      }
+      // Armrests
+      g.add(pos(box(0.06, 0.03, 0.25, M.woodMid), -0.7, 0.62, 0.0));
+      g.add(pos(box(0.06, 0.03, 0.25, M.woodMid), 0.7, 0.62, 0.0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'bridge_arch', name: 'Мостик арочный', icon: '🌉', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Walkway deck
+      g.add(pos(box(3.0, 0.08, 1.0, M.woodMid), 0, 1.2, 0));
+      // Arch segments underneath
+      for (let i = 0; i < 7; i++) {
+        const t = (i / 6) * Math.PI;
+        const x = (i - 3) * 0.45;
+        const y = Math.sin(t) * 0.6;
+        g.add(pos(box(0.5, 0.12, 0.8, M.conc2), x, y + 0.3, 0));
+      }
+      // Side railings
+      g.add(pos(box(3.0, 0.06, 0.05, M.metalDark), 0, 1.55, 0.47));
+      g.add(pos(box(3.0, 0.06, 0.05, M.metalDark), 0, 1.55, -0.47));
+      // Balusters
+      for (let i = 0; i < 8; i++) {
+        const x = -1.4 + i * 0.4;
+        g.add(pos(cyl(0.02, 0.02, 0.35, M.metalMid, 6), x, 1.38, 0.47));
+        g.add(pos(cyl(0.02, 0.02, 0.35, M.metalMid, 6), x, 1.38, -0.47));
+      }
+      // End posts
+      g.add(pos(cyl(0.05, 0.05, 0.5, M.conc3, 8), -1.5, 1.45, 0.47));
+      g.add(pos(cyl(0.05, 0.05, 0.5, M.conc3, 8), 1.5, 1.45, 0.47));
+      g.add(pos(cyl(0.05, 0.05, 0.5, M.conc3, 8), -1.5, 1.45, -0.47));
+      g.add(pos(cyl(0.05, 0.05, 0.5, M.conc3, 8), 1.5, 1.45, -0.47));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'barbed_wire_fence', name: 'Колючая проволока (ограждение)', icon: '🔒', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Two posts
+      g.add(pos(cyl(0.04, 0.04, 2.0, M.metalDark, 8), -1.5, 1.0, 0));
+      g.add(pos(cyl(0.04, 0.04, 2.0, M.metalDark, 8), 1.5, 1.0, 0));
+      // Post caps
+      g.add(pos(cyl(0.06, 0.04, 0.08, M.metalMid, 8), -1.5, 2.02, 0));
+      g.add(pos(cyl(0.06, 0.04, 0.08, M.metalMid, 8), 1.5, 2.02, 0));
+      // Spiral barbed wire between posts
+      for (let i = 0; i < 20; i++) {
+        const t = (i / 20) * Math.PI * 6;
+        const x = -1.4 + (i / 20) * 2.8;
+        const y = 1.8 + Math.sin(t) * 0.12;
+        const z = Math.cos(t) * 0.12;
+        g.add(pos(box(0.18, 0.03, 0.03, M.barbedWire), x, y, z));
+      }
+      // Barbs (small spikes)
+      for (let i = 0; i < 12; i++) {
+        const x = -1.3 + (i / 12) * 2.6;
+        g.add(pos(box(0.02, 0.06, 0.02, M.barbedWire), x, 1.92, 0.05));
+      }
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'metal_detector', name: 'Металлодетектор', icon: '🚪', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Left vertical panel
+      g.add(pos(box(0.12, 2.2, 0.3, M.metalMid), -0.4, 1.1, 0));
+      // Right vertical panel
+      g.add(pos(box(0.12, 2.2, 0.3, M.metalMid), 0.4, 1.1, 0));
+      // Top horizontal beam
+      g.add(pos(box(0.92, 0.12, 0.3, M.metalMid), 0, 2.2, 0));
+      // Base plates
+      g.add(pos(box(0.2, 0.04, 0.4, M.metalDark), -0.4, 0.02, 0));
+      g.add(pos(box(0.2, 0.04, 0.4, M.metalDark), 0.4, 0.02, 0));
+      // Control panel on right side
+      g.add(pos(box(0.08, 0.25, 0.15, M.metalDark), 0.52, 1.3, 0));
+      // Screen on control panel
+      g.add(pos(box(0.02, 0.12, 0.1, M.screenGlow), 0.57, 1.35, 0));
+      // LED indicator
+      g.add(pos(box(0.02, 0.03, 0.03, M.ledRed), 0.57, 1.48, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'camera_security', name: 'Камера наблюдения', icon: '📷', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Wall mount plate
+      g.add(pos(box(0.12, 0.12, 0.03, M.metalDark), 0, 0.3, 0));
+      // Arm bracket
+      g.add(pos(box(0.04, 0.04, 0.25, M.metalMid), 0, 0.28, 0.14));
+      // Arm elbow
+      g.add(pos(box(0.04, 0.12, 0.04, M.metalMid), 0, 0.22, 0.25));
+      // Camera body
+      g.add(pos(box(0.1, 0.08, 0.15, M.metalDark), 0, 0.18, 0.32));
+      // Lens
+      g.add(pos(cyl(0.03, 0.025, 0.04, M.lensGlass, 10), 0, 0.18, 0.4));
+      // LED indicator
+      g.add(pos(box(0.02, 0.02, 0.02, M.ledRed), 0.04, 0.22, 0.32));
+      // Housing top cover
+      g.add(pos(box(0.12, 0.02, 0.18, M.metalMid), 0, 0.23, 0.32));
+      // Cable
+      g.add(pos(cyl(0.01, 0.01, 0.15, M.metalDark, 6), 0, 0.38, 0.01));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'guard_tower', name: 'Вышка охраны', icon: '🗼', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Four legs (slightly angled outward)
+      g.add(pos(cyl(0.06, 0.08, 5.0, M.metalDark, 8), -0.7, 2.5, -0.7));
+      g.add(pos(cyl(0.06, 0.08, 5.0, M.metalDark, 8), 0.7, 2.5, -0.7));
+      g.add(pos(cyl(0.06, 0.08, 5.0, M.metalDark, 8), -0.7, 2.5, 0.7));
+      g.add(pos(cyl(0.06, 0.08, 5.0, M.metalDark, 8), 0.7, 2.5, 0.7));
+      // Cross braces (X pattern on two sides)
+      g.add(pos(box(0.04, 2.5, 0.04, M.metalMid), 0, 1.8, -0.7));
+      g.add(pos(box(0.04, 2.5, 0.04, M.metalMid), 0, 1.8, 0.7));
+      g.add(pos(box(0.04, 0.04, 1.4, M.metalMid), -0.7, 1.5, 0));
+      g.add(pos(box(0.04, 0.04, 1.4, M.metalMid), 0.7, 1.5, 0));
+      // Elevated platform
+      g.add(pos(box(2.0, 0.1, 2.0, M.metalDark), 0, 4.0, 0));
+      // Railing around platform
+      g.add(pos(box(2.0, 0.05, 0.04, M.metalMid), 0, 4.5, 0.95));
+      g.add(pos(box(2.0, 0.05, 0.04, M.metalMid), 0, 4.5, -0.95));
+      g.add(pos(box(0.04, 0.05, 2.0, M.metalMid), 0.95, 4.5, 0));
+      g.add(pos(box(0.04, 0.05, 2.0, M.metalMid), -0.95, 4.5, 0));
+      // Railing posts
+      g.add(pos(cyl(0.03, 0.03, 0.6, M.metalMid, 6), 0.95, 4.3, 0.95));
+      g.add(pos(cyl(0.03, 0.03, 0.6, M.metalMid, 6), -0.95, 4.3, 0.95));
+      g.add(pos(cyl(0.03, 0.03, 0.6, M.metalMid, 6), 0.95, 4.3, -0.95));
+      g.add(pos(cyl(0.03, 0.03, 0.6, M.metalMid, 6), -0.95, 4.3, -0.95));
+      // Roof
+      g.add(pos(box(2.2, 0.08, 2.2, M.metalDark), 0, 5.1, 0));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'ornament_meander', name: 'Греческий меандр', icon: '🔲', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Horizontal backing strip
+      g.add(pos(box(4.0, 0.5, 0.06, M.conc1), 0, 0.25, 0));
+      // Greek key meander pattern (repeated L-shaped motif)
+      const step = 0.5;
+      for (let i = 0; i < 8; i++) {
+        const bx = -1.75 + i * step;
+        // Vertical up
+        g.add(pos(box(0.06, 0.35, 0.04, M.conc3), bx, 0.25, 0.04));
+        // Horizontal top
+        g.add(pos(box(0.25, 0.06, 0.04, M.conc3), bx + 0.12, 0.42, 0.04));
+        // Short vertical down
+        g.add(pos(box(0.06, 0.2, 0.04, M.conc3), bx + 0.22, 0.3, 0.04));
+        // Horizontal bottom connector
+        g.add(pos(box(0.2, 0.06, 0.04, M.conc3), bx + 0.12, 0.1, 0.04));
+      }
+      // Top and bottom border lines
+      g.add(pos(box(4.0, 0.04, 0.05, M.conc2), 0, 0.48, 0.04));
+      g.add(pos(box(4.0, 0.04, 0.05, M.conc2), 0, 0.02, 0.04));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'ornament_celtic', name: 'Кельтский узел', icon: '☘️', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Backing panel
+      g.add(pos(box(4.0, 0.5, 0.05, M.conc1), 0, 0.25, 0));
+      // Woven knotwork pattern - interlaced horizontal and diagonal bands
+      for (let i = 0; i < 10; i++) {
+        const bx = -1.8 + i * 0.4;
+        const up = i % 2 === 0;
+        // Over-under weave: alternating height
+        g.add(pos(box(0.3, 0.08, 0.04, M.conc3), bx, up ? 0.32 : 0.18, 0.04));
+        g.add(pos(box(0.08, 0.3, 0.04, M.conc2), bx, 0.25, up ? 0.05 : 0.03));
+      }
+      // Top and bottom border bands
+      g.add(pos(box(4.0, 0.06, 0.04, M.conc3), 0, 0.47, 0.04));
+      g.add(pos(box(4.0, 0.06, 0.04, M.conc3), 0, 0.03, 0.04));
+      // Diagonal cross elements
+      for (let i = 0; i < 5; i++) {
+        const bx = -1.6 + i * 0.8;
+        g.add(pos(box(0.5, 0.06, 0.04, M.conc2), bx, 0.35, 0.05));
+        g.add(pos(box(0.5, 0.06, 0.04, M.conc2), bx + 0.2, 0.15, 0.05));
+      }
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'ornament_arabesque', name: 'Арабеска', icon: '🕌', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Flat backing panel
+      g.add(pos(box(2.0, 2.0, 0.05, M.conc1), 0, 1.0, 0));
+      // Central star (8 radial boxes)
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const star = box(0.4, 0.1, 0.04, M.conc3);
+        star.position.set(Math.cos(a) * 0.25, 1.0 + Math.sin(a) * 0.25, 0.04);
+        star.rotation.z = a;
+        star.castShadow = true;
+        g.add(star);
+      }
+      // Inner ring
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2;
+        g.add(pos(box(0.08, 0.08, 0.04, M.conc2), Math.cos(a) * 0.5, 1.0 + Math.sin(a) * 0.5, 0.04));
+      }
+      // Outer geometric petals
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+        const petal = box(0.35, 0.12, 0.04, M.conc3);
+        petal.position.set(Math.cos(a) * 0.7, 1.0 + Math.sin(a) * 0.7, 0.04);
+        petal.rotation.z = a;
+        petal.castShadow = true;
+        g.add(petal);
+      }
+      // Corner ornaments
+      g.add(pos(box(0.15, 0.15, 0.04, M.conc2), -0.85, 0.15, 0.04));
+      g.add(pos(box(0.15, 0.15, 0.04, M.conc2), 0.85, 0.15, 0.04));
+      g.add(pos(box(0.15, 0.15, 0.04, M.conc2), -0.85, 1.85, 0.04));
+      g.add(pos(box(0.15, 0.15, 0.04, M.conc2), 0.85, 1.85, 0.04));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'cornice_dentil', name: 'Зубчатый карниз', icon: '🏛️', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Top plate
+      g.add(pos(box(4.0, 0.1, 0.3, M.conc1), 0, 0.45, 0));
+      // Bottom plate (slightly narrower)
+      g.add(pos(box(3.8, 0.08, 0.25, M.conc1), 0, 0.04, 0));
+      // Middle backing
+      g.add(pos(box(3.9, 0.3, 0.12, M.conc2), 0, 0.23, -0.05));
+      // Dentil blocks (repeating small rectangles)
+      for (let i = 0; i < 20; i++) {
+        const x = -1.9 + i * 0.2;
+        g.add(pos(box(0.12, 0.15, 0.15, M.conc3), x, 0.16, 0.06));
+      }
+      // Crown molding detail (top edge)
+      g.add(pos(box(4.0, 0.04, 0.32, M.conc3), 0, 0.5, 0.01));
+      // Base molding detail
+      g.add(pos(box(3.8, 0.04, 0.26, M.conc2), 0, 0.0, 0.01));
+      return mergeGroup(g);
+    }
+  },
+  {
+    id: 'rosette_ornament', name: 'Розетка', icon: '🌸', category: 'building',
+    create: () => {
+      const g = new THREE.Group();
+      // Central disc
+      g.add(pos(cyl(0.12, 0.12, 0.06, M.conc3, 16), 0, 0.5, 0.03));
+      // Inner ring
+      g.add(pos(cyl(0.2, 0.2, 0.04, M.conc2, 16), 0, 0.5, 0.02));
+      // Petals (12 radially arranged)
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2;
+        const petal = box(0.18, 0.07, 0.04, M.conc1);
+        petal.position.set(Math.cos(a) * 0.32, 0.5 + Math.sin(a) * 0.32, 0.03);
+        petal.rotation.z = a;
+        petal.castShadow = true;
+        g.add(petal);
+      }
+      // Outer ring
+      g.add(pos(cyl(0.48, 0.48, 0.03, M.conc2, 20), 0, 0.5, 0.01));
+      // Outer border ring
+      g.add(pos(cyl(0.5, 0.5, 0.04, M.conc3, 20), 0, 0.5, 0.005));
+      // Background disc
+      g.add(pos(cyl(0.52, 0.52, 0.02, M.conc1, 20), 0, 0.5, 0));
+      return mergeGroup(g);
+    }
+  },
 ];
+
 
 function createGeometryForShape(shape: VoxelShape): THREE.BufferGeometry {
   if (shape === 'rounded') {
