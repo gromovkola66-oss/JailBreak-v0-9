@@ -355,7 +355,7 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
 
     const handleKey = (e: KeyboardEvent) => {
       if (ptRentalMenuRef.current) return;
-      if (e.code === 'F9') {
+      if (e.code === 'F9' && !multiplayerClient) {
         e.preventDefault();
         stopPlaytest();
       }
@@ -1195,12 +1195,14 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
             )}
           </div>
 
-          {/* Badge */}
+          {/* Badge - only show in single-player editor playtest mode */}
+          {!multiplayerClient && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-purple-600/90 text-white px-6 py-2 rounded-lg flex items-center gap-3">
             <span>🧪</span>
             <span className="font-bold">ТЕСТИРОВАНИЕ</span>
             <span className="text-purple-200 text-sm">F9 — выход</span>
           </div>
+          )}
 
           {/* Wallet */}
           {ptLocked && ptWallet && (
@@ -1274,7 +1276,7 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
           {!ptLocked && !ptInventory?.isOpen && !ptCameraState?.inTerminalMode && !ptDeathState?.isDead && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center pointer-events-auto">
               <div className="text-center text-white">
-                <h2 className="text-3xl font-bold mb-4">🧪 Тестирование карты</h2>
+                <h2 className="text-3xl font-bold mb-4">{multiplayerClient ? 'JailBreak' : '🧪 Тестирование карты'}</h2>
                 <p className="text-xl mb-6 text-gray-300">Кликните чтобы начать</p>
                 <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto text-sm">
                   <div className="bg-gray-700/50 p-2 rounded"><span className="text-yellow-400">WASD</span> Движение</div>
@@ -1282,12 +1284,14 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
                   <div className="bg-gray-700/50 p-2 rounded"><span className="text-yellow-400">E</span> Подобрать</div>
                   <div className="bg-gray-700/50 p-2 rounded"><span className="text-yellow-400">G</span> Бросить</div>
                 </div>
+                {!multiplayerClient && (
                 <button
                   onClick={stopPlaytest}
                   className="mt-8 px-6 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition pointer-events-auto"
                 >
                   ← Вернуться в редактор (F9)
                 </button>
+                )}
               </div>
             </div>
           )}
