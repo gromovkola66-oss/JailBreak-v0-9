@@ -68,6 +68,7 @@ export class PlaytestMode {
   private deathTimer = 0;
   private readonly RESPAWN_DELAY = 5;
   private spawnPoint: THREE.Vector3 | null = null;
+  private spawnPoints: THREE.Vector3[] = [];
 
   private raycaster = new THREE.Raycaster();
   private boundOnResize = this.onResize.bind(this);
@@ -817,7 +818,7 @@ export class PlaytestMode {
   }
 
   private loadMap(mapData: MapData, team: 'guard' | 'prisoner') {
-    let spawnPoint: THREE.Vector3 | null = null;
+    const spawnPointCandidates: THREE.Vector3[] = [];
     const spawnType = team === 'guard' ? 'spawn_guard' : 'spawn_prisoner';
     let cameraCount = 0;
     let doorCellIndex = 0;
@@ -841,8 +842,8 @@ export class PlaytestMode {
 
       // Скрипты — не рендерим визуально, но обрабатываем логику
       if (objData.type === 'spawn_prisoner' || objData.type === 'spawn_guard') {
-        if (objData.type === spawnType && !spawnPoint) {
-          spawnPoint = new THREE.Vector3(objData.position.x, objData.position.y + 1.7, objData.position.z);
+        if (objData.type === spawnType) {
+          spawnPointCandidates.push(new THREE.Vector3(objData.position.x, objData.position.y + 1.7, objData.position.z));
         }
         continue;
       }
@@ -1259,6 +1260,10 @@ export class PlaytestMode {
     this.placedLights = extractedLights;
 
     // Спавн
+    this.spawnPoints = spawnPointCandidates;
+    const spawnPoint = spawnPointCandidates.length > 0
+      ? spawnPointCandidates[Math.floor(Math.random() * spawnPointCandidates.length)]
+      : null;
     if (spawnPoint) {
       this.spawnPoint = spawnPoint.clone();
       this.controller.camera.position.copy(spawnPoint);
@@ -1370,9 +1375,12 @@ export class PlaytestMode {
           this.combat.respawn();
           this.inventory.reset();
 
-          // Teleport to spawn point
-          if (this.spawnPoint) {
-            this.controller.camera.position.copy(this.spawnPoint);
+          // Teleport to random spawn point
+          const respawnPoint = this.spawnPoints.length > 0
+            ? this.spawnPoints[Math.floor(Math.random() * this.spawnPoints.length)]
+            : this.spawnPoint;
+          if (respawnPoint) {
+            this.controller.camera.position.copy(respawnPoint);
             this.controller.initFeetPosition();
           }
 
