@@ -17,6 +17,7 @@ import { RentalDoor, RENTAL_OPTIONS } from './game/RentalDoorSystem';
 import { LockerState } from './game/LockerSystem';
 import { RARITY_COLORS } from './game/ItemDefs';
 import { CharacterModel } from './game/CharacterModel';
+import { MultiplayerClient } from './game/multiplayer';
 
 // 10 prison-themed CSS wallpapers (simple reliable gradients)
 const TERMINAL_WALLPAPERS: { background: string }[] = [
@@ -147,11 +148,12 @@ const THEME_CONFIGS: Record<TerminalTheme, ThemeConfig> = {
 
 interface EditorAppProps {
   onBackToGame: () => void;
+  multiplayerClient?: MultiplayerClient | null;
 }
 
 type EditorMode = 'editing' | 'team_select' | 'playtesting';
 
-export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
+export const EditorApp = ({ onBackToGame, multiplayerClient }: EditorAppProps) => {
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const playtestContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<MapEditor | null>(null);
@@ -258,6 +260,8 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
   // Camera saved screenshots
   const [savedScreenshots, setSavedScreenshots] = useState<string[]>([]);
 
+  // Multiplayer player count state
+  const [mpPlayerCount, setMpPlayerCount] = useState(0);
   // Camera rewind state
   const [rewindPlaying, setRewindPlaying] = useState(false);
   const [rewindFrame, setRewindFrame] = useState(0);
@@ -827,6 +831,13 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
       };
 
       pt.start();
+      // Wire multiplayer if client is connected
+      if (multiplayerClient && multiplayerClient.isConnected) {
+        pt.setMultiplayerClient(multiplayerClient);
+        pt.onMultiplayerPlayersUpdate = (count: number) => {
+          setMpPlayerCount(count);
+        };
+      }
       // Whether any cell-doors were placed on this map (controls availability
       // of the warden "open cells" command).
       setPtHasDoors(pt.hasDoors());
@@ -1164,6 +1175,14 @@ export const EditorApp = ({ onBackToGame }: EditorAppProps) => {
               moneyFlash === 'gain' ? 'text-green-400 scale-105' : moneyFlash === 'loss' ? 'text-red-400 scale-105' : 'text-white'
             }`}>
               <span className="text-yellow-400">{'\u20bd'}</span> {ptWallet.balance}
+            </div>
+          )}
+
+          {/* Multiplayer indicator */}
+          {multiplayerClient && multiplayerClient.isConnected && (
+            <div className="absolute top-4 right-4 bg-black/60 px-3 py-1.5 rounded-full flex items-center gap-2 font-mono text-xs">
+              <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.6)]" />
+              <span className="text-green-300">{mpPlayerCount} игроков</span>
             </div>
           )}
 
