@@ -8,6 +8,7 @@ import { EditorUI } from './components/EditorUI';
 import { GuardMenu } from './components/GuardMenu';
 import { Minesweeper } from './components/Minesweeper';
 import { Paint } from './components/Paint';
+import { Scoreboard } from './components/Scoreboard';
 import { EditorObjectType } from './editor/EditorObjects';
 import { CombatState } from './game/Combat';
 import { CameraSystemState } from './game/CameraSystem';
@@ -17,7 +18,7 @@ import { RentalDoor, RENTAL_OPTIONS } from './game/RentalDoorSystem';
 import { LockerState } from './game/LockerSystem';
 import { RARITY_COLORS } from './game/ItemDefs';
 import { CharacterModel } from './game/CharacterModel';
-import { MultiplayerClient } from './game/multiplayer';
+import { MultiplayerClient, PlayerData } from './game/multiplayer';
 import testMapData from './editor/maps/test-map.json';
 
 // 10 prison-themed CSS wallpapers (simple reliable gradients)
@@ -150,11 +151,12 @@ const THEME_CONFIGS: Record<TerminalTheme, ThemeConfig> = {
 interface EditorAppProps {
   onBackToGame: () => void;
   multiplayerClient?: MultiplayerClient | null;
+  multiplayerTeam?: 'guard' | 'prisoner';
 }
 
 type EditorMode = 'editing' | 'team_select' | 'playtesting';
 
-export const EditorApp = ({ onBackToGame, multiplayerClient }: EditorAppProps) => {
+export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: EditorAppProps) => {
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const playtestContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<MapEditor | null>(null);
@@ -263,6 +265,10 @@ export const EditorApp = ({ onBackToGame, multiplayerClient }: EditorAppProps) =
 
   // Multiplayer player count state
   const [mpPlayerCount, setMpPlayerCount] = useState(0);
+  // Multiplayer players map for scoreboard
+  const [mpPlayers, setMpPlayers] = useState<Map<string, PlayerData>>(new Map());
+  // Scoreboard visibility (hold Q)
+  const [scoreboardVisible, setScoreboardVisible] = useState(false);
   // Camera rewind state
   const [rewindPlaying, setRewindPlaying] = useState(false);
   const [rewindFrame, setRewindFrame] = useState(0);
@@ -292,8 +298,8 @@ export const EditorApp = ({ onBackToGame, multiplayerClient }: EditorAppProps) =
   // === AUTO-START MULTIPLAYER PLAYTEST ===
   useEffect(() => {
     if (!multiplayerClient) return;
-    // When multiplayer is active, auto-start playtesting as prisoner
-    startPlaytest('prisoner');
+    // When multiplayer is active, auto-start playtesting with selected team
+    startPlaytest(multiplayerTeam || 'prisoner');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -356,6 +362,9 @@ export const EditorApp = ({ onBackToGame, multiplayerClient }: EditorAppProps) =
       if (e.code === 'KeyM' && ptTeam === 'guard') {
         setPtGuardMenuOpen(prev => !prev);
       }
+      if (e.code === 'KeyQ' && multiplayerClient) {
+        setScoreboardVisible(true);
+      }
       // Close locker with Escape or E
       if ((e.code === 'Escape' || e.code === 'KeyE') && playtestRef.current && ptLockerStateRef.current) {
         e.preventDefault();
@@ -372,11 +381,18 @@ export const EditorApp = ({ onBackToGame, multiplayerClient }: EditorAppProps) =
         return;
       }
     };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'KeyQ' && multiplayerClient) {
+        setScoreboardVisible(false);
+      }
+    };
     document.addEventListener('keydown', handleKey);
+    document.addEventListener('keyup', handleKeyUp);
 
     return () => {
       document.removeEventListener('pointerlockchange', handlePointerLock);
       document.removeEventListener('keydown', handleKey);
+      document.removeEventListener('keyup', handleKeyUp);
       if (playtestRef.current) {
         playtestRef.current.dispose();
         playtestRef.current = null;
@@ -847,6 +863,13 @@ export const EditorApp = ({ onBackToGame, multiplayerClient }: EditorAppProps) =
         pt.onMultiplayerPlayersUpdate = (count: number) => {
           setMpPlayerCount(count);
         };
+        // Keep mpPlayers state in sync for scoreboard
+        multiplayerClient.onPlayersUpdated = (players) => {
+          setMpPlayers(new Map(players));
+          setMpPlayerCount(players.size);
+        };
+        // Initialize with current state
+        setMpPlayers(new Map(multiplayerClient.getPlayers()));
       }
       // Whether any cell-doors were placed on this map (controls availability
       // of the warden "open cells" command).
@@ -1194,6 +1217,16 @@ export const EditorApp = ({ onBackToGame, multiplayerClient }: EditorAppProps) =
               <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.6)]" />
               <span className="text-green-300">{mpPlayerCount} игроков</span>
             </div>
+          )}
+
+          {/* Scoreboard overlay (hold Q) */}
+          {multiplayerClient && (
+            <Scoreboard
+              players={mpPlayers}
+              visible={scoreboardVisible}
+              localPlayerId={multiplayerClient.playerId}
+              localTeam={ptTeam}
+            />
           )}
 
           {/* HP */}

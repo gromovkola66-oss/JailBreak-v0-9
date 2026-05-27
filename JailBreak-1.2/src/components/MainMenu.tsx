@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { getQuality, setQuality, type Quality } from '../game/QualitySettings';
-import { MultiplayerClient, PlayerData } from '../game/multiplayer';
 
 interface MainMenuProps {
   onOpenEditor: () => void;
-  onStartMultiplayer?: (client: MultiplayerClient) => void;
+  onOpenServers: () => void;
 }
 
 /* ========== SETTINGS MODAL ========== */
@@ -76,184 +75,6 @@ const SettingsModal = ({ onClose }: { onClose: () => void }) => {
               ))}
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/* ========== MULTIPLAYER MODAL ========== */
-const MultiplayerModal = ({ onClose, onStartMultiplayer }: { onClose: () => void; onStartMultiplayer?: (client: MultiplayerClient) => void }) => {
-  const [nickname, setNickname] = useState(() => localStorage.getItem('jb_nickname') || '');
-  const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
-  const [players, setPlayers] = useState<Map<string, PlayerData>>(new Map());
-  const clientRef = useRef<MultiplayerClient | null>(null);
-
-  const handleConnect = () => {
-    if (!nickname.trim()) return;
-    const trimmedNickname = nickname.trim();
-    localStorage.setItem('jb_nickname', trimmedNickname);
-
-    const client = new MultiplayerClient();
-    clientRef.current = client;
-    setStatus('connecting');
-
-    client.onConnected = () => {
-      setStatus('connected');
-      setPlayers(new Map(client.getPlayers()));
-    };
-
-    client.onDisconnected = () => {
-      setStatus('disconnected');
-      setPlayers(new Map());
-      clientRef.current = null;
-    };
-
-    client.onPlayerJoined = () => {
-      setPlayers(new Map(client.getPlayers()));
-    };
-
-    client.onPlayerLeft = () => {
-      setPlayers(new Map(client.getPlayers()));
-    };
-
-    client.onPlayersUpdated = () => {
-      setPlayers(new Map(client.getPlayers()));
-    };
-
-    client.connect(trimmedNickname);
-  };
-
-  const handleDisconnect = () => {
-    if (clientRef.current) {
-      clientRef.current.disconnect();
-      clientRef.current = null;
-    }
-    setStatus('disconnected');
-    setPlayers(new Map());
-  };
-
-  const handlePlay = () => {
-    if (clientRef.current && status === 'connected' && onStartMultiplayer) {
-      onStartMultiplayer(clientRef.current);
-      clientRef.current = null;
-      onClose();
-    }
-  };
-
-  const handleClose = () => {
-    if (clientRef.current && status !== 'connected') {
-      clientRef.current.disconnect();
-      clientRef.current = null;
-    }
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={handleClose}>
-      <div className="absolute inset-0 bg-black/50" />
-      <div onClick={e => e.stopPropagation()} style={{
-        width: 480, maxHeight: '85vh', borderRadius: 12,
-        background: 'rgba(10,10,26,0.85)', backdropFilter: 'blur(24px)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 16px 64px rgba(0,0,0,0.6)',
-        overflow: 'hidden',
-      }}>
-        <div style={{
-          padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-          background: 'rgba(255,255,255,0.03)',
-        }}>
-          <span className="text-white font-semibold text-sm">Мультиплеер</span>
-          <button onClick={handleClose} className="w-7 h-7 flex items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition text-lg">{'\u2715'}</button>
-        </div>
-        <div style={{ padding: 24, overflowY: 'auto', maxHeight: 'calc(85vh - 50px)' }}>
-          {/* Nickname input */}
-          <div className="mb-5">
-            <label className="text-xs font-bold text-blue-400 mb-2 uppercase tracking-wider block">Никнейм</label>
-            <input
-              type="text"
-              value={nickname}
-              onChange={e => setNickname(e.target.value)}
-              placeholder="Введите никнейм..."
-              disabled={status === 'connecting' || status === 'connected'}
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500/50 disabled:opacity-50 transition"
-              maxLength={20}
-            />
-          </div>
-
-          {/* Connection status */}
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className={`w-2.5 h-2.5 rounded-full ${
-                status === 'connected' ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.6)]' :
-                status === 'connecting' ? 'bg-yellow-400 animate-pulse' :
-                status === 'error' ? 'bg-red-400' : 'bg-gray-500'
-              }`} />
-              <span className={`text-sm font-medium ${
-                status === 'connected' ? 'text-green-400' :
-                status === 'connecting' ? 'text-yellow-400' :
-                status === 'error' ? 'text-red-400' : 'text-gray-400'
-              }`}>
-                {status === 'connected' ? 'Подключено' :
-                 status === 'connecting' ? 'Подключение...' :
-                 status === 'error' ? 'Ошибка' : 'Отключено'}
-              </span>
-              {status === 'connected' && (
-                <span className="text-gray-400 text-xs ml-auto">{players.size} игроков онлайн</span>
-              )}
-            </div>
-          </div>
-
-          {/* Connect / Disconnect buttons */}
-          <div className="flex gap-3 mb-5">
-            {status === 'disconnected' || status === 'error' ? (
-              <button
-                onClick={handleConnect}
-                disabled={!nickname.trim()}
-                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition"
-              >
-                Подключиться
-              </button>
-            ) : status === 'connected' ? (
-              <button
-                onClick={handleDisconnect}
-                className="flex-1 px-4 py-2.5 bg-red-600/80 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition"
-              >
-                Отключиться
-              </button>
-            ) : null}
-          </div>
-
-          {/* Player list */}
-          {status === 'connected' && (
-            <div className="mb-5">
-              <h3 className="text-xs font-bold text-green-400 mb-2 uppercase tracking-wider">Игроки онлайн</h3>
-              <div className="bg-black/30 rounded-lg p-3 max-h-40 overflow-y-auto">
-                {players.size === 0 ? (
-                  <div className="text-gray-500 text-sm text-center py-2">Нет игроков</div>
-                ) : (
-                  Array.from(players.values()).map(player => (
-                    <div key={player.id} className="flex items-center gap-2 py-1.5 border-b border-gray-700/30 last:border-0">
-                      <div className="w-2 h-2 rounded-full bg-green-400" />
-                      <span className="text-gray-200 text-sm">{player.nickname}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Play button */}
-          {status === 'connected' && (
-            <button
-              onClick={handlePlay}
-              disabled={!onStartMultiplayer}
-              className="w-full px-4 py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-bold transition"
-            >
-              Играть
-            </button>
-          )}
         </div>
       </div>
     </div>
@@ -453,9 +274,8 @@ const SceneFreedom = () => (
 );
 
 /* ========== MAIN MENU ========== */
-export const MainMenu = ({ onOpenEditor, onStartMultiplayer }: MainMenuProps) => {
+export const MainMenu = ({ onOpenEditor, onOpenServers }: MainMenuProps) => {
   const [showSettings, setShowSettings] = useState(false);
-  const [showServers, setShowServers] = useState(false);
   const [activeScene, setActiveScene] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -472,7 +292,7 @@ export const MainMenu = ({ onOpenEditor, onStartMultiplayer }: MainMenuProps) =>
 
   const buttons = [
     { icon: '\u{1F5FA}\uFE0F', label: 'Редактор карт', action: onOpenEditor },
-    { icon: '\u{1F310}', label: 'Серверы', action: () => setShowServers(true) },
+    { icon: '\u{1F310}', label: 'Серверы', action: onOpenServers },
     { icon: '\u2699\uFE0F', label: 'Настройки', action: () => setShowSettings(true) },
     { icon: '\u{1F6AA}', label: 'Выход', action: () => window.close() },
   ];
@@ -531,7 +351,6 @@ export const MainMenu = ({ onOpenEditor, onStartMultiplayer }: MainMenuProps) =>
 
       {/* Modals */}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
-      {showServers && <MultiplayerModal onClose={() => setShowServers(false)} onStartMultiplayer={onStartMultiplayer} />}
 
       {/* Animation Keyframes */}
       <style>{`
