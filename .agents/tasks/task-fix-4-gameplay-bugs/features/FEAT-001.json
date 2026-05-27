@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Fix all 4 gameplay bugs: rental door false interaction, garage door direction, door frame collisions, and terrain size reset",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1 - Fix Issue 1 (Regular bars showing rental menu): In /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/game/RentalDoorSystem.ts, modify the `findNearest` method to check Y-axis distance separately. Add a vertical threshold check (e.g., 2.5m max Y difference) before considering a door as nearby. The problem is `position.distanceTo(door.closedPosition)` uses full 3D distance, so a rental door on a different floor (Y+4m) can still be within 3m 3D range. Fix: compute horizontal distance (XZ only) and add a Y distance check (abs(position.y - door.closedPosition.y) < 2.5). Alternative: increase Y threshold awareness by computing the distance in XZ plane only for the range check, or add an explicit Y check.",
     "Step 2 - Fix Issue 2 (Garage doors should open upward): In /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/game/GarageDoorSystem.ts, in the `registerDoor` method, change openPos.y from `closedPos.y - doorHeight` to `closedPos.y + doorHeight`. Currently the door sinks below ground when opening. It should move upward.",
@@ -27,5 +27,5 @@
     "Verify the zip file exists and contains JailBreak-1.2/ structure without node_modules"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Pre-existing tsc error at PlaytestMode.ts line 1797 (WeaponType argument mismatch) - not introduced by this change. Vite build passes successfully."
 }
