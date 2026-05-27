@@ -337,6 +337,7 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
   const [scoreboardVisible, setScoreboardVisible] = useState(false);
   // ESC pause menu (multiplayer only)
   const [pauseMenuOpen, setPauseMenuOpen] = useState(false);
+  const pauseMenuOpenRef = useRef(pauseMenuOpen);
   const [pauseMenuSettings, setPauseMenuSettings] = useState(false);
   // Camera rewind state
   const [rewindPlaying, setRewindPlaying] = useState(false);
@@ -360,6 +361,7 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
   // === Keep locker state ref in sync ===
   useEffect(() => { ptLockerStateRef.current = ptLockerState; }, [ptLockerState]);
   useEffect(() => { ptArmoryOpenRef.current = ptArmoryOpen; }, [ptArmoryOpen]);
+  useEffect(() => { pauseMenuOpenRef.current = pauseMenuOpen; }, [pauseMenuOpen]);
 
   // Current theme config
   const thCfg = THEME_CONFIGS[terminalTheme];
@@ -419,7 +421,15 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
   useEffect(() => {
     if (mode !== 'playtesting') return;
 
-    const handlePointerLock = () => setPtLocked(document.pointerLockElement !== null);
+    const handlePointerLock = () => {
+      const locked = document.pointerLockElement !== null;
+      setPtLocked(locked);
+      // In multiplayer mode, auto-open pause menu when pointer lock is released
+      if (!locked && multiplayerClient) {
+        setPauseMenuOpen(true);
+        setPauseMenuSettings(false);
+      }
+    };
     document.addEventListener('pointerlockchange', handlePointerLock);
 
     const handleKey = (e: KeyboardEvent) => {
@@ -434,17 +444,13 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
       if (e.code === 'KeyQ' && multiplayerClient) {
         setScoreboardVisible(true);
       }
-      // ESC pause menu toggle (multiplayer only)
-      if (e.code === 'Escape' && multiplayerClient && !ptLockerStateRef.current && !ptArmoryOpenRef.current) {
+      // ESC closes pause menu and re-requests pointer lock (multiplayer only)
+      if (e.code === 'Escape' && multiplayerClient && pauseMenuOpenRef.current && !ptLockerStateRef.current && !ptArmoryOpenRef.current) {
         e.preventDefault();
         e.stopPropagation();
-        setPauseMenuOpen(prev => {
-          if (!prev) {
-            document.exitPointerLock();
-            setPauseMenuSettings(false);
-          }
-          return !prev;
-        });
+        setPauseMenuOpen(false);
+        setPauseMenuSettings(false);
+        playtestContainerRef.current?.requestPointerLock();
         return;
       }
       // Close locker with Escape or E
