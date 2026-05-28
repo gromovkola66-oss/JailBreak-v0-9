@@ -49,6 +49,7 @@ export class PlaytestMode {
   private doorColliders: Map<string, THREE.Box3[]> = new Map();
   private garageDoorColliders: Map<string, THREE.Box3[]> = new Map();
   private rentalDoorColliders: Map<string, THREE.Box3[]> = new Map();
+  private lockerMeshes: Map<string, THREE.Object3D> = new Map();
   private inTerminalMode = false;
 
   // Armory locker
@@ -655,15 +656,39 @@ export class PlaytestMode {
       }
       // Locker interaction (before rental door so locker takes priority when both are nearby)
       {
-        const { canInteract: canLocker, lockerId } = this.lockerSystem.canInteract(this.controller.camera.position);
-        if (canLocker && lockerId) {
-          const opened = this.lockerSystem.tryOpen(lockerId, this.team, this.rentalDoorSystem);
-          if (!opened) {
-            this.onLockerAccessDenied?.();
-          } else {
-            document.exitPointerLock();
+        // Raycast from camera to check if player is looking at a locker within range
+        const lockerRaycaster = new THREE.Raycaster();
+        lockerRaycaster.setFromCamera(new THREE.Vector2(0, 0), this.controller.camera);
+        lockerRaycaster.far = 2.5;
+        const lockerObjects: THREE.Object3D[] = [];
+        for (const obj of this.lockerMeshes.values()) {
+          lockerObjects.push(obj);
+        }
+        const lockerHits = lockerRaycaster.intersectObjects(lockerObjects, true);
+        if (lockerHits.length > 0) {
+          // Find which locker was hit
+          const hitObject = lockerHits[0].object;
+          let hitLockerId: string | null = null;
+          for (const [lockerId, lockerObj] of this.lockerMeshes.entries()) {
+            let obj: THREE.Object3D | null = hitObject;
+            while (obj) {
+              if (obj === lockerObj) {
+                hitLockerId = lockerId;
+                break;
+              }
+              obj = obj.parent;
+            }
+            if (hitLockerId) break;
           }
-          return;
+          if (hitLockerId) {
+            const opened = this.lockerSystem.tryOpen(hitLockerId, this.team, this.rentalDoorSystem);
+            if (!opened) {
+              this.onLockerAccessDenied?.();
+            } else {
+              document.exitPointerLock();
+            }
+            return;
+          }
         }
       }
       // Armory locker interaction
@@ -990,6 +1015,7 @@ export class PlaytestMode {
         const lockerPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
         const lockerId = `locker_${objData.id}`;
         this.lockerSystem.registerLocker(lockerId, objData.groupId || 0, lockerPos);
+        this.lockerMeshes.set(lockerId, obj);
         continue;
       }
 
@@ -1602,6 +1628,7 @@ export class PlaytestMode {
       }
 
       // Terminal raycast
+      this.raycaster.far = Infinity;
       this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.controller.camera);
       this.cameraSystem.checkRaycast(this.raycaster);
 
