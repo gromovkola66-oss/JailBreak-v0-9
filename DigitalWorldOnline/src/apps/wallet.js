@@ -1,5 +1,6 @@
 import { createWindow, registerCleanup } from '../core/windowManager.js';
 import { getBalance, getTransactions } from '../core/economy.js';
+import { getReputation } from '../core/reputation.js';
 
 export function open() {
   const win = createWindow({
@@ -28,6 +29,7 @@ export function open() {
 function render(container) {
   const balance = getBalance();
   const transactions = getTransactions();
+  const rep = getReputation();
 
   // Sort newest first
   const sorted = [...transactions].sort((a, b) => b.timestamp - a.timestamp);
@@ -57,6 +59,19 @@ function render(container) {
           </div>
         `;
       }).join('')}
+    </div>
+    <div style="margin-top:16px;background:var(--surface-color, #2a2a3e);border-radius:12px;padding:16px;">
+      <div style="font-size:14px;font-weight:600;color:var(--text-primary, #fff);margin-bottom:12px;">Репутация</div>
+      <div style="display:flex;gap:16px;">
+        <div style="flex:1;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:11px;color:#999;margin-bottom:4px;">Белая репутация</div>
+          <div style="font-size:20px;font-weight:bold;color:#4ade80;">${rep.white}</div>
+        </div>
+        <div style="flex:1;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:11px;color:#999;margin-bottom:4px;">Чёрная репутация</div>
+          <div style="font-size:20px;font-weight:bold;color:#a855f7;">${rep.black}</div>
+        </div>
+      </div>
     </div>
   `;
 }

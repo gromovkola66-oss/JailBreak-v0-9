@@ -3,6 +3,7 @@ import * as fileSystem from '../core/fileSystem.js';
 import * as hackingSystem from '../core/hackingSystem.js';
 import * as reputation from '../core/reputation.js';
 import * as storage from '../core/storage.js';
+import { addMoney } from '../core/economy.js';
 import { bruteforceMinigame, decryptMinigame, exploitMinigame } from './hackingMinigames.js';
 
 export function open() {
@@ -231,6 +232,23 @@ function connectedDownload(filename, output, state) {
   }
   fileSystem.createFile('/Downloads/' + filename, file.content);
   appendLine(output, 'Файл загружен: ' + filename, '#00ff88');
+
+  addMoney(10, 'Скачивание: ' + filename);
+  reputation.addBlackRep(5, 'Скачивание файлов');
+
+  if (Math.random() < 0.2) {
+    const threats = storage.get('system_threats') || [];
+    const threatNames = ['Троян.DownloadHelper', 'Шпион.DataGrab', 'Вирус.CryptoHook', 'Червь.NetCrawl'];
+    threats.push({
+      id: Date.now(),
+      name: threatNames[Math.floor(Math.random() * threatNames.length)],
+      severity: Math.random() > 0.5 ? 'medium' : 'low',
+      source: filename,
+      timestamp: Date.now()
+    });
+    storage.set('system_threats', threats);
+    appendLine(output, '\u26A0 ВНИМАНИЕ: Антивирус обнаружил подозрительную активность!', '#ff4444');
+  }
 }
 
 // ============ Hacking commands ============
@@ -299,7 +317,9 @@ function doBruteforce(parts, output, state, container) {
       const allHacked = updatedTarget.ports.every(p => updatedTarget.hackedPorts.includes(p.port));
       if (allHacked && !updatedTarget.fullyHacked) {
         hackingSystem.markTargetFullyHacked(ip);
-        appendLine(output, `Цель "${updatedTarget.name}" полностью взломана! Награда: ${updatedTarget.reward} DC`, '#00ff88');
+        addMoney(updatedTarget.reward, 'Взлом: ' + updatedTarget.name);
+        reputation.addBlackRep(updatedTarget.difficulty * 10, 'Взлом: ' + updatedTarget.name);
+        appendLine(output, `Система полностью взломана! Получено ${updatedTarget.reward} DC`, '#00ff88');
       }
     } else {
       appendLine(output, 'Подбор не удался.', '#f44747');
@@ -363,8 +383,10 @@ function doExploit(parts, output, state, container) {
       hackingSystem.markTargetFullyHacked(ip);
       reputation.addBlackRep(10, `Эксплойт ${vuln} на ${ip}`);
       storage.set('last_hack_time', Date.now());
+      addMoney(target.reward, 'Взлом: ' + target.name);
+      reputation.addBlackRep(target.difficulty * 10, 'Взлом: ' + target.name);
       appendLine(output, `Эксплойт применён! Все порты на ${ip} взломаны.`, '#00ff88');
-      appendLine(output, `Цель "${target.name}" полностью взломана! Награда: ${target.reward} DC`, '#00ff88');
+      appendLine(output, `Система полностью взломана! Получено ${target.reward} DC`, '#00ff88');
     } else {
       appendLine(output, 'Эксплойт не удался. Соединение сброшено.', '#f44747');
     }

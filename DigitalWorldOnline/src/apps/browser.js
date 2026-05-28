@@ -1,6 +1,9 @@
 import { createWindow, registerCleanup } from '../core/windowManager.js';
 import { getBalance, getTransactions, addMoney, spendMoney } from '../core/economy.js';
 import * as storage from '../core/storage.js';
+import { getHackingTools, purchaseTool } from '../core/hackingSystem.js';
+import { getReputation, addBlackRep } from '../core/reputation.js';
+import * as fileSystem from '../core/fileSystem.js';
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -58,6 +61,10 @@ function render(container, state, win) {
       <button class="browser-bookmark" data-url="bank.dw">\u041a\u0440\u0438\u043f\u0442\u043e\u0411\u0430\u043d\u043a</button>
       <button class="browser-bookmark" data-url="freelance.dw">\u0424\u0440\u0438\u043b\u0430\u043d\u0441\u0411\u0438\u0440\u0436\u0430</button>
       <button class="browser-bookmark" data-url="market.dw">\u041c\u0430\u0440\u043a\u0435\u0442\u041f\u043b\u0435\u0439\u0441</button>
+      ${storage.get('vpn_active') ? `
+        <button class="browser-bookmark" data-url="shadow.onion" style="color:#9333ea;border-color:#9333ea;">ТеневойРынок</button>
+        <button class="browser-bookmark" data-url="hackforum.onion" style="color:#9333ea;border-color:#9333ea;">ХакФорум</button>
+      ` : ''}
     </div>
     <div class="browser-content"></div>
   `;
@@ -195,7 +202,9 @@ function updateTabTitle(state) {
     'wiki.dw': '\u0412\u0438\u043a\u0438\u041c\u0438\u0440',
     'bank.dw': '\u041a\u0440\u0438\u043f\u0442\u043e\u0411\u0430\u043d\u043a',
     'freelance.dw': '\u0424\u0440\u0438\u043b\u0430\u043d\u0441\u0411\u0438\u0440\u0436\u0430',
-    'market.dw': '\u041c\u0430\u0440\u043a\u0435\u0442\u041f\u043b\u0435\u0439\u0441'
+    'market.dw': '\u041c\u0430\u0440\u043a\u0435\u0442\u041f\u043b\u0435\u0439\u0441',
+    'shadow.onion': 'ТеневойРынок',
+    'hackforum.onion': 'ХакФорум'
   };
   tab.title = titles[tab.url] || tab.url;
 }
@@ -226,6 +235,19 @@ function loadPage(container, state, win) {
     renderFreelance(content, container, state, win);
   } else if (url === 'market.dw') {
     renderMarket(content, container, state, win);
+  } else if (url.endsWith('.onion')) {
+    const vpnActive = storage.get('vpn_active');
+    if (!vpnActive) {
+      renderDarknetError(content);
+      return;
+    }
+    if (url === 'shadow.onion') {
+      renderShadowMarket(content, container, state, win);
+    } else if (url === 'hackforum.onion') {
+      renderHackForum(content, container, state, win);
+    } else {
+      renderNotFound(content, url, container, state, win);
+    }
   } else {
     renderNotFound(content, url, container, state, win);
   }
@@ -281,6 +303,13 @@ function renderSearchResults(content, query, container, state, win) {
     { url: 'market.dw', title: 'МаркетПлейс - Цифровой магазин', desc: 'Софт, обои, утилиты. Покупки за ДигиКоины.', keywords: ['магазин', 'купить', 'софт', 'обои', 'market', 'покупки'] },
     { url: 'searchall.dw', title: 'ПоискВсё - Поисковая система', desc: 'Поиск информации в цифровом мире.', keywords: ['поиск', 'найти', 'search'] }
   ];
+
+  if (storage.get('vpn_active')) {
+    sites.push(
+      { url: 'shadow.onion', title: 'ТеневойРынок - Теневая торговая площадка', desc: 'Инструменты, данные, услуги. Только для авторизованных пользователей.', keywords: ['теневой', 'рынок', 'хакер', 'инструменты', 'darknet', 'даркнет', 'взлом'] },
+      { url: 'hackforum.onion', title: 'ХакФорум - Сообщество цифровых исследователей', desc: 'Форум для обмена опытом, заказы, советы по безопасности.', keywords: ['форум', 'хакер', 'взлом', 'заказы', 'советы', 'hack'] }
+    );
+  }
 
   const results = sites.filter(s => {
     return s.keywords.some(k => k.includes(query) || query.includes(k)) ||
@@ -773,6 +802,214 @@ function renderMarket(content, container, state, win) {
       }
 
       renderMarket(content, container, state, win);
+    });
+  });
+}
+
+// ==================== Darknet: Error Page ====================
+function renderDarknetError(content) {
+  content.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;background:#0a0a0a;color:#ff4444;font-family:monospace;text-align:center;padding:40px;">
+      <div style="font-size:48px;margin-bottom:20px;">&#9888;</div>
+      <h2 style="color:#ff4444;margin-bottom:10px;">Ошибка подключения</h2>
+      <p style="color:#ff6666;font-size:14px;">Сайт недоступен. Включите VPN для доступа к скрытым ресурсам.</p>
+      <p style="color:#666;margin-top:20px;font-size:12px;">Используйте приложение VPN или команду "vpn on" в терминале.</p>
+    </div>
+  `;
+}
+
+// ==================== Darknet: ТеневойРынок ====================
+function renderShadowMarket(content, container, state, win) {
+  const tools = getHackingTools();
+  const rep = getReputation();
+  const balance = getBalance();
+
+  const shopItems = [
+    { id: 'scannerPro', name: 'Сканер портов Pro', price: 300, desc: 'Показывает уязвимости при сканировании целей', reqRep: 0 },
+    { id: 'bruteforceV2', name: 'Брутфорс v2.0', price: 500, desc: 'Увеличивает шанс успешного подбора пароля на 20%', reqRep: 0 },
+    { id: 'exploitKit', name: 'Набор эксплоитов', price: 1000, desc: 'Открывает команду exploit для обхода защиты', reqRep: 50 },
+    { id: 'cryptor', name: 'Криптор', price: 750, desc: 'Скрывает следы вашей активности от систем отслеживания', reqRep: 30 }
+  ];
+
+  const stolenData = [
+    { name: 'База email адресов (50,000 записей)', price: 2000 },
+    { name: 'Дамп кредитных карт', price: 5000 },
+    { name: 'Персональные данные пользователей', price: 3000 }
+  ];
+
+  content.innerHTML = `
+    <div style="background:#0a0a0a;min-height:100%;padding:30px;font-family:'Courier New',monospace;">
+      <div style="text-align:center;margin-bottom:30px;">
+        <h1 style="color:#9333ea;font-size:28px;margin:0;">&#9760; ТеневойРынок</h1>
+        <p style="color:#00ff88;font-size:12px;margin-top:8px;">Теневая торговая площадка</p>
+        <p style="color:#555;font-size:11px;margin-top:4px;">Баланс: ${balance} DC | Чёрная репутация: ${rep.black}</p>
+      </div>
+
+      <div style="margin-bottom:30px;">
+        <h2 style="color:#00ffcc;font-size:16px;border-bottom:1px solid #333;padding-bottom:8px;margin-bottom:15px;">Инструменты</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          ${shopItems.map(item => {
+            const owned = tools[item.id];
+            const meetsRep = rep.black >= item.reqRep;
+            let btnHtml;
+            if (owned) {
+              btnHtml = `<button disabled style="background:#1a3d1a;color:#00ff88;border:1px solid #00ff88;padding:6px 12px;border-radius:4px;cursor:default;font-family:monospace;">Куплено</button>`;
+            } else if (!meetsRep) {
+              btnHtml = `<button disabled style="background:#222;color:#666;border:1px solid #444;padding:6px 12px;border-radius:4px;cursor:default;font-family:monospace;">Требуется репутация: ${item.reqRep}</button>`;
+            } else {
+              btnHtml = `<button class="shadow-buy-btn" data-tool-id="${item.id}" data-price="${item.price}" style="background:#9333ea;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-family:monospace;">Купить - ${item.price} DC</button>`;
+            }
+            return `
+              <div style="background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:15px;">
+                <h3 style="color:#00ff88;font-size:14px;margin:0 0 6px 0;">${item.name}</h3>
+                <p style="color:#888;font-size:11px;margin:0 0 10px 0;">${item.desc}</p>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span style="color:#00ffcc;font-size:13px;font-weight:bold;">${item.price} DC</span>
+                  ${btnHtml}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+
+      <div>
+        <h2 style="color:#00ffcc;font-size:16px;border-bottom:1px solid #333;padding-bottom:8px;margin-bottom:15px;">Украденные данные</h2>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${stolenData.map(item => `
+            <div style="background:#1a1a2e;border:1px solid #333;border-radius:6px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+              <span style="color:#aaa;font-size:12px;">${item.name}</span>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="color:#00ffcc;font-size:12px;">${item.price} DC</span>
+                <span style="color:#f44;font-size:11px;font-style:italic;">Нет в наличии</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  content.querySelectorAll('.shadow-buy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const toolId = btn.dataset.toolId;
+      const price = parseInt(btn.dataset.price);
+      if (spendMoney(price, 'ТеневойРынок: ' + toolId) === false) {
+        alert('Недостаточно средств!');
+        return;
+      }
+      purchaseTool(toolId);
+      renderShadowMarket(content, container, state, win);
+    });
+  });
+}
+
+// ==================== Darknet: ХакФорум ====================
+function renderHackForum(content, container, state, win) {
+  const rep = getReputation();
+  const completedContracts = storage.get('completed_contracts') || [];
+
+  const forumPosts = [
+    { user: 'darkmaster_99', color: '#ff4444', msg: 'У Виктора (192.168.1.10) пароль на SSH из словаря. Брутфорс справится за минуту.' },
+    { user: 'null_ptr', color: '#00ffcc', msg: 'Сервер кафе (192.168.1.25) использует стандартные учётные данные на MySQL. Даже сканер не нужен.' },
+    { user: 'ghost_in_shell', color: '#ff88ff', msg: 'На сервере бизнеса (10.0.1.100) есть SQL-инъекция в PostgreSQL. Используйте эксплоит.' },
+    { user: 'crypto_shadow', color: '#ffaa00', msg: 'Банковский терминал (172.16.50.1) - только zero-day эксплоит сработает. Нужен набор эксплоитов.' },
+    { user: 'red_queen', color: '#ff5577', msg: 'Правительственный сервер (10.255.0.1) требует цепочку эксплоитов. Не для новичков.' }
+  ];
+
+  const contracts = [
+    { idx: 0, desc: 'Получить файл passwords.txt с ПК Виктора', reward: 100, reqRep: 0, targetIp: '192.168.1.10', file: 'passwords.txt' },
+    { idx: 1, desc: 'Скачать базу клиентов малого бизнеса', reward: 400, reqRep: 20, targetIp: '10.0.1.100', file: 'client_database.db' },
+    { idx: 2, desc: 'Извлечь email архив компании', reward: 700, reqRep: 40, targetIp: '172.16.0.5', file: 'email_archive.mbox' },
+    { idx: 3, desc: 'Получить ключи доступа из банковского терминала', reward: 1500, reqRep: 80, targetIp: '172.16.50.1', file: 'access_keys.dat' }
+  ];
+
+  content.innerHTML = `
+    <div style="background:#111111;min-height:100%;padding:30px;font-family:'Courier New',monospace;">
+      <div style="text-align:center;margin-bottom:30px;">
+        <h1 style="color:#00ff88;font-size:28px;margin:0;">&#128187; ХакФорум</h1>
+        <p style="color:#888;font-size:12px;margin-top:8px;">Сообщество цифровых исследователей</p>
+      </div>
+
+      <div style="margin-bottom:30px;">
+        <h2 style="color:#00ffcc;font-size:16px;border-bottom:1px solid #333;padding-bottom:8px;margin-bottom:15px;">Советы</h2>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${forumPosts.map(post => `
+            <div style="background:#1a1a1a;border-left:3px solid ${post.color};padding:12px 15px;border-radius:0 6px 6px 0;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                <span style="color:${post.color};font-size:12px;font-weight:bold;">${post.user}</span>
+                <span style="color:#555;font-size:10px;">${Math.floor(Math.random() * 24)}ч назад</span>
+              </div>
+              <p style="color:#ccc;font-size:12px;margin:0;line-height:1.5;">${post.msg}</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div>
+        <h2 style="color:#00ffcc;font-size:16px;border-bottom:1px solid #333;padding-bottom:8px;margin-bottom:15px;">Заказы</h2>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${contracts.map(c => {
+            const completed = completedContracts.includes(c.idx);
+            const meetsRep = rep.black >= c.reqRep;
+            let statusHtml;
+            if (completed) {
+              statusHtml = `<span style="color:#00ff88;font-size:11px;">&#10003; Выполнено</span>`;
+            } else if (!meetsRep) {
+              statusHtml = `<span style="color:#666;font-size:11px;">Требуется репутация: ${c.reqRep}</span>`;
+            } else {
+              statusHtml = `<button class="forum-contract-btn" data-idx="${c.idx}" style="background:#9333ea;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-family:monospace;">Выполнить</button>`;
+            }
+            return `
+              <div style="background:#1a1a2e;border:1px solid #333;border-radius:6px;padding:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                  <div>
+                    <p style="color:#ddd;font-size:13px;margin:0 0 5px 0;">${c.desc}</p>
+                    <p style="color:#666;font-size:11px;margin:0;">Цель: ${c.targetIp} | Файл: ${c.file}</p>
+                  </div>
+                  <div style="text-align:right;">
+                    <p style="color:#00ff88;font-size:14px;font-weight:bold;margin:0 0 5px 0;">${c.reward} DC</p>
+                    ${statusHtml}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+      <div class="forum-message" style="margin-top:15px;padding:10px;text-align:center;font-size:12px;color:#ff8800;display:none;"></div>
+    </div>
+  `;
+
+  content.querySelectorAll('.forum-contract-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      const contract = contracts.find(c => c.idx === idx);
+      if (!contract) return;
+
+      const msgEl = content.querySelector('.forum-message');
+
+      // Check if the file exists in /Downloads
+      const downloadsNode = fileSystem.getNode('/Downloads');
+      let fileFound = false;
+      if (downloadsNode && downloadsNode.type === 'folder' && downloadsNode.children) {
+        fileFound = downloadsNode.children.includes(contract.file);
+      }
+
+      if (fileFound) {
+        addMoney(contract.reward, 'Заказ: ' + contract.desc);
+        addBlackRep(10, 'Выполнение заказа');
+        const completed = storage.get('completed_contracts') || [];
+        completed.push(idx);
+        storage.set('completed_contracts', completed);
+        renderHackForum(content, container, state, win);
+      } else {
+        if (msgEl) {
+          msgEl.textContent = 'Сначала получите нужный файл с целевого сервера.';
+          msgEl.style.display = 'block';
+          setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+        }
+      }
     });
   });
 }
