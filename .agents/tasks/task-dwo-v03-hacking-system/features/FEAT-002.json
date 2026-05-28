@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Antivirus app, VPN app, hacking minigames, and all related CSS/icons. Creates new desktop apps for Antivirus and VPN with full UI, adds 3 hacking minigames (bruteforce reflex game, decrypt pattern matching, exploit path puzzle), registers apps on desktop and start menu, adds system tray indicators.",
+  "status": "in_progress",
+  "steps": [
+    "Create public/icons/antivirus.svg - a shield-shaped SVG icon (green/blue shield with checkmark, similar style to other icons in the project).",
+    "Create public/icons/vpn.svg - a lock/globe SVG icon (globe with lock overlay, similar style to other icons).",
+    "Create src/apps/antivirus.js following the pattern of other apps (export function open()). The app window should have: (a) Dashboard tab showing system status (green 'Система защищена' or red 'Обнаружены угрозы!' based on threat count), last scan time, protection level selector (Базовый/Стандартный/Максимальный). (b) Scan tab with two buttons: 'Быстрая проверка' (3 sec animated scan) and 'Полная проверка' (10 sec animated scan with progress bar). Shows results as list of threats found. (c) Threat system: store threats in localStorage via storage.js key 'system_threats'. Threats have name, severity (low/medium/high), source. Player can 'Удалить угрозу' button on each. Threats are gained from downloading certain files from hacked systems (check in hackingSystem when download happens). (d) Firewall toggle (on/off switch). When ON, stored in storage key 'firewall_active'. Reduces trace danger in terminal. Visual status shown.",
+    "Create src/styles/apps/antivirus.css with styling for the antivirus dashboard, scan animations, threat list, and firewall toggle. Use dark theme consistent with other apps. Green for safe, red for threats.",
+    "Create src/apps/vpn.js following the app pattern. The app window should have: (a) Large circular connect/disconnect button with animation (spinner for 2 sec on connect). (b) Status display: 'Отключён' (grey) or 'Подключён' (green). (c) Fake IP display that changes when connected (generate random IP). (d) Server location selector dropdown with 5 options: Германия, Нидерланды, Швейцария, Япония, США. (e) Connection speed indicator (fake, shows random Mbps). (f) Functional: sets storage key 'vpn_active' to true/false. This is the same key terminal vpn command uses.",
+    "Create src/styles/apps/vpn.css with styling for VPN app. Dark theme, large centered connect button with glow effect when connected, server list, status indicators.",
+    "Create src/apps/hackingMinigames.js with 3 minigames displayed as modal overlays: (a) Bruteforce minigame: numbers scroll in a container, player clicks when correct 4-digit sequence appears highlighted. 3 rounds, each faster (1200ms, 800ms, 500ms interval). Returns promise resolving true (success) or false (fail). (b) Decrypt minigame: shows an encoded word (Caesar cipher shift), player must type the decoded word within 30 seconds. Shows hint (shift amount). Returns promise. (c) Exploit minigame: 4x4 grid of nodes, player must click the correct path from top-left to bottom-right (highlighted start/end). Only adjacent nodes connected by 'wires' are valid. 60 second timer. Returns promise. All minigames create a modal overlay div appended to document.body, remove it when done.",
+    "Create src/styles/apps/hacking-minigames.css with styling for all 3 minigames. Dark hacker theme (dark bg, green/cyan text, monospace font, glow effects). Animated elements for scrolling numbers, grid nodes, timer displays.",
+    "Wire up minigames in terminal.js: bruteforce command triggers bruteforce minigame (success = port hacked), decrypt command triggers decrypt minigame, exploit command triggers exploit minigame.",
+    "Register Antivirus and VPN in src/core/desktop.js: add imports, add to appOpeners object, add to desktopIcons array with Russian names ('Антивирус' and 'VPN').",
+    "Register Antivirus and VPN in src/core/startMenu.js: add to the apps array.",
+    "Update src/core/taskbar.js: add VPN and firewall status indicators to the system tray section. VPN indicator: small icon that is grey when off, green when on (check storage 'vpn_active'). Firewall indicator: small shield icon grey/green. Poll every 2 seconds to update status.",
+    "Import new CSS files in src/main.js: add imports for antivirus.css, vpn.css, hacking-minigames.css."
+  ],
+  "acceptance_criteria": [
+    "Antivirus app opens from desktop icon and shows dashboard with scan functionality",
+    "VPN app opens from desktop icon and toggles vpn_active in localStorage",
+    "Both apps appear in desktop icons grid and start menu",
+    "Hacking minigames render as modal overlays and return success/failure",
+    "Terminal bruteforce/decrypt/exploit commands trigger corresponding minigames",
+    "System tray shows VPN and firewall status indicators",
+    "All text is in Russian",
+    "npm run build succeeds without errors"
+  ],
+  "verification": ["cd /projects/sandbox/JailBreak-v0-9/DigitalWorldOnline && npm run build"],
+  "blocked_reason": null,
+  "findings": ""
+}

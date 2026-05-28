@@ -3,6 +3,7 @@ import * as fileSystem from '../core/fileSystem.js';
 import * as hackingSystem from '../core/hackingSystem.js';
 import * as reputation from '../core/reputation.js';
 import * as storage from '../core/storage.js';
+import { bruteforceMinigame, decryptMinigame, exploitMinigame } from './hackingMinigames.js';
 
 export function open() {
   const win = createWindow({
@@ -171,7 +172,7 @@ function processCommand(input, output, state, container) {
       doConnect(args, output, state);
       break;
     case 'exploit':
-      doExploit(parts, output, state);
+      doExploit(parts, output, state, container);
       break;
     case 'trace':
       doTrace(output, state);
@@ -280,47 +281,33 @@ function doBruteforce(parts, output, state, container) {
     return;
   }
 
-  const tools = hackingSystem.getHackingTools();
-  const diffChances = { 1: 90, 2: 70, 3: 50, 4: 30, 5: 10 };
-  let chance = diffChances[target.difficulty] || 10;
-  if (tools.bruteforceV2) chance += 20;
-  if (chance > 100) chance = 100;
-
   const inputEl = container.querySelector('.terminal-input');
   inputEl.disabled = true;
 
   appendLine(output, `Подбор пароля к ${ip}:${port}...`, state.textColor);
+  appendLine(output, 'Запуск модуля взлома...', state.textColor);
 
-  let progress = 0;
-  const interval = setInterval(() => {
-    progress += 10;
-    const bar = '[' + '='.repeat(progress / 10) + ' '.repeat(10 - progress / 10) + '] ' + progress + '%';
-    appendLine(output, bar, state.textColor);
-    output.scrollTop = output.scrollHeight;
+  bruteforceMinigame().then(success => {
+    if (success) {
+      hackingSystem.markPortHacked(ip, port);
+      reputation.addBlackRep(5, `Взлом порта ${port} на ${ip}`);
+      storage.set('last_hack_time', Date.now());
+      appendLine(output, 'Успешно! Порт взломан.', '#00ff88');
 
-    if (progress >= 100) {
-      clearInterval(interval);
-      const roll = Math.random() * 100;
-      if (roll < chance) {
-        hackingSystem.markPortHacked(ip, port);
-        reputation.addBlackRep(5, `Взлом порта ${port} на ${ip}`);
-        storage.set('last_hack_time', Date.now());
-        appendLine(output, 'Успешно! Порт взломан.', '#00ff88');
-
-        // Check if all ports are hacked
-        const updatedTarget = hackingSystem.getTargetByIp(ip);
-        const allHacked = updatedTarget.ports.every(p => updatedTarget.hackedPorts.includes(p.port));
-        if (allHacked && !updatedTarget.fullyHacked) {
-          hackingSystem.markTargetFullyHacked(ip);
-          appendLine(output, `Цель "${updatedTarget.name}" полностью взломана! Награда: ${updatedTarget.reward} DC`, '#00ff88');
-        }
-      } else {
-        appendLine(output, 'Подбор не удался.', '#f44747');
+      // Check if all ports are hacked
+      const updatedTarget = hackingSystem.getTargetByIp(ip);
+      const allHacked = updatedTarget.ports.every(p => updatedTarget.hackedPorts.includes(p.port));
+      if (allHacked && !updatedTarget.fullyHacked) {
+        hackingSystem.markTargetFullyHacked(ip);
+        appendLine(output, `Цель "${updatedTarget.name}" полностью взломана! Награда: ${updatedTarget.reward} DC`, '#00ff88');
       }
-      inputEl.disabled = false;
-      inputEl.focus();
+    } else {
+      appendLine(output, 'Подбор не удался.', '#f44747');
     }
-  }, 300);
+    inputEl.disabled = false;
+    inputEl.focus();
+    output.scrollTop = output.scrollHeight;
+  });
 }
 
 function doConnect(args, output, state) {
@@ -343,7 +330,7 @@ function doConnect(args, output, state) {
   appendLine(output, 'Доступные команды: ls, cat <файл>, download <файл>, disconnect', state.textColor);
 }
 
-function doExploit(parts, output, state) {
+function doExploit(parts, output, state, container) {
   if (parts.length < 3) {
     appendLine(output, 'Использование: exploit <ip> <уязвимость>', '#f44747');
     return;
@@ -365,11 +352,26 @@ function doExploit(parts, output, state) {
     appendLine(output, `Уязвимость '${vuln}' не найдена на ${ip}.`, '#f44747');
     return;
   }
-  hackingSystem.markTargetFullyHacked(ip);
-  reputation.addBlackRep(10, `Эксплойт ${vuln} на ${ip}`);
-  storage.set('last_hack_time', Date.now());
-  appendLine(output, `Эксплойт применён! Все порты на ${ip} взломаны.`, '#00ff88');
-  appendLine(output, `Цель "${target.name}" полностью взломана! Награда: ${target.reward} DC`, '#00ff88');
+
+  const inputEl = container.querySelector('.terminal-input');
+  inputEl.disabled = true;
+
+  appendLine(output, 'Запуск модуля эксплойта...', state.textColor);
+
+  exploitMinigame().then(success => {
+    if (success) {
+      hackingSystem.markTargetFullyHacked(ip);
+      reputation.addBlackRep(10, `Эксплойт ${vuln} на ${ip}`);
+      storage.set('last_hack_time', Date.now());
+      appendLine(output, `Эксплойт применён! Все порты на ${ip} взломаны.`, '#00ff88');
+      appendLine(output, `Цель "${target.name}" полностью взломана! Награда: ${target.reward} DC`, '#00ff88');
+    } else {
+      appendLine(output, 'Эксплойт не удался. Соединение сброшено.', '#f44747');
+    }
+    inputEl.disabled = false;
+    inputEl.focus();
+    output.scrollTop = output.scrollHeight;
+  });
 }
 
 function doTrace(output, state) {
@@ -413,21 +415,13 @@ function doDecrypt(args, output, state, container) {
     return;
   }
 
-  const target = hackingSystem.getTargetByIp(state.connectedTo);
-  const tools = hackingSystem.getHackingTools();
-  const diffChances = { 1: 90, 2: 80, 3: 60, 4: 40, 5: 20 };
-  let chance = diffChances[target.difficulty] || 20;
-  if (tools.cryptor) chance += 30;
-  if (chance > 100) chance = 100;
-
   const inputEl = container.querySelector('.terminal-input');
   inputEl.disabled = true;
 
-  appendLine(output, 'Дешифровка файла...', state.textColor);
+  appendLine(output, 'Запуск модуля дешифровки...', state.textColor);
 
-  setTimeout(() => {
-    const roll = Math.random() * 100;
-    if (roll < chance) {
+  decryptMinigame().then(success => {
+    if (success) {
       appendLine(output, 'Дешифровка успешна!', '#00ff88');
       file.content.split('\n').forEach(line => {
         appendLine(output, line, state.textColor);
@@ -438,7 +432,7 @@ function doDecrypt(args, output, state, container) {
     inputEl.disabled = false;
     inputEl.focus();
     output.scrollTop = output.scrollHeight;
-  }, 1500);
+  });
 }
 
 function doVpn(args, output, state, container) {

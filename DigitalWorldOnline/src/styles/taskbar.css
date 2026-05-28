@@ -110,6 +110,23 @@
   gap: 2px;
 }
 
+.tray-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin: 0 3px;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.tray-indicator-off {
+  background: #555;
+}
+
+.tray-indicator-on {
+  background: #4ade80;
+  box-shadow: 0 0 4px rgba(74, 222, 128, 0.6);
+}
+
 .tray-icon-btn {
   display: flex;
   align-items: center;

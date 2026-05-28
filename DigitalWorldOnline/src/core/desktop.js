@@ -8,6 +8,8 @@ import { open as openSettings } from '../apps/settings.js';
 import { open as openCalculator } from '../apps/calculator.js';
 import { open as openRecycleBin } from '../apps/recycleBin.js';
 import { open as openWallet } from '../apps/wallet.js';
+import { open as openAntivirus } from '../apps/antivirus.js';
+import { open as openVpn } from '../apps/vpn.js';
 
 const appOpeners = {
   fileExplorer: openFileExplorer,
@@ -17,7 +19,9 @@ const appOpeners = {
   settings: openSettings,
   calculator: openCalculator,
   recycleBin: openRecycleBin,
-  wallet: openWallet
+  wallet: openWallet,
+  antivirus: openAntivirus,
+  vpn: openVpn
 };
 
 const desktopIcons = [
@@ -28,7 +32,9 @@ const desktopIcons = [
   { id: 'settings', name: 'Настройки', icon: '/icons/settings.svg', appId: 'settings' },
   { id: 'recycle-bin', name: 'Корзина', icon: '/icons/recycle-bin.svg', appId: 'recycleBin' },
   { id: 'calculator', name: 'Калькулятор', icon: '/icons/calculator.svg', appId: 'calculator' },
-  { id: 'wallet', name: 'Кошелёк', icon: '/icons/wallet.svg', appId: 'wallet' }
+  { id: 'wallet', name: 'Кошелёк', icon: '/icons/wallet.svg', appId: 'wallet' },
+  { id: 'antivirus', name: 'Антивирус', icon: '/icons/antivirus.svg', appId: 'antivirus' },
+  { id: 'vpn', name: 'VPN', icon: '/icons/vpn.svg', appId: 'vpn' }
 ];
 
 let desktopEl = null;

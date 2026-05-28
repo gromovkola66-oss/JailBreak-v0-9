@@ -10,6 +10,9 @@ import './styles/apps/browser.css';
 import './styles/apps/settings.css';
 import './styles/apps/calculator.css';
 import './styles/apps/wallet.css';
+import './styles/apps/antivirus.css';
+import './styles/apps/vpn.css';
+import './styles/apps/hacking-minigames.css';
 
 import { initFileSystem } from './core/fileSystem.js';
 import { initDesktop } from './core/desktop.js';

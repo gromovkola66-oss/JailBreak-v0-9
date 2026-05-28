@@ -1,4 +1,5 @@
 import { on, getWindows, minimizeWindow, restoreWindow, focusWindow, getActiveWindowId } from './windowManager.js';
+import * as storage from './storage.js';
 
 let taskbarEl = null;
 let clockInterval = null;
@@ -14,6 +15,7 @@ export function initTaskbar() {
   renderTaskbar();
   setupWindowListeners();
   startClock();
+  startTrayIndicators();
 }
 
 function renderTaskbar() {
@@ -28,6 +30,8 @@ function renderTaskbar() {
       </div>
       <div class="taskbar-tray">
         <div class="tray-icons">
+          <span class="tray-indicator" id="tray-vpn-indicator" title="VPN"></span>
+          <span class="tray-indicator" id="tray-firewall-indicator" title="Файрвол"></span>
           <button class="tray-icon-btn" aria-label="Wi-Fi">
             <img src="/icons/wifi.svg" alt="Wi-Fi" />
           </button>
@@ -147,4 +151,24 @@ function updateClock() {
   const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
   const date = now.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric', year: 'numeric' });
   clockEl.innerHTML = `<span class="clock-time">${time}</span><span class="clock-date">${date}</span>`;
+}
+
+function startTrayIndicators() {
+  updateTrayIndicators();
+  setInterval(updateTrayIndicators, 2000);
+}
+
+function updateTrayIndicators() {
+  const vpnEl = document.getElementById('tray-vpn-indicator');
+  const firewallEl = document.getElementById('tray-firewall-indicator');
+  if (!vpnEl || !firewallEl) return;
+
+  const vpnActive = storage.get('vpn_active') || false;
+  const firewallActive = storage.get('firewall_active') || false;
+
+  vpnEl.className = 'tray-indicator ' + (vpnActive ? 'tray-indicator-on' : 'tray-indicator-off');
+  vpnEl.title = vpnActive ? 'VPN: Вкл' : 'VPN: Выкл';
+
+  firewallEl.className = 'tray-indicator ' + (firewallActive ? 'tray-indicator-on' : 'tray-indicator-off');
+  firewallEl.title = firewallActive ? 'Файрвол: Вкл' : 'Файрвол: Выкл';
 }

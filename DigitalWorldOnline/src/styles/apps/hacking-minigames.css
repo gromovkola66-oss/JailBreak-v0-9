@@ -1,0 +1,308 @@
+.minigame-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  animation: mg-fade-in 0.2s ease;
+}
+
+@keyframes mg-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.minigame-content {
+  background: #0a0a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 380px;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 0 40px rgba(0, 255, 136, 0.1);
+}
+
+.minigame-title {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: #00ff88;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  letter-spacing: 3px;
+}
+
+.minigame-round {
+  font-family: 'Consolas', monospace;
+  font-size: 13px;
+  color: #888;
+}
+
+.minigame-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.mg-btn {
+  padding: 10px 24px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.mg-btn-action {
+  background: rgba(0, 255, 136, 0.15);
+  color: #00ff88;
+  border-color: #00ff88;
+}
+
+.mg-btn-action:hover {
+  background: rgba(0, 255, 136, 0.3);
+}
+
+.mg-btn-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  color: #888;
+  border-color: #555;
+}
+
+.mg-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* Bruteforce minigame */
+.bf-scroll-container {
+  position: relative;
+  width: 200px;
+  height: 210px;
+  overflow: hidden;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #050510;
+}
+
+.bf-numbers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 2px;
+}
+
+.bf-center-zone {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 30px;
+  margin-top: -15px;
+  border-top: 1px solid #00ffff;
+  border-bottom: 1px solid #00ffff;
+  background: rgba(0, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+.bf-line {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 20px;
+  color: #00ff88;
+  padding: 2px 0;
+  text-align: center;
+  opacity: 0.4;
+}
+
+.bf-line-center {
+  opacity: 1;
+  color: #00ffff;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
+.bf-line-success {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.2);
+}
+
+.bf-line-fail {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.bf-target {
+  font-family: 'Consolas', monospace;
+  font-size: 14px;
+  color: #aaa;
+}
+
+.bf-target-value {
+  color: #00ffff;
+  font-weight: bold;
+}
+
+/* Decrypt minigame */
+.dc-timer {
+  font-family: 'Consolas', monospace;
+  font-size: 14px;
+  color: #4ade80;
+  transition: color 0.3s;
+}
+
+.dc-timer-urgent {
+  color: #facc15;
+}
+
+.dc-timer-critical {
+  color: #ef4444;
+  animation: timer-blink 0.5s ease-in-out infinite;
+}
+
+@keyframes timer-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.dc-encoded {
+  font-family: 'Consolas', monospace;
+  font-size: 16px;
+  color: #e0e0e0;
+}
+
+.dc-encoded-word {
+  color: #00ffff;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.dc-hint {
+  font-family: 'Consolas', monospace;
+  font-size: 13px;
+  color: #facc15;
+}
+
+.dc-alphabet {
+  font-family: 'Consolas', monospace;
+  font-size: 10px;
+  color: #666;
+  word-break: break-all;
+  text-align: center;
+  max-width: 350px;
+}
+
+.dc-input-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.dc-input {
+  flex: 1;
+  background: #0f172a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: #fff;
+  font-family: 'Consolas', monospace;
+  font-size: 14px;
+  outline: none;
+}
+
+.dc-input:focus {
+  border-color: #00ff88;
+  box-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+}
+
+/* Exploit minigame */
+.ex-timer {
+  font-family: 'Consolas', monospace;
+  font-size: 14px;
+  color: #4ade80;
+  transition: color 0.3s;
+}
+
+.ex-info {
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+  color: #888;
+}
+
+.ex-grid {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background: #050510;
+  border: 1px solid #333;
+  border-radius: 8px;
+}
+
+.ex-node {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #444;
+  background: #1a1a2e;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.ex-node:hover {
+  border-color: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+}
+
+.ex-node-start {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.2);
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+}
+
+.ex-node-end {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+.ex-node-active {
+  border-color: #00ffff;
+  background: rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.ex-conn-right::after {
+  content: '';
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  background: #444;
+  transform: translateY(-50%);
+}
+
+.ex-conn-bottom::before {
+  content: '';
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  background: #444;
+  transform: translateX(-50%);
+}
+
+.ex-node-active.ex-conn-right::after,
+.ex-node-active.ex-conn-bottom::before {
+  background: #00ffff;
+}
