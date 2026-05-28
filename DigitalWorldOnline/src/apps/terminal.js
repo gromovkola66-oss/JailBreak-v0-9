@@ -5,6 +5,8 @@ import * as reputation from '../core/reputation.js';
 import * as storage from '../core/storage.js';
 import { addMoney } from '../core/economy.js';
 import { bruteforceMinigame, decryptMinigame, exploitMinigame } from './hackingMinigames.js';
+import { updateQuestStep, getActiveQuests } from '../core/questSystem.js';
+import { addMessageFromNpc } from './messenger.js';
 
 export function open() {
   const win = createWindow({
@@ -129,6 +131,8 @@ function processCommand(input, output, state, container) {
   switch (cmd) {
     case 'help':
       printHelp(output, state);
+      // Quest trigger: terminal_help
+      updateQuestStep('first_steps', 'terminal_help', null);
       break;
     case 'dir':
       printDir(output, state);
@@ -237,6 +241,16 @@ function connectedDownload(filename, output, state) {
   }
   appendLine(output, 'Файл загружен: ' + filename, '#00ff88');
 
+  // Quest trigger: download_file
+  const activeQs = getActiveQuests();
+  activeQs.forEach(q => {
+    q.steps.forEach(s => {
+      if (s.type === 'download_file' && s.target === filename) {
+        updateQuestStep(q.id, 'download_file', filename);
+      }
+    });
+  });
+
   addMoney(10, 'Скачивание: ' + filename);
   reputation.addBlackRep(5, 'Скачивание файлов');
 
@@ -263,6 +277,19 @@ function doScan(args, output, state) {
     return;
   }
   const ip = args.trim();
+
+  // Special case: Olga's PC
+  if (ip === '10.0.2.50') {
+    appendLine(output, 'Сканирование 10.0.2.50...', state.textColor);
+    appendLine(output, 'Цель: ПК Ольги "Firewall" Жуковой', state.textColor);
+    appendLine(output, 'Обнаружена мощная защита. Все порты защищены.', state.textColor);
+    appendLine(output, 'Файрвол уровня "военный". Взлом невозможен.', state.textColor);
+    // Quest trigger: hack_attempt_olga
+    updateQuestStep('stress_test', 'hack_attempt_olga', null);
+    addMessageFromNpc('olga', 'Неплохая попытка! Я засекла твой скан. Не обижаюсь - уважаю смелость. Может, будем работать вместе?');
+    return;
+  }
+
   const target = hackingSystem.getTargetByIp(ip);
   if (!target) {
     appendLine(output, `Хост ${ip} не найден в сети.`, '#f44747');
@@ -325,6 +352,15 @@ function doBruteforce(parts, output, state, container) {
         addMoney(updatedTarget.reward, 'Взлом: ' + updatedTarget.name);
         reputation.addBlackRep(updatedTarget.difficulty * 10, 'Взлом: ' + updatedTarget.name);
         appendLine(output, `Система полностью взломана! Получено ${updatedTarget.reward} DC`, '#00ff88');
+        // Quest trigger: hack_target
+        const activeQuests = getActiveQuests();
+        activeQuests.forEach(q => {
+          q.steps.forEach(s => {
+            if (s.type === 'hack_target' && s.target === ip) {
+              updateQuestStep(q.id, 'hack_target', ip);
+            }
+          });
+        });
       }
     } else {
       appendLine(output, 'Подбор не удался.', '#f44747');
@@ -395,6 +431,15 @@ function doExploit(parts, output, state, container) {
       reputation.addBlackRep(target.difficulty * 10, 'Взлом: ' + target.name);
       appendLine(output, `Эксплойт применён! Все порты на ${ip} взломаны.`, '#00ff88');
       appendLine(output, `Система полностью взломана! Получено ${target.reward} DC`, '#00ff88');
+      // Quest trigger: hack_target
+      const activeQuests = getActiveQuests();
+      activeQuests.forEach(q => {
+        q.steps.forEach(s => {
+          if (s.type === 'hack_target' && s.target === ip) {
+            updateQuestStep(q.id, 'hack_target', ip);
+          }
+        });
+      });
     } else {
       appendLine(output, 'Эксплойт не удался. Соединение сброшено.', '#f44747');
     }
@@ -474,6 +519,8 @@ function doVpn(args, output, state, container) {
     const inputEl = container.querySelector('.terminal-input');
     inputEl.style.color = '#00ff88';
     appendLine(output, '[VPN] VPN активирован. Соединение защищено.', '#00ff88');
+    // Quest trigger: vpn_activate
+    updateQuestStep('dark_side', 'vpn_activate', null);
   } else if (arg === 'off') {
     storage.set('vpn_active', false);
     state.textColor = '#cccccc';

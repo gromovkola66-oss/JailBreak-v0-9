@@ -255,10 +255,15 @@ export function completeQuest(id) {
   // NPC posts react to quest completion
   if (id === 'first_steps') {
     addNpcPost('alexey', '\u0415\u0449\u0451 \u043e\u0434\u0438\u043d \u043d\u043e\u0432\u0438\u0447\u043e\u043a \u043e\u0441\u0432\u043e\u0438\u043b\u0441\u044f! \u0420\u0430\u0434 \u043f\u043e\u043c\u043e\u0447\u044c \u{1F389}');
+    addMessageFromNpc('alexey', 'Отлично! Теперь ты знаешь основы. Попробуй заработать на ФрилансБирже.');
+  } else if (id === 'freelance_beginner') {
+    addMessageFromNpc('alexey', 'Фриланс - хороший старт. Но есть способы заработать больше... Установи VPN и загляни на ХакФорум.');
   } else if (id === 'first_hack') {
     addNpcPost('ghost', '\u041d\u043e\u0432\u044b\u0439 \u043a\u0430\u0434\u0440 \u0432 \u0434\u0435\u043b\u0435. \u0412\u043f\u0435\u0447\u0430\u0442\u043b\u044f\u0435\u0442.');
+    addMessageFromNpc('ghost', 'Чисто сработано. Ты мне нравишься. У меня будет для тебя ещё работа.');
   } else if (id === 'journalist_investigation') {
     addNpcPost('marina', '\u041f\u043e\u043b\u0443\u0447\u0438\u043b\u0430 \u0432\u0430\u0436\u043d\u044b\u0435 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b. \u0421\u043a\u043e\u0440\u043e \u0431\u0443\u0434\u0435\u0442 \u0433\u0440\u043e\u043c\u043a\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f!');
+    addMessageFromNpc('marina', 'Спасибо! Эти документы - именно то, что нужно. Ты очень помог.');
   } else if (id === 'help_with_virus') {
     addNpcPost('anna', '\u0421\u043f\u0430\u0441\u0438\u0431\u043e \u0437\u0430 \u043f\u043e\u043c\u043e\u0449\u044c \u0441 \u0432\u0438\u0440\u0443\u0441\u043e\u043c! \u0422\u0435\u043f\u0435\u0440\u044c \u0432\u0441\u0451 \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0442 \u{1F60A}');
   }

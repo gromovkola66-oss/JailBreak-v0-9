@@ -2,6 +2,8 @@ import { createWindow, registerCleanup } from '../core/windowManager.js';
 import * as storage from '../core/storage.js';
 import { getNpcById } from '../core/npcSystem.js';
 import { showNotification } from '../core/notifications.js';
+import { updateQuestStep } from '../core/questSystem.js';
+import { addMoney, spendMoney } from '../core/economy.js';
 
 const MSG_KEY = 'messenger_messages';
 const UNREAD_KEY = 'messenger_unread';
@@ -105,6 +107,94 @@ const dialogues = {
         {
           text: 'Что мне делать на форуме?',
           reply: 'Осмотрись. Почитай. Когда будешь готов к настоящему делу - я найду тебя сам.',
+          nextDialogue: null
+        }
+      ]
+    }
+  ],
+  maxim: [
+    {
+      id: 'initial',
+      trigger: 'auto',
+      responses: [
+        {
+          text: 'Расскажи подробнее',
+          reply: 'Вложи 200 DC, через некоторое время получишь 400. Гарантирую... ну, почти. Рынок - штука непредсказуемая.',
+          nextDialogue: 'invest_confirm'
+        },
+        {
+          text: 'Не интересует',
+          reply: 'Как знаешь. Но предложение остаётся в силе.',
+          nextDialogue: null
+        }
+      ]
+    },
+    {
+      id: 'invest_confirm',
+      trigger: 'manual',
+      responses: [
+        {
+          text: 'Вложить 200 DC',
+          action: 'invest',
+          reply: 'Отлично! Деньги в работе. Жди результат...',
+          nextDialogue: null
+        },
+        {
+          text: 'Подумаю ещё',
+          reply: 'Не затягивай, возможности не ждут!',
+          nextDialogue: null
+        }
+      ]
+    }
+  ],
+  victor: [
+    {
+      id: 'initial',
+      trigger: 'auto',
+      responses: [
+        {
+          text: 'Что за предложение?',
+          reply: 'У меня есть покупатели на данные. Если у тебя есть что-нибудь интересное из взломов - я куплю. 800 DC прямо сейчас.',
+          nextDialogue: 'sell_confirm'
+        },
+        {
+          text: 'Нет, спасибо',
+          reply: 'Зря. Деньги на дороге не валяются.',
+          nextDialogue: null
+        }
+      ]
+    },
+    {
+      id: 'sell_confirm',
+      trigger: 'manual',
+      responses: [
+        {
+          text: 'Продать данные (800 DC, -20 белая репутация)',
+          action: 'sell_data',
+          reply: 'Сделка! Деньги на твоём счету. Приятно иметь дело с деловым человеком.',
+          nextDialogue: null
+        },
+        {
+          text: 'Нет, это слишком рискованно',
+          reply: 'Трусишь? Ладно, ещё передумаешь.',
+          nextDialogue: null
+        }
+      ]
+    }
+  ],
+  olga: [
+    {
+      id: 'initial',
+      trigger: 'auto',
+      responses: [
+        {
+          text: 'Работать вместе? Как?',
+          reply: 'Я специалист по защите. Ты - по атаке. Вместе мы можем тестировать системы. Подумай об этом.',
+          nextDialogue: null
+        },
+        {
+          text: 'Извини за скан',
+          reply: 'Не извиняйся. Это комплимент! Мало кто решается. Уважаю.',
           nextDialogue: null
         }
       ]
@@ -375,6 +465,29 @@ function handlePlayerChoice(chatEl, container, npcId, response) {
   // Clear choices
   const choicesEl = chatEl.querySelector('.messenger-choices');
   choicesEl.innerHTML = '';
+
+  // Handle special actions
+  if (response.action === 'invest') {
+    const success = spendMoney(200, 'Инвестиция Максима');
+    if (success === false) {
+      addMessageToHistory(npcId, 'У тебя недостаточно средств. Нужно 200 DC.');
+      renderMessages(chatEl, npcId);
+      setTimeout(() => renderChoices(chatEl, container, npcId), 300);
+      return;
+    }
+    updateQuestStep('investment', 'invest_money', null);
+    // Random outcome after 30 seconds
+    setTimeout(() => {
+      if (Math.random() < 0.5) {
+        addMoney(400, 'Возврат инвестиции');
+        addMessageFromNpc('maxim', 'Отличные новости! Инвестиция удвоилась! 400 DC на твоём счету. Я же говорил!');
+      } else {
+        addMessageFromNpc('maxim', 'Плохие новости... Рынок обвалился. Деньги потеряны. Извини, бро. В следующий раз повезёт.');
+      }
+    }, 30000);
+  } else if (response.action === 'sell_data') {
+    updateQuestStep('dubious_offer', 'sell_data', null);
+  }
 
   // Show typing indicator
   const messagesEl = chatEl.querySelector('.messenger-messages');

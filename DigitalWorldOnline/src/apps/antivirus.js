@@ -1,5 +1,7 @@
 import { createWindow } from '../core/windowManager.js';
 import * as storage from '../core/storage.js';
+import { updateQuestStep } from '../core/questSystem.js';
+import { addMessageFromNpc } from './messenger.js';
 
 export function open() {
   const win = createWindow({
@@ -199,6 +201,10 @@ function runScan(container, duration, threatChance, render) {
     if (progress >= 100) {
       clearInterval(interval);
       storage.set('last_scan_time', Date.now());
+
+      // Quest trigger: antivirus_scan
+      updateQuestStep('help_with_virus', 'antivirus_scan', null);
+      addMessageFromNpc('anna', 'Ой, спасибо огромное! Всё заработало! Ты лучший \u{1F60A}');
 
       const found = Math.random() < threatChance;
       if (found) {

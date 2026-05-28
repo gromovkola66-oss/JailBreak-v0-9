@@ -1,5 +1,6 @@
 import { on, getWindows, minimizeWindow, restoreWindow, focusWindow, getActiveWindowId } from './windowManager.js';
 import * as storage from './storage.js';
+import { getUnreadCount } from '../apps/messenger.js';
 
 let taskbarEl = null;
 let clockInterval = null;
@@ -8,7 +9,8 @@ let trayIndicatorInterval = null;
 const pinnedApps = [
   { id: 'fileExplorer', name: 'Проводник', icon: '/icons/file-explorer.svg' },
   { id: 'browser', name: 'Браузер', icon: '/icons/browser.svg' },
-  { id: 'terminal', name: 'Терминал', icon: '/icons/terminal.svg' }
+  { id: 'terminal', name: 'Терминал', icon: '/icons/terminal.svg' },
+  { id: 'messenger', name: 'Мессенджер', icon: '/icons/messenger.svg' }
 ];
 
 export function initTaskbar() {
@@ -157,7 +159,11 @@ function updateClock() {
 function startTrayIndicators() {
   if (trayIndicatorInterval) clearInterval(trayIndicatorInterval);
   updateTrayIndicators();
-  trayIndicatorInterval = setInterval(updateTrayIndicators, 2000);
+  updateMessengerBadge();
+  trayIndicatorInterval = setInterval(() => {
+    updateTrayIndicators();
+    updateMessengerBadge();
+  }, 2000);
 }
 
 function updateTrayIndicators() {
@@ -173,4 +179,21 @@ function updateTrayIndicators() {
 
   firewallEl.className = 'tray-indicator ' + (firewallActive ? 'tray-indicator-on' : 'tray-indicator-off');
   firewallEl.title = firewallActive ? 'Файрвол: Вкл' : 'Файрвол: Выкл';
+}
+
+function updateMessengerBadge() {
+  const messengerBtn = document.querySelector('.taskbar-app-btn[data-app-id="messenger"]');
+  if (!messengerBtn) return;
+  const count = getUnreadCount();
+  let badge = messengerBtn.querySelector('.taskbar-badge');
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'taskbar-badge';
+      messengerBtn.appendChild(badge);
+    }
+    badge.textContent = count > 9 ? '9+' : count;
+  } else if (badge) {
+    badge.remove();
+  }
 }

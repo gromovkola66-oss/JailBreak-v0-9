@@ -1,5 +1,6 @@
 import { createWindow } from '../core/windowManager.js';
 import * as storage from '../core/storage.js';
+import { updateQuestStep } from '../core/questSystem.js';
 
 const servers = [
   { name: 'Германия', prefix: '185.234' },
@@ -81,6 +82,8 @@ function renderApp(container) {
         setTimeout(() => {
           state.connecting = false;
           storage.set('vpn_active', true);
+          // Quest trigger: vpn_activate
+          updateQuestStep('dark_side', 'vpn_activate', null);
           const srv = servers[state.selectedServer];
           state.currentIp = `${srv.prefix}.${Math.floor(Math.random() * 200) + 10}.${Math.floor(Math.random() * 200) + 10}`;
           render();

@@ -5,7 +5,8 @@ import { getHackingTools, purchaseTool } from '../core/hackingSystem.js';
 import { getReputation, addBlackRep } from '../core/reputation.js';
 import * as fileSystem from '../core/fileSystem.js';
 import { getNpcs, getNpcById, getNpcPosts, addNpcPost, getRelationship, updateRelationship } from '../core/npcSystem.js';
-import { open as openMessenger } from './messenger.js';
+import { open as openMessenger, addMessageFromNpc } from './messenger.js';
+import { updateQuestStep } from '../core/questSystem.js';
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -251,6 +252,13 @@ function loadPage(container, state, win) {
       renderShadowMarket(content, container, state, win);
     } else if (url === 'hackforum.onion') {
       renderHackForum(content, container, state, win);
+      // Quest trigger: visit_hackforum
+      updateQuestStep('dark_side', 'visit_hackforum', null);
+      const darkSideVisited = storage.get('hackforum_first_visit');
+      if (!darkSideVisited) {
+        storage.set('hackforum_first_visit', true);
+        addMessageFromNpc('ghost', 'Слышал о тебе от Кодера. Ты на правильном пути. Если хочешь заработать - у меня есть работа. IP: 192.168.1.10. Скань, брутфорсь, зайди.');
+      }
     } else {
       renderNotFound(content, url, container, state, win);
     }
@@ -707,6 +715,8 @@ function renderFreelance(content, container, state, win) {
           const completed = storage.get('completed_jobs') || [];
           completed.push(job.id);
           storage.set('completed_jobs', completed);
+          // Quest trigger: freelance_complete
+          updateQuestStep('freelance_beginner', 'freelance_complete', null);
           state.activeJob = null;
 
           if (progressText) progressText.textContent = `Задание выполнено! +${job.reward} DC`;
