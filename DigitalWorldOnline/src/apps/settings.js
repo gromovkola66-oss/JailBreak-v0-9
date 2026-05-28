@@ -73,6 +73,11 @@ function renderPersonalization(content) {
     { name: 'Тёмные', value: 'linear-gradient(135deg, #232526 0%, #414345 100%)' }
   ];
 
+  const purchasedWallpapers = storage.get('purchased_wallpapers') || [];
+  purchasedWallpapers.forEach(pw => {
+    wallpapers.push({ name: pw.name, value: pw.value });
+  });
+
   const accents = ['#0078D4', '#FF8C00', '#E81123', '#0B6A0B', '#8764B8', '#00B7C3', '#767676', '#CA5010'];
 
   content.innerHTML = `
