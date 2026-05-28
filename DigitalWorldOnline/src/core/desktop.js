@@ -19,13 +19,13 @@ const appOpeners = {
 };
 
 const desktopIcons = [
-  { id: 'file-explorer', name: 'File Explorer', icon: '/icons/file-explorer.svg', appId: 'fileExplorer' },
-  { id: 'notepad', name: 'Notepad', icon: '/icons/notepad.svg', appId: 'notepad' },
-  { id: 'terminal', name: 'Terminal', icon: '/icons/terminal.svg', appId: 'terminal' },
-  { id: 'browser', name: 'Browser', icon: '/icons/browser.svg', appId: 'browser' },
-  { id: 'settings', name: 'Settings', icon: '/icons/settings.svg', appId: 'settings' },
-  { id: 'recycle-bin', name: 'Recycle Bin', icon: '/icons/recycle-bin.svg', appId: 'recycleBin' },
-  { id: 'calculator', name: 'Calculator', icon: '/icons/calculator.svg', appId: 'calculator' }
+  { id: 'file-explorer', name: 'Проводник', icon: '/icons/file-explorer.svg', appId: 'fileExplorer' },
+  { id: 'notepad', name: 'Блокнот', icon: '/icons/notepad.svg', appId: 'notepad' },
+  { id: 'terminal', name: 'Терминал', icon: '/icons/terminal.svg', appId: 'terminal' },
+  { id: 'browser', name: 'Браузер', icon: '/icons/browser.svg', appId: 'browser' },
+  { id: 'settings', name: 'Настройки', icon: '/icons/settings.svg', appId: 'settings' },
+  { id: 'recycle-bin', name: 'Корзина', icon: '/icons/recycle-bin.svg', appId: 'recycleBin' },
+  { id: 'calculator', name: 'Калькулятор', icon: '/icons/calculator.svg', appId: 'calculator' }
 ];
 
 let desktopEl = null;
@@ -104,18 +104,18 @@ function showContextMenu(x, y) {
   contextMenuEl.innerHTML = `
     <div class="context-menu-content">
       <div class="context-menu-item context-menu-submenu">
-        <span>New</span>
+        <span>Создать</span>
         <span class="context-menu-arrow">&#9656;</span>
         <div class="context-submenu">
-          <div class="context-menu-item" data-action="new-folder">Folder</div>
-          <div class="context-menu-item" data-action="new-file">Text Document</div>
+          <div class="context-menu-item" data-action="new-folder">Папку</div>
+          <div class="context-menu-item" data-action="new-file">Текстовый документ</div>
         </div>
       </div>
       <div class="context-menu-separator"></div>
-      <div class="context-menu-item" data-action="refresh">Refresh</div>
+      <div class="context-menu-item" data-action="refresh">Обновить</div>
       <div class="context-menu-separator"></div>
-      <div class="context-menu-item" data-action="display-settings">Display settings</div>
-      <div class="context-menu-item" data-action="personalize">Personalize</div>
+      <div class="context-menu-item" data-action="display-settings">Параметры экрана</div>
+      <div class="context-menu-item" data-action="personalize">Персонализация</div>
     </div>
   `;
 
@@ -146,10 +146,10 @@ function handleContextAction(action) {
     case 'refresh':
       break;
     case 'display-settings':
-      openApp('settings', 'Settings', '/icons/settings.svg');
+      openApp('settings', 'Настройки', '/icons/settings.svg');
       break;
     case 'personalize':
-      openApp('settings', 'Settings', '/icons/settings.svg');
+      openApp('settings', 'Настройки', '/icons/settings.svg');
       break;
   }
 }

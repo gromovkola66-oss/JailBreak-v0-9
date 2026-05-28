@@ -4,7 +4,7 @@ import * as storage from '../core/storage.js';
 
 export function open() {
   const win = createWindow({
-    title: 'Settings',
+    title: 'Настройки',
     icon: '/icons/settings.svg',
     appId: 'settings',
     width: 800,
@@ -22,15 +22,15 @@ function render(container, state) {
     <div class="settings-sidebar">
       <div class="settings-sidebar-item ${state.page === 'personalization' ? 'active' : ''}" data-page="personalization">
         <span>&#127912;</span>
-        <span>Personalization</span>
+        <span>Персонализация</span>
       </div>
       <div class="settings-sidebar-item ${state.page === 'system' ? 'active' : ''}" data-page="system">
         <span>&#128187;</span>
-        <span>System</span>
+        <span>Система</span>
       </div>
       <div class="settings-sidebar-item ${state.page === 'about' ? 'active' : ''}" data-page="about">
         <span>&#8505;</span>
-        <span>About</span>
+        <span>О системе</span>
       </div>
     </div>
     <div class="settings-content"></div>
@@ -63,22 +63,22 @@ function renderPersonalization(content) {
   const currentAccent = storage.get('accent') || '#0078D4';
 
   const wallpapers = [
-    { name: 'Default', value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-    { name: 'Ocean', value: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)' },
-    { name: 'Sunset', value: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-    { name: 'Forest', value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' },
-    { name: 'Night', value: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)' },
-    { name: 'Autumn', value: 'linear-gradient(135deg, #f12711 0%, #f5af19 100%)' },
-    { name: 'Sky', value: 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)' },
-    { name: 'Dark', value: 'linear-gradient(135deg, #232526 0%, #414345 100%)' }
+    { name: 'По умолчанию', value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+    { name: 'Океан', value: 'linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)' },
+    { name: 'Закат', value: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+    { name: 'Лес', value: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' },
+    { name: 'Ночь', value: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)' },
+    { name: 'Осень', value: 'linear-gradient(135deg, #f12711 0%, #f5af19 100%)' },
+    { name: 'Небо', value: 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)' },
+    { name: 'Тёмные', value: 'linear-gradient(135deg, #232526 0%, #414345 100%)' }
   ];
 
   const accents = ['#0078D4', '#FF8C00', '#E81123', '#0B6A0B', '#8764B8', '#00B7C3', '#767676', '#CA5010'];
 
   content.innerHTML = `
-    <h2>Personalization</h2>
+    <h2>Персонализация</h2>
     <div class="settings-section">
-      <h3>Wallpaper</h3>
+      <h3>Обои</h3>
       <div class="settings-color-grid" style="grid-template-columns:repeat(4,1fr);">
         ${wallpapers.map(w => `
           <div class="settings-color-swatch ${currentWallpaper === w.value ? 'active' : ''}" 
@@ -89,14 +89,14 @@ function renderPersonalization(content) {
       </div>
     </div>
     <div class="settings-section">
-      <h3>Theme</h3>
+      <h3>Тема</h3>
       <div class="settings-option">
-        <span>Dark mode</span>
+        <span>Тёмная тема</span>
         <div class="settings-toggle ${currentTheme === 'dark' ? 'active' : ''}" data-toggle="theme"></div>
       </div>
     </div>
     <div class="settings-section">
-      <h3>Accent Color</h3>
+      <h3>Акцентный цвет</h3>
       <div class="settings-color-grid">
         ${accents.map(c => `
           <div class="settings-color-swatch ${currentAccent === c ? 'active' : ''}" 
@@ -139,38 +139,38 @@ function renderPersonalization(content) {
 
 function renderSystem(content) {
   content.innerHTML = `
-    <h2>System</h2>
+    <h2>Система</h2>
     <div class="settings-section">
-      <h3>Device specifications</h3>
-      <div class="settings-option"><span>Device name</span><span>DIGITAL-WORLD-PC</span></div>
-      <div class="settings-option"><span>Processor</span><span>Intel Core i9-13900K @ 5.80 GHz</span></div>
-      <div class="settings-option"><span>Installed RAM</span><span>32.0 GB</span></div>
-      <div class="settings-option"><span>System type</span><span>64-bit operating system, x64-based processor</span></div>
-      <div class="settings-option"><span>Display</span><span>2560 x 1440 @ 165Hz</span></div>
+      <h3>Характеристики устройства</h3>
+      <div class="settings-option"><span>Имя устройства</span><span>DIGITAL-WORLD-PC</span></div>
+      <div class="settings-option"><span>Процессор</span><span>Intel Core i9-13900K @ 5.80 GHz</span></div>
+      <div class="settings-option"><span>Оперативная память</span><span>32.0 GB</span></div>
+      <div class="settings-option"><span>Тип системы</span><span>64-разрядная ОС, процессор x64</span></div>
+      <div class="settings-option"><span>Дисплей</span><span>2560 x 1440 @ 165Hz</span></div>
     </div>
     <div class="settings-section">
-      <h3>Storage</h3>
-      <div class="settings-option"><span>Drive C:</span><span>512 GB NVMe SSD (234 GB free)</span></div>
-      <div class="settings-option"><span>Drive D:</span><span>2 TB HDD (1.4 TB free)</span></div>
+      <h3>Хранилище</h3>
+      <div class="settings-option"><span>Диск C:</span><span>512 GB NVMe SSD (234 GB free)</span></div>
+      <div class="settings-option"><span>Диск D:</span><span>2 TB HDD (1.4 TB free)</span></div>
     </div>
   `;
 }
 
 function renderAbout(content) {
   content.innerHTML = `
-    <h2>About</h2>
+    <h2>О системе</h2>
     <div class="settings-section">
-      <h3>Digital World Online</h3>
-      <div class="settings-option"><span>Edition</span><span>Digital World Online</span></div>
-      <div class="settings-option"><span>Version</span><span>1.0.0</span></div>
-      <div class="settings-option"><span>OS build</span><span>22631.1234</span></div>
+      <h3>Цифровой Мир Онлайн</h3>
+      <div class="settings-option"><span>Редакция</span><span>Digital World Online</span></div>
+      <div class="settings-option"><span>Версия</span><span>1.0.0</span></div>
+      <div class="settings-option"><span>Сборка ОС</span><span>22631.1234</span></div>
     </div>
     <div class="settings-section">
-      <h3>Device specifications</h3>
-      <div class="settings-option"><span>Device name</span><span>DIGITAL-WORLD-PC</span></div>
-      <div class="settings-option"><span>Processor</span><span>Intel Core i9-13900K @ 5.80 GHz</span></div>
-      <div class="settings-option"><span>Installed RAM</span><span>32.0 GB</span></div>
-      <div class="settings-option"><span>System type</span><span>64-bit operating system, x64-based processor</span></div>
+      <h3>Характеристики устройства</h3>
+      <div class="settings-option"><span>Имя устройства</span><span>DIGITAL-WORLD-PC</span></div>
+      <div class="settings-option"><span>Процессор</span><span>Intel Core i9-13900K @ 5.80 GHz</span></div>
+      <div class="settings-option"><span>Оперативная память</span><span>32.0 GB</span></div>
+      <div class="settings-option"><span>Тип системы</span><span>64-разрядная ОС, процессор x64</span></div>
     </div>
   `;
 }

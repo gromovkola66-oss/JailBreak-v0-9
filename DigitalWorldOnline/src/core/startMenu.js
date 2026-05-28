@@ -1,13 +1,13 @@
 import { openApp } from './desktop.js';
 
 const apps = [
-  { id: 'fileExplorer', name: 'File Explorer', icon: '/icons/file-explorer.svg' },
-  { id: 'notepad', name: 'Notepad', icon: '/icons/notepad.svg' },
-  { id: 'terminal', name: 'Terminal', icon: '/icons/terminal.svg' },
-  { id: 'browser', name: 'Browser', icon: '/icons/browser.svg' },
-  { id: 'settings', name: 'Settings', icon: '/icons/settings.svg' },
-  { id: 'calculator', name: 'Calculator', icon: '/icons/calculator.svg' },
-  { id: 'recycleBin', name: 'Recycle Bin', icon: '/icons/recycle-bin.svg' }
+  { id: 'fileExplorer', name: 'Проводник', icon: '/icons/file-explorer.svg' },
+  { id: 'notepad', name: 'Блокнот', icon: '/icons/notepad.svg' },
+  { id: 'terminal', name: 'Терминал', icon: '/icons/terminal.svg' },
+  { id: 'browser', name: 'Браузер', icon: '/icons/browser.svg' },
+  { id: 'settings', name: 'Настройки', icon: '/icons/settings.svg' },
+  { id: 'calculator', name: 'Калькулятор', icon: '/icons/calculator.svg' },
+  { id: 'recycleBin', name: 'Корзина', icon: '/icons/recycle-bin.svg' }
 ];
 
 let startMenuEl = null;
@@ -24,19 +24,19 @@ function renderStartMenu() {
     <div class="start-menu-content">
       <div class="start-menu-search">
         <img src="/icons/search.svg" alt="" class="start-search-icon" />
-        <input type="text" placeholder="Type here to search" class="start-search-input" id="start-search" />
+        <input type="text" placeholder="Введите для поиска" class="start-search-input" id="start-search" />
       </div>
       <div class="start-menu-section">
         <div class="start-menu-section-header">
-          <span>Pinned</span>
-          <button class="start-all-apps-btn" id="all-apps-btn">All apps &rarr;</button>
+          <span>Закреплённые</span>
+          <button class="start-all-apps-btn" id="all-apps-btn">Все приложения &rarr;</button>
         </div>
         <div class="start-menu-grid" id="start-pinned-grid"></div>
       </div>
       <div class="start-menu-all-apps" id="start-all-apps" style="display:none;">
         <div class="start-menu-section-header">
-          <button class="start-all-apps-btn" id="back-to-pinned-btn">&larr; Back</button>
-          <span>All apps</span>
+          <button class="start-all-apps-btn" id="back-to-pinned-btn">&larr; Назад</button>
+          <span>Все приложения</span>
         </div>
         <div class="start-all-apps-list" id="start-all-apps-list"></div>
       </div>
@@ -50,9 +50,9 @@ function renderStartMenu() {
             <img src="/icons/power.svg" alt="Power" />
           </button>
           <div class="power-menu" id="power-menu" style="display:none;">
-            <button class="power-menu-item" data-action="sleep">Sleep</button>
-            <button class="power-menu-item" data-action="restart">Restart</button>
-            <button class="power-menu-item" data-action="shutdown">Shut down</button>
+            <button class="power-menu-item" data-action="sleep">Спящий режим</button>
+            <button class="power-menu-item" data-action="restart">Перезагрузка</button>
+            <button class="power-menu-item" data-action="shutdown">Выключение</button>
           </div>
         </div>
       </div>
@@ -154,10 +154,10 @@ function performPowerAction(action) {
 
   switch (action) {
     case 'shutdown':
-      overlay.innerHTML = '<div class="power-text">Shutting down...</div>';
+      overlay.innerHTML = '<div class="power-text">Завершение работы...</div>';
       break;
     case 'restart':
-      overlay.innerHTML = '<div class="power-text">Restarting...</div>';
+      overlay.innerHTML = '<div class="power-text">Перезагрузка...</div>';
       break;
     case 'sleep':
       overlay.innerHTML = '';

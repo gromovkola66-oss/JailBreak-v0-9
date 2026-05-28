@@ -36,8 +36,8 @@ function render(container, state) {
   const input = container.querySelector('.terminal-input');
   const promptEl = container.querySelector('.terminal-prompt');
 
-  appendLine(output, 'Microsoft Windows [Version 10.0.22631.1234]', state.textColor);
-  appendLine(output, '(c) Digital World Online. All rights reserved.', state.textColor);
+  appendLine(output, 'Цифровой Мир Онлайн [Версия 10.0.22631.1234]', state.textColor);
+  appendLine(output, '(c) Digital World Online. Все права защищены.', state.textColor);
   appendLine(output, '', state.textColor);
 
   input.focus();
@@ -106,10 +106,10 @@ function processCommand(input, output, state, container) {
       output.innerHTML = '';
       break;
     case 'date':
-      appendLine(output, 'The current date is: ' + new Date().toLocaleDateString(), state.textColor);
+      appendLine(output, 'Текущая дата: ' + new Date().toLocaleDateString('ru-RU'), state.textColor);
       break;
     case 'time':
-      appendLine(output, 'The current time is: ' + new Date().toLocaleTimeString(), state.textColor);
+      appendLine(output, 'Текущее время: ' + new Date().toLocaleTimeString('ru-RU'), state.textColor);
       break;
     case 'whoami':
       appendLine(output, 'User', state.textColor);
@@ -124,7 +124,7 @@ function processCommand(input, output, state, container) {
       doPing(args, output, state, container);
       break;
     default:
-      appendLine(output, `'${cmd}' is not recognized as an internal or external command.`, '#f44747');
+      appendLine(output, `'${cmd}' не распознана как внутренняя или внешняя команда.`, '#f44747');
       break;
   }
 }
@@ -132,36 +132,36 @@ function processCommand(input, output, state, container) {
 function printHelp(output, state) {
   const lines = [
     'Available commands:',
-    '  help      - Show this help message',
-    '  dir       - List files and folders in current directory',
-    '  cd <path> - Change directory (cd .. to go up)',
-    '  mkdir <n> - Create a new directory',
-    '  echo <t>  - Print text to terminal',
-    '  cls       - Clear the terminal screen',
-    '  date      - Show current date',
-    '  time      - Show current time',
-    '  whoami    - Display current user',
-    '  color <c> - Change text color (0a=green, 0b=cyan, 0c=red, 0e=yellow)',
-    '  ipconfig  - Show network configuration',
-    '  ping <a>  - Ping an address'
+    '  help      - Показать справку',
+    '  dir       - Список файлов и папок в текущей директории',
+    '  cd <путь> - Сменить директорию (cd .. чтобы выйти)',
+    '  mkdir <имя> - Создать новую директорию',
+    '  echo <текст> - Вывести текст в терминал',
+    '  cls       - Очистить экран терминала',
+    '  date      - Показать текущую дату',
+    '  time      - Показать текущее время',
+    '  whoami    - Показать текущего пользователя',
+    '  color <код> - Изменить цвет текста (0a=зелёный, 0b=голубой, 0c=красный, 0e=жёлтый)',
+    '  ipconfig  - Показать сетевую конфигурацию',
+    '  ping <адрес> - Пинг адреса'
   ];
   lines.forEach(l => appendLine(output, l, state.textColor));
 }
 
 function printDir(output, state) {
   const items = fileSystem.listFolder(state.currentPath);
-  appendLine(output, ' Directory of C:\\Users\\User' + state.currentPath.replace(/\//g, '\\'), state.textColor);
+  appendLine(output, ' Директория C:\\Users\\User' + state.currentPath.replace(/\//g, '\\'), state.textColor);
   appendLine(output, '', state.textColor);
 
   if (!items || items.length === 0) {
-    appendLine(output, '  (empty)', state.textColor);
+    appendLine(output, '  (пусто)', state.textColor);
   } else {
     items.forEach(item => {
       const type = item.type === 'folder' ? '<DIR>' : '     ';
       appendLine(output, `  ${type}  ${item.name}`, state.textColor);
     });
   }
-  appendLine(output, `        ${items ? items.length : 0} item(s)`, state.textColor);
+  appendLine(output, `        ${items ? items.length : 0} элемент(ов)`, state.textColor);
 }
 
 function changeDir(args, output, state) {
@@ -185,19 +185,19 @@ function changeDir(args, output, state) {
   if (node && node.type === 'folder') {
     state.currentPath = newPath;
   } else {
-    appendLine(output, 'The system cannot find the path specified.', '#f44747');
+    appendLine(output, 'Система не может найти указанный путь.', '#f44747');
   }
 }
 
 function makeDir(args, output, state) {
   if (!args) {
-    appendLine(output, 'The syntax of the command is incorrect.', '#f44747');
+    appendLine(output, 'Синтаксис команды неверен.', '#f44747');
     return;
   }
   const path = state.currentPath === '/' ? '/' + args : state.currentPath + '/' + args;
   const result = fileSystem.createFolder(path);
   if (!result) {
-    appendLine(output, 'A subdirectory or file already exists.', '#f44747');
+    appendLine(output, 'Подкаталог или файл уже существует.', '#f44747');
   }
 }
 
@@ -216,25 +216,25 @@ function changeColor(args, output, state, container) {
   if (colorMap[code]) {
     state.textColor = colorMap[code];
     container.querySelector('.terminal-input').style.color = state.textColor;
-    appendLine(output, 'Color changed.', state.textColor);
+    appendLine(output, 'Цвет изменён.', state.textColor);
   } else if (args) {
-    appendLine(output, 'Invalid color code. Try: 0a, 0b, 0c, 0d, 0e, 0f, 07', '#f44747');
+    appendLine(output, 'Неверный код цвета. Попробуйте: 0a, 0b, 0c, 0d, 0e, 0f, 07', '#f44747');
   } else {
-    appendLine(output, 'Usage: color <code> (e.g., 0a for green)', state.textColor);
+    appendLine(output, 'Использование: color <код> (напр., 0a для зелёного)', state.textColor);
   }
 }
 
 function printIpconfig(output, state) {
   const lines = [
     '',
-    'Windows IP Configuration',
+    'Конфигурация IP Windows',
     '',
-    'Ethernet adapter Ethernet:',
+    'Адаптер Ethernet:',
     '',
-    '   Connection-specific DNS Suffix  . : digitalworld.local',
-    '   IPv4 Address. . . . . . . . . . . : 192.168.1.100',
-    '   Subnet Mask . . . . . . . . . . . : 255.255.255.0',
-    '   Default Gateway . . . . . . . . . : 192.168.1.1',
+    '   DNS-суффикс подключения . . . . . : digitalworld.local',
+    '   IPv4-адрес. . . . . . . . . . . . : 192.168.1.100',
+    '   Маска подсети . . . . . . . . . . : 255.255.255.0',
+    '   Основной шлюз . . . . . . . . . . : 192.168.1.1',
     ''
   ];
   lines.forEach(l => appendLine(output, l, state.textColor));
@@ -242,7 +242,7 @@ function printIpconfig(output, state) {
 
 function doPing(address, output, state, container) {
   if (!address) {
-    appendLine(output, 'Usage: ping <address>', '#f44747');
+    appendLine(output, 'Использование: ping <адрес>', '#f44747');
     return;
   }
 
@@ -250,19 +250,19 @@ function doPing(address, output, state, container) {
   inputEl.disabled = true;
 
   appendLine(output, '', state.textColor);
-  appendLine(output, `Pinging ${address} with 32 bytes of data:`, state.textColor);
+  appendLine(output, `Обмен пакетами с ${address} (32 байт):`, state.textColor);
 
   let count = 0;
   const interval = setInterval(() => {
     const time = Math.floor(Math.random() * 20) + 5;
-    appendLine(output, `Reply from ${address}: bytes=32 time=${time}ms TTL=128`, state.textColor);
+    appendLine(output, `Ответ от ${address}: байт=32 время=${time}мс TTL=128`, state.textColor);
     output.scrollTop = output.scrollHeight;
     count++;
     if (count >= 4) {
       clearInterval(interval);
       appendLine(output, '', state.textColor);
-      appendLine(output, `Ping statistics for ${address}:`, state.textColor);
-      appendLine(output, '    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)', state.textColor);
+      appendLine(output, `Статистика Ping для ${address}:`, state.textColor);
+      appendLine(output, '    Пакетов: отправлено = 4, получено = 4, потеряно = 0 (0% потерь)', state.textColor);
       inputEl.disabled = false;
       inputEl.focus();
     }

@@ -12,7 +12,7 @@ export function open(filePath) {
 
   const title = state.fileName;
   const win = createWindow({
-    title: title + ' - Notepad',
+    title: title + ' - Блокнот',
     icon: '/icons/notepad.svg',
     appId: 'notepad',
     width: 700,
@@ -33,14 +33,14 @@ function render(container, state, win) {
   container.innerHTML = `
     <div class="notepad-menubar">
       <div class="notepad-menu-group">
-        <button class="notepad-menu-btn" data-menu="file">File</button>
-        <button class="notepad-menu-btn" data-menu="format">Format</button>
+        <button class="notepad-menu-btn" data-menu="file">Файл</button>
+        <button class="notepad-menu-btn" data-menu="format">Формат</button>
       </div>
     </div>
     <textarea class="notepad-textarea" spellcheck="false">${escapeHtml(state.content)}</textarea>
     <div class="notepad-statusbar">
-      <span class="notepad-status-file">${state.filePath || 'New file'}</span>
-      <span class="notepad-status-wrap">${state.wordWrap ? 'Word Wrap: On' : 'Word Wrap: Off'}</span>
+      <span class="notepad-status-file">${state.filePath || 'Новый файл'}</span>
+      <span class="notepad-status-wrap">${state.wordWrap ? 'Перенос: Вкл' : 'Перенос: Выкл'}</span>
     </div>
   `;
 
@@ -63,20 +63,20 @@ function setupMenus(container, state, win, textarea) {
 
   fileBtn.addEventListener('click', (e) => {
     showDropdown(e.target, [
-      { label: 'New', action: () => doNew(container, state, win) },
-      { label: 'Open...', action: () => doOpen(container, state, win) },
-      { label: 'Save', action: () => doSave(state, win) },
-      { label: 'Save As...', action: () => doSaveAs(state, win) }
+      { label: 'Новый', action: () => doNew(container, state, win) },
+      { label: 'Открыть...', action: () => doOpen(container, state, win) },
+      { label: 'Сохранить', action: () => doSave(state, win) },
+      { label: 'Сохранить как...', action: () => doSaveAs(state, win) }
     ], win.id);
   });
 
   formatBtn.addEventListener('click', (e) => {
     showDropdown(e.target, [
-      { label: state.wordWrap ? '  Word Wrap (On)' : '  Word Wrap (Off)', action: () => {
+      { label: state.wordWrap ? '  Перенос по словам (Вкл)' : '  Перенос по словам (Выкл)', action: () => {
         state.wordWrap = !state.wordWrap;
         textarea.style.whiteSpace = state.wordWrap ? 'pre-wrap' : 'pre';
         textarea.style.overflowX = state.wordWrap ? 'hidden' : 'auto';
-        container.querySelector('.notepad-status-wrap').textContent = state.wordWrap ? 'Word Wrap: On' : 'Word Wrap: Off';
+        container.querySelector('.notepad-status-wrap').textContent = state.wordWrap ? 'Перенос: Вкл' : 'Перенос: Выкл';
       }}
     ], win.id);
   });
@@ -127,7 +127,7 @@ function doNew(container, state, win) {
 function doOpen(container, state, win) {
   const files = getAllTextFiles('/');
   if (files.length === 0) {
-    alert('No text files found.');
+    alert('Текстовые файлы не найдены.');
     return;
   }
 
@@ -138,7 +138,7 @@ function doOpen(container, state, win) {
   picker.className = 'notepad-file-picker';
   picker.dataset.windowId = win.id;
   picker.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-primary);border:1px solid var(--border-color);border-radius:var(--radius-lg);box-shadow:var(--shadow-xl);padding:16px;z-index:99999;min-width:300px;max-height:400px;overflow-y:auto;';
-  picker.innerHTML = `<h3 style="margin-bottom:12px;font-size:14px;">Open File</h3>`;
+  picker.innerHTML = `<h3 style="margin-bottom:12px;font-size:14px;">Открыть файл</h3>`;
 
   files.forEach(f => {
     const item = document.createElement('div');
@@ -159,7 +159,7 @@ function doOpen(container, state, win) {
   });
 
   const cancelBtn = document.createElement('button');
-  cancelBtn.textContent = 'Cancel';
+  cancelBtn.textContent = 'Отмена';
   cancelBtn.style.cssText = 'margin-top:12px;padding:6px 16px;border:1px solid var(--border-color);background:var(--bg-secondary);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;';
   cancelBtn.addEventListener('click', () => picker.remove());
   picker.appendChild(cancelBtn);
@@ -183,7 +183,7 @@ function doSave(state, win) {
 }
 
 function doSaveAs(state, win) {
-  const path = prompt('Save as (full path):', state.filePath || '/Documents/file.txt');
+  const path = prompt('Сохранить как (полный путь):', state.filePath || '/Documents/file.txt');
   if (!path) return;
   state.filePath = path;
   state.fileName = path.split('/').pop();
@@ -200,7 +200,7 @@ function doSaveAs(state, win) {
 function updateTitle(win, state) {
   const titleEl = win.element.querySelector('.window-title');
   const prefix = state.modified ? '*' : '';
-  titleEl.textContent = prefix + state.fileName + ' - Notepad';
+  titleEl.textContent = prefix + state.fileName + ' - Блокнот';
 }
 
 function getAllTextFiles(path) {

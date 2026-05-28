@@ -3,7 +3,7 @@ import * as fileSystem from '../core/fileSystem.js';
 
 export function open() {
   const win = createWindow({
-    title: 'Recycle Bin',
+    title: 'Корзина',
     icon: '/icons/recycle-bin.svg',
     appId: 'recycleBin',
     width: 700,
@@ -22,9 +22,9 @@ function render(container) {
 
   container.innerHTML = `
     <div class="file-explorer-toolbar">
-      <button class="rb-restore-btn" title="Restore selected">&#8634; Restore</button>
-      <button class="rb-delete-btn" title="Delete permanently">&#10006; Delete</button>
-      <button class="rb-empty-btn" title="Empty Recycle Bin">&#128465; Empty</button>
+      <button class="rb-restore-btn" title="Восстановить">&#8634; Восстановить</button>
+      <button class="rb-delete-btn" title="Удалить">&#10006; Удалить</button>
+      <button class="rb-empty-btn" title="Очистить">&#128465; Очистить</button>
     </div>
     <div class="file-explorer-body">
       <div class="file-explorer-files rb-files"></div>
@@ -35,7 +35,7 @@ function render(container) {
   let selectedItem = null;
 
   if (items.length === 0) {
-    filesArea.innerHTML = '<div style="padding:20px;color:var(--text-secondary);font-size:13px;">Recycle Bin is empty</div>';
+    filesArea.innerHTML = '<div style="padding:20px;color:var(--text-secondary);font-size:13px;">Корзина пуста</div>';
   } else {
     filesArea.innerHTML = items.map(item => {
       const info = deletedItems.find(d => d.name === item.name);
@@ -68,7 +68,7 @@ function render(container) {
   // Toolbar actions
   container.querySelector('.rb-restore-btn').addEventListener('click', () => {
     if (!selectedItem) {
-      alert('Please select an item to restore.');
+      alert('Выберите элемент для восстановления.');
       return;
     }
     if (fileSystem.restoreFile(selectedItem)) {
@@ -79,10 +79,10 @@ function render(container) {
 
   container.querySelector('.rb-delete-btn').addEventListener('click', () => {
     if (!selectedItem) {
-      alert('Please select an item to delete.');
+      alert('Выберите элемент для удаления.');
       return;
     }
-    if (confirm('Permanently delete "' + selectedItem + '"?')) {
+    if (confirm('Удалить навсегда "' + selectedItem + '"?')) {
       fileSystem.permanentDelete('/Recycle Bin/' + selectedItem);
       selectedItem = null;
       render(container);
@@ -91,7 +91,7 @@ function render(container) {
 
   container.querySelector('.rb-empty-btn').addEventListener('click', () => {
     if (items.length === 0) return;
-    if (confirm('Permanently delete all items in the Recycle Bin?')) {
+    if (confirm('Удалить все элементы из Корзины навсегда?')) {
       items.forEach(item => {
         fileSystem.permanentDelete('/Recycle Bin/' + item.name);
       });

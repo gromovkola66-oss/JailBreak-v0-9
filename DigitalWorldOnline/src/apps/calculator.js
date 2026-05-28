@@ -2,7 +2,7 @@ import { createWindow } from '../core/windowManager.js';
 
 export function open() {
   const win = createWindow({
-    title: 'Calculator',
+    title: 'Калькулятор',
     icon: '/icons/calculator.svg',
     appId: 'calculator',
     width: 320,

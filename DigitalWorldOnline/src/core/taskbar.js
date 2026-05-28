@@ -4,9 +4,9 @@ let taskbarEl = null;
 let clockInterval = null;
 
 const pinnedApps = [
-  { id: 'fileExplorer', name: 'File Explorer', icon: '/icons/file-explorer.svg' },
-  { id: 'browser', name: 'Browser', icon: '/icons/browser.svg' },
-  { id: 'terminal', name: 'Terminal', icon: '/icons/terminal.svg' }
+  { id: 'fileExplorer', name: 'Проводник', icon: '/icons/file-explorer.svg' },
+  { id: 'browser', name: 'Браузер', icon: '/icons/browser.svg' },
+  { id: 'terminal', name: 'Терминал', icon: '/icons/terminal.svg' }
 ];
 
 export function initTaskbar() {
@@ -144,7 +144,7 @@ function updateClock() {
   const clockEl = document.getElementById('taskbar-clock');
   if (!clockEl) return;
   const now = new Date();
-  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const date = now.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  const date = now.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric', year: 'numeric' });
   clockEl.innerHTML = `<span class="clock-time">${time}</span><span class="clock-date">${date}</span>`;
 }

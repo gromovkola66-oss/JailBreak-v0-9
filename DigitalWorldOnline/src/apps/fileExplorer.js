@@ -3,7 +3,7 @@ import * as fileSystem from '../core/fileSystem.js';
 
 export function open(startPath) {
   const win = createWindow({
-    title: 'File Explorer',
+    title: 'Проводник',
     icon: '/icons/file-explorer.svg',
     appId: 'fileExplorer',
     width: 850,
@@ -29,10 +29,10 @@ export function open(startPath) {
 function render(container, state, win) {
   container.innerHTML = `
     <div class="file-explorer-toolbar">
-      <button class="fe-btn-back" title="Back">&#8592;</button>
-      <button class="fe-btn-forward" title="Forward">&#8594;</button>
-      <button class="fe-btn-new-folder" title="New Folder">&#128193;+</button>
-      <button class="fe-btn-new-file" title="New File">&#128196;+</button>
+      <button class="fe-btn-back" title="Назад">&#8592;</button>
+      <button class="fe-btn-forward" title="Вперёд">&#8594;</button>
+      <button class="fe-btn-new-folder" title="Новая папка">&#128193;+</button>
+      <button class="fe-btn-new-file" title="Новый файл">&#128196;+</button>
       <input class="file-explorer-path" type="text" value="${state.currentPath}" />
     </div>
     <div class="file-explorer-body">
@@ -49,12 +49,17 @@ function render(container, state, win) {
 
 function renderSidebar(container, state, win) {
   const sidebar = container.querySelector('.file-explorer-sidebar');
-  const folders = ['Desktop', 'Documents', 'Downloads', 'Pictures'];
+  const folders = [
+    { path: '/Desktop', label: 'Рабочий стол' },
+    { path: '/Documents', label: 'Документы' },
+    { path: '/Downloads', label: 'Загрузки' },
+    { path: '/Pictures', label: 'Изображения' }
+  ];
 
   sidebar.innerHTML = folders.map(folder => `
-    <div class="file-explorer-sidebar-item ${state.currentPath === '/' + folder ? 'active' : ''}" data-path="/${folder}">
+    <div class="file-explorer-sidebar-item ${state.currentPath === folder.path ? 'active' : ''}" data-path="${folder.path}">
       <img src="/icons/folder.svg" alt="" />
-      <span>${folder}</span>
+      <span>${folder.label}</span>
     </div>
   `).join('');
 
@@ -70,7 +75,7 @@ function renderFiles(container, state, win) {
   const items = fileSystem.listFolder(state.currentPath);
 
   if (!items || items.length === 0) {
-    filesArea.innerHTML = '<div style="padding:20px;color:var(--text-secondary);font-size:13px;">This folder is empty</div>';
+    filesArea.innerHTML = '<div style="padding:20px;color:var(--text-secondary);font-size:13px;">Папка пуста</div>';
     return;
   }
 
@@ -123,7 +128,7 @@ function setupToolbar(container, state, win) {
   });
 
   newFolderBtn.addEventListener('click', () => {
-    const name = prompt('Folder name:');
+    const name = prompt('Имя папки:');
     if (name && name.trim()) {
       const path = state.currentPath === '/' ? '/' + name.trim() : state.currentPath + '/' + name.trim();
       fileSystem.createFolder(path);
@@ -132,7 +137,7 @@ function setupToolbar(container, state, win) {
   });
 
   newFileBtn.addEventListener('click', () => {
-    const name = prompt('File name:', 'New File.txt');
+    const name = prompt('Имя файла:', 'Новый файл.txt');
     if (name && name.trim()) {
       const path = state.currentPath === '/' ? '/' + name.trim() : state.currentPath + '/' + name.trim();
       fileSystem.createFile(path, '');
@@ -166,10 +171,10 @@ function setupContextMenu(container, state, win) {
     menu.dataset.windowId = win.id;
     menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:4px;z-index:9999;min-width:150px;`;
     menu.innerHTML = `
-      <div class="fe-ctx-item" data-action="new-folder" style="padding:6px 12px;cursor:pointer;font-size:13px;border-radius:var(--radius-sm);">New Folder</div>
-      <div class="fe-ctx-item" data-action="new-file" style="padding:6px 12px;cursor:pointer;font-size:13px;border-radius:var(--radius-sm);">New Text File</div>
+      <div class="fe-ctx-item" data-action="new-folder" style="padding:6px 12px;cursor:pointer;font-size:13px;border-radius:var(--radius-sm);">Новая папка</div>
+      <div class="fe-ctx-item" data-action="new-file" style="padding:6px 12px;cursor:pointer;font-size:13px;border-radius:var(--radius-sm);">Новый текстовый файл</div>
       <div style="height:1px;background:var(--border-color);margin:4px 0;"></div>
-      <div class="fe-ctx-item" data-action="refresh" style="padding:6px 12px;cursor:pointer;font-size:13px;border-radius:var(--radius-sm);">Refresh</div>
+      <div class="fe-ctx-item" data-action="refresh" style="padding:6px 12px;cursor:pointer;font-size:13px;border-radius:var(--radius-sm);">Обновить</div>
     `;
 
     document.body.appendChild(menu);
@@ -180,14 +185,14 @@ function setupContextMenu(container, state, win) {
       item.addEventListener('click', () => {
         const action = item.dataset.action;
         if (action === 'new-folder') {
-          const name = prompt('Folder name:');
+          const name = prompt('Имя папки:');
           if (name && name.trim()) {
             const path = state.currentPath === '/' ? '/' + name.trim() : state.currentPath + '/' + name.trim();
             fileSystem.createFolder(path);
             renderFiles(container, state, win);
           }
         } else if (action === 'new-file') {
-          const name = prompt('File name:', 'New File.txt');
+          const name = prompt('Имя файла:', 'Новый файл.txt');
           if (name && name.trim()) {
             const path = state.currentPath === '/' ? '/' + name.trim() : state.currentPath + '/' + name.trim();
             fileSystem.createFile(path, '');
