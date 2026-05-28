@@ -228,6 +228,7 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
   const editorRef = useRef<MapEditor | null>(null);
   const playtestRef = useRef<PlaytestMode | null>(null);
   const savedMapRef = useRef<MapData | null>(null);
+  const serverMapRef = useRef<MapData | null>(null);
   const characterModelRef = useRef<CharacterModel | null>(null);
 
   const [mode, setMode] = useState<EditorMode>(multiplayerClient ? 'playtesting' : 'editing');
@@ -369,8 +370,12 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
   // === AUTO-START MULTIPLAYER PLAYTEST ===
   useEffect(() => {
     if (!multiplayerClient) return;
-    // When multiplayer is active, auto-start playtesting with selected team
-    startPlaytest(multiplayerTeam || 'prisoner');
+    // When multiplayer is active, request map from server then start playtesting
+    multiplayerClient.onMapData = (map: any) => {
+      serverMapRef.current = map as MapData;
+      startPlaytest(multiplayerTeam || 'prisoner');
+    };
+    multiplayerClient.requestMap();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -870,7 +875,7 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
     setMode('playtesting');
 
     setTimeout(() => {
-      const mapData = multiplayerClient ? (testMapData as unknown as MapData) : savedMapRef.current;
+      const mapData = multiplayerClient ? (serverMapRef.current || testMapData as unknown as MapData) : savedMapRef.current;
       if (!playtestContainerRef.current || !mapData) {
         console.error('[EditorApp] ABORT: container=', !!playtestContainerRef.current, 'mapData=', !!mapData);
         return;

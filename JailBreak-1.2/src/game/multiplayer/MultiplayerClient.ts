@@ -30,6 +30,7 @@ export class MultiplayerClient {
   public onPlayersUpdated?: (players: Map<string, PlayerData>) => void;
   public onChatMessage?: (nickname: string, text: string) => void;
   public onWelcome?: (data: { id: string; players: PlayerData[] }) => void;
+  public onMapData?: (map: any) => void;
 
   get isConnected(): boolean {
     return this._isConnected;
@@ -91,6 +92,12 @@ export class MultiplayerClient {
   sendTeamSelection(team: 'guard' | 'prisoner'): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: 'select_team', team }));
+    }
+  }
+
+  requestMap(): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: 'map_request' }));
     }
   }
 
@@ -214,6 +221,11 @@ export class MultiplayerClient {
           player.team = team;
           this.onPlayersUpdated?.(this._players);
         }
+        break;
+      }
+
+      case 'map_data': {
+        this.onMapData?.(msg.map);
         break;
       }
     }
