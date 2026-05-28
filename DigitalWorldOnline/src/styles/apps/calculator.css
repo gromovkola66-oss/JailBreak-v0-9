@@ -1,0 +1,83 @@
+/* Calculator App Styles */
+.app-calculator {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-secondary);
+}
+
+.calculator-display {
+  padding: 16px 20px;
+  text-align: right;
+}
+
+.calculator-expression {
+  font-size: 13px;
+  color: var(--text-secondary);
+  min-height: 20px;
+}
+
+.calculator-result {
+  font-size: 36px;
+  font-weight: 300;
+  color: var(--text-primary);
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calculator-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  padding: 4px;
+  flex: 1;
+}
+
+.calc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-family: var(--font-family);
+}
+
+.calc-btn-number {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.calc-btn-number:hover {
+  background: var(--bg-tertiary);
+}
+
+.calc-btn-operator {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.calc-btn-operator:hover {
+  background: var(--bg-tertiary);
+}
+
+.calc-btn-equals {
+  background: var(--accent-color);
+  color: white;
+}
+
+.calc-btn-equals:hover {
+  background: var(--accent-hover);
+}
+
+.calc-btn-clear {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.calc-btn-clear:hover {
+  background: var(--bg-tertiary);
+}
