@@ -1,0 +1,122 @@
+/* File Explorer App Styles */
+.app-file-explorer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.file-explorer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.file-explorer-toolbar button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.file-explorer-toolbar button:hover {
+  background: var(--bg-tertiary);
+}
+
+.file-explorer-path {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  background: var(--bg-primary);
+  outline: none;
+}
+
+.file-explorer-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.file-explorer-sidebar {
+  width: 200px;
+  padding: 8px;
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  background: var(--bg-secondary);
+}
+
+.file-explorer-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  transition: background var(--transition-fast);
+}
+
+.file-explorer-sidebar-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.file-explorer-sidebar-item.active {
+  background: rgba(0, 120, 212, 0.08);
+  color: var(--accent-color);
+}
+
+.file-explorer-sidebar-item img {
+  width: 16px;
+  height: 16px;
+}
+
+.file-explorer-files {
+  flex: 1;
+  padding: 8px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 4px;
+  align-content: start;
+}
+
+.file-explorer-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.file-explorer-item:hover {
+  background: var(--bg-secondary);
+}
+
+.file-explorer-item.selected {
+  background: rgba(0, 120, 212, 0.1);
+}
+
+.file-explorer-item img {
+  width: 32px;
+  height: 32px;
+}
+
+.file-explorer-item span {
+  font-size: 11px;
+  text-align: center;
+  word-break: break-all;
+}

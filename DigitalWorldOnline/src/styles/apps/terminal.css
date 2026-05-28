@@ -1,0 +1,90 @@
+/* Terminal App Styles */
+.app-terminal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1e1e1e;
+  color: #cccccc;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 14px;
+}
+
+.terminal-tabs {
+  display: flex;
+  align-items: center;
+  background: #2d2d2d;
+  padding: 4px 8px 0;
+  gap: 2px;
+}
+
+.terminal-tab {
+  padding: 6px 12px;
+  background: #1e1e1e;
+  border: none;
+  color: #cccccc;
+  font-size: 12px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: pointer;
+}
+
+.terminal-tab.active {
+  background: #1e1e1e;
+  color: #ffffff;
+}
+
+.terminal-output {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+.terminal-input-line {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px 12px;
+}
+
+.terminal-prompt {
+  color: #569cd6;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #cccccc;
+  font-family: inherit;
+  font-size: inherit;
+  caret-color: #cccccc;
+}
+
+.terminal-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: #cccccc;
+  animation: blink 1s step-end infinite;
+  margin-left: -2px;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.terminal-output .terminal-line-output {
+  color: #cccccc;
+}
+
+.terminal-output .terminal-line-error {
+  color: #f44747;
+}
+
+.terminal-output .terminal-line-success {
+  color: #4ec9b0;
+}

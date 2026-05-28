@@ -1,0 +1,188 @@
+/* Browser App Styles */
+.app-browser {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.browser-tab-bar {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  padding: 6px 8px 0;
+  gap: 2px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.browser-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  overflow-x: auto;
+}
+
+.browser-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: pointer;
+  font-size: 12px;
+  max-width: 180px;
+  min-width: 80px;
+  color: var(--text-secondary);
+  transition: background var(--transition-fast);
+}
+
+.browser-tab.active {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.browser-tab-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browser-tab-close {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 0 2px;
+  border-radius: 2px;
+  line-height: 1;
+}
+
+.browser-tab-close:hover {
+  background: rgba(0,0,0,0.1);
+  color: var(--text-primary);
+}
+
+.browser-new-tab-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.browser-new-tab-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.browser-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.browser-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-secondary);
+  transition: background var(--transition-fast);
+}
+
+.browser-nav-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.browser-url-bar {
+  flex: 1;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 13px;
+  background: var(--bg-primary);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.browser-url-bar:focus {
+  border-color: var(--accent-color);
+}
+
+.browser-bookmarks-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.browser-bookmark {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.browser-bookmark:hover {
+  background: var(--bg-tertiary);
+}
+
+.browser-content {
+  flex: 1;
+  background: white;
+  overflow: auto;
+  padding: 20px;
+}
+
+.browser-homepage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 20px;
+}
+
+.browser-homepage h1 {
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--text-primary);
+}
+
+.browser-search-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.browser-search-input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  font-size: 14px;
+  outline: none;
+}
+
+.browser-search-input:focus {
+  border-color: var(--accent-color);
+}
