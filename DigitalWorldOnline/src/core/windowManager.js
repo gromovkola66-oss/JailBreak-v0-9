@@ -1,6 +1,8 @@
 let windows = [];
 let activeWindowId = null;
 let zIndexCounter = 100;
+const Z_INDEX_BASE = 100;
+const Z_INDEX_THRESHOLD = 10000;
 let windowIdCounter = 0;
 let container = null;
 
@@ -99,7 +101,8 @@ export function createWindow(options = {}) {
     minimized: false,
     maximized: false,
     prevBounds: null,
-    onClose
+    onClose,
+    _cleanups: []
   };
 
   windows.push(windowData);
@@ -120,6 +123,13 @@ export function createWindow(options = {}) {
   return windowData;
 }
 
+export function registerCleanup(windowId, cleanupFn) {
+  const windowData = windows.find(w => w.id === windowId);
+  if (windowData && windowData._cleanups) {
+    windowData._cleanups.push(cleanupFn);
+  }
+}
+
 export function closeWindow(id) {
   const idx = windows.findIndex(w => w.id === id);
   if (idx === -1) return;
@@ -127,10 +137,20 @@ export function closeWindow(id) {
   const windowData = windows[idx];
   const win = windowData.element;
 
+  // Clean up any body-level menus/overlays associated with this window
+  cleanupOrphanedMenus(id);
+
   win.classList.add('window-closing');
   setTimeout(() => {
     win.remove();
     windows.splice(idx, 1);
+
+    // Run cleanup hooks (remove document-level listeners, etc.)
+    if (windowData._cleanups) {
+      windowData._cleanups.forEach(fn => fn());
+      windowData._cleanups = [];
+    }
+
     if (windowData.onClose) windowData.onClose();
     emit('close', windowData);
 
@@ -144,6 +164,23 @@ export function closeWindow(id) {
       }
     }
   }, 150);
+}
+
+function cleanupOrphanedMenus(windowId) {
+  // Remove any dropdown menus or context menus associated with this window
+  const overlays = document.querySelectorAll(
+    `.dropdown-overlay[data-window-id="${windowId}"], .context-menu-overlay[data-window-id="${windowId}"]`
+  );
+  overlays.forEach(el => el.remove());
+
+  // Also remove any generic dropdown/context menu overlays that might be open
+  const genericOverlays = document.querySelectorAll('.notepad-dropdown-overlay, .explorer-context-overlay');
+  genericOverlays.forEach(el => {
+    // Check if the overlay belongs to the window being closed
+    if (el.dataset.windowId === windowId) {
+      el.remove();
+    }
+  });
 }
 
 export function minimizeWindow(id) {
@@ -215,7 +252,23 @@ export function focusWindow(id) {
   windowData.element.style.zIndex = ++zIndexCounter;
   windowData.element.classList.add('window-focused');
   activeWindowId = id;
+
+  // Normalize z-indices when counter exceeds threshold
+  if (zIndexCounter > Z_INDEX_THRESHOLD) {
+    normalizeZIndices();
+  }
+
   emit('focus', windowData);
+}
+
+function normalizeZIndices() {
+  const sorted = [...windows]
+    .filter(w => !w.minimized)
+    .sort((a, b) => (parseInt(a.element.style.zIndex) || 0) - (parseInt(b.element.style.zIndex) || 0));
+  sorted.forEach((w, i) => {
+    w.element.style.zIndex = Z_INDEX_BASE + i + 1;
+  });
+  zIndexCounter = Z_INDEX_BASE + sorted.length;
 }
 
 function setupTitleBarButtons(win, windowData) {
@@ -263,16 +316,16 @@ function setupDrag(win, windowData) {
     e.preventDefault();
   });
 
-  document.addEventListener('mousemove', (e) => {
+  function onMouseMove(e) {
     if (!isDragging) return;
 
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
     win.style.left = (startLeft + dx) + 'px';
     win.style.top = (startTop + dy) + 'px';
-  });
+  }
 
-  document.addEventListener('mouseup', (e) => {
+  function onMouseUp(e) {
     if (!isDragging) return;
     isDragging = false;
     win.classList.remove('window-dragging');
@@ -298,6 +351,15 @@ function setupDrag(win, windowData) {
       // Snap maximize
       maximizeWindow(windowData.id);
     }
+  }
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+
+  // Store cleanup references
+  windowData._cleanups.push(() => {
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
   });
 }
 

@@ -1,4 +1,4 @@
-import { createWindow } from '../core/windowManager.js';
+import { createWindow, registerCleanup } from '../core/windowManager.js';
 import * as fileSystem from '../core/fileSystem.js';
 
 export function open(startPath) {
@@ -18,10 +18,15 @@ export function open(startPath) {
     historyIndex: 0
   };
 
-  render(container, state);
+  render(container, state, win);
+
+  // Register cleanup to remove any orphaned context menus on window close
+  registerCleanup(win.id, () => {
+    document.querySelectorAll(`.fe-context-menu[data-window-id="${win.id}"]`).forEach(el => el.remove());
+  });
 }
 
-function render(container, state) {
+function render(container, state, win) {
   container.innerHTML = `
     <div class="file-explorer-toolbar">
       <button class="fe-btn-back" title="Back">&#8592;</button>
@@ -36,13 +41,13 @@ function render(container, state) {
     </div>
   `;
 
-  renderSidebar(container, state);
-  renderFiles(container, state);
-  setupToolbar(container, state);
-  setupContextMenu(container, state);
+  renderSidebar(container, state, win);
+  renderFiles(container, state, win);
+  setupToolbar(container, state, win);
+  setupContextMenu(container, state, win);
 }
 
-function renderSidebar(container, state) {
+function renderSidebar(container, state, win) {
   const sidebar = container.querySelector('.file-explorer-sidebar');
   const folders = ['Desktop', 'Documents', 'Downloads', 'Pictures'];
 
@@ -55,12 +60,12 @@ function renderSidebar(container, state) {
 
   sidebar.querySelectorAll('.file-explorer-sidebar-item').forEach(item => {
     item.addEventListener('click', () => {
-      navigateTo(container, state, item.dataset.path);
+      navigateTo(container, state, item.dataset.path, win);
     });
   });
 }
 
-function renderFiles(container, state) {
+function renderFiles(container, state, win) {
   const filesArea = container.querySelector('.file-explorer-files');
   const items = fileSystem.listFolder(state.currentPath);
 
@@ -81,7 +86,7 @@ function renderFiles(container, state) {
       const path = el.dataset.path;
       const type = el.dataset.type;
       if (type === 'folder') {
-        navigateTo(container, state, path);
+        navigateTo(container, state, path, win);
       } else if (el.dataset.name.endsWith('.txt')) {
         import('./notepad.js').then(m => m.open(path));
       }
@@ -94,7 +99,7 @@ function renderFiles(container, state) {
   });
 }
 
-function setupToolbar(container, state) {
+function setupToolbar(container, state, win) {
   const backBtn = container.querySelector('.fe-btn-back');
   const fwdBtn = container.querySelector('.fe-btn-forward');
   const newFolderBtn = container.querySelector('.fe-btn-new-folder');
@@ -105,7 +110,7 @@ function setupToolbar(container, state) {
     if (state.historyIndex > 0) {
       state.historyIndex--;
       state.currentPath = state.history[state.historyIndex];
-      render(container, state);
+      render(container, state, win);
     }
   });
 
@@ -113,7 +118,7 @@ function setupToolbar(container, state) {
     if (state.historyIndex < state.history.length - 1) {
       state.historyIndex++;
       state.currentPath = state.history[state.historyIndex];
-      render(container, state);
+      render(container, state, win);
     }
   });
 
@@ -122,7 +127,7 @@ function setupToolbar(container, state) {
     if (name && name.trim()) {
       const path = state.currentPath === '/' ? '/' + name.trim() : state.currentPath + '/' + name.trim();
       fileSystem.createFolder(path);
-      renderFiles(container, state);
+      renderFiles(container, state, win);
     }
   });
 
@@ -131,7 +136,7 @@ function setupToolbar(container, state) {
     if (name && name.trim()) {
       const path = state.currentPath === '/' ? '/' + name.trim() : state.currentPath + '/' + name.trim();
       fileSystem.createFile(path, '');
-      renderFiles(container, state);
+      renderFiles(container, state, win);
     }
   });
 
@@ -139,13 +144,13 @@ function setupToolbar(container, state) {
     if (e.key === 'Enter') {
       const newPath = pathInput.value.trim();
       if (fileSystem.getNode(newPath) && fileSystem.getNode(newPath).type === 'folder') {
-        navigateTo(container, state, newPath);
+        navigateTo(container, state, newPath, win);
       }
     }
   });
 }
 
-function setupContextMenu(container, state) {
+function setupContextMenu(container, state, win) {
   const filesArea = container.querySelector('.file-explorer-files');
   filesArea.addEventListener('contextmenu', (e) => {
     e.preventDefault();
@@ -153,9 +158,12 @@ function setupContextMenu(container, state) {
 
     const existing = container.querySelector('.fe-context-menu');
     if (existing) existing.remove();
+    // Also remove any body-level context menus for this window
+    document.querySelectorAll(`.fe-context-menu[data-window-id="${win.id}"]`).forEach(el => el.remove());
 
     const menu = document.createElement('div');
     menu.className = 'fe-context-menu';
+    menu.dataset.windowId = win.id;
     menu.style.cssText = `position:fixed;left:${e.clientX}px;top:${e.clientY}px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:4px;z-index:9999;min-width:150px;`;
     menu.innerHTML = `
       <div class="fe-ctx-item" data-action="new-folder" style="padding:6px 12px;cursor:pointer;font-size:13px;border-radius:var(--radius-sm);">New Folder</div>
@@ -176,17 +184,17 @@ function setupContextMenu(container, state) {
           if (name && name.trim()) {
             const path = state.currentPath === '/' ? '/' + name.trim() : state.currentPath + '/' + name.trim();
             fileSystem.createFolder(path);
-            renderFiles(container, state);
+            renderFiles(container, state, win);
           }
         } else if (action === 'new-file') {
           const name = prompt('File name:', 'New File.txt');
           if (name && name.trim()) {
             const path = state.currentPath === '/' ? '/' + name.trim() : state.currentPath + '/' + name.trim();
             fileSystem.createFile(path, '');
-            renderFiles(container, state);
+            renderFiles(container, state, win);
           }
         } else if (action === 'refresh') {
-          renderFiles(container, state);
+          renderFiles(container, state, win);
         }
         menu.remove();
       });
@@ -202,10 +210,10 @@ function setupContextMenu(container, state) {
   });
 }
 
-function navigateTo(container, state, path) {
+function navigateTo(container, state, path, win) {
   state.currentPath = path;
   state.historyIndex++;
   state.history = state.history.slice(0, state.historyIndex);
   state.history.push(path);
-  render(container, state);
+  render(container, state, win);
 }

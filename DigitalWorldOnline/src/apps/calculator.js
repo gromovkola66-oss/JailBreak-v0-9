@@ -138,11 +138,111 @@ function safeEval(expr) {
   expr = expr.replace(/\s+/g, ' ').trim();
   // Handle percentage
   expr = expr.replace(/(\d+\.?\d*)\s*%/g, '($1/100)');
-  // Only allow numbers, operators, decimal points, spaces, parentheses
-  if (/[^0-9+\-*/().%\s]/.test(expr)) {
-    throw new Error('Invalid expression');
+
+  // Tokenize and parse using a recursive descent parser
+  // No Function() or eval() - only supports numbers and +-*/() operators
+  const tokens = tokenize(expr);
+  const result = parseExpression(tokens);
+  if (tokens.pos < tokens.list.length) {
+    throw new Error('Unexpected token');
   }
-  return Function('"use strict"; return (' + expr + ')')();
+  return result;
+}
+
+function tokenize(expr) {
+  const list = [];
+  let i = 0;
+  while (i < expr.length) {
+    if (expr[i] === ' ') {
+      i++;
+      continue;
+    }
+    if ('+-*/()'.includes(expr[i])) {
+      list.push({ type: 'op', value: expr[i] });
+      i++;
+    } else if (/[0-9.]/.test(expr[i])) {
+      let num = '';
+      while (i < expr.length && /[0-9.]/.test(expr[i])) {
+        num += expr[i];
+        i++;
+      }
+      const parsed = parseFloat(num);
+      if (isNaN(parsed)) throw new Error('Invalid number');
+      list.push({ type: 'num', value: parsed });
+    } else {
+      throw new Error('Invalid character');
+    }
+  }
+  return { list, pos: 0 };
+}
+
+// Grammar:
+// expression = term (('+' | '-') term)*
+// term = unary (('*' | '/') unary)*
+// unary = ('-' | '+')? factor
+// factor = '(' expression ')' | number
+
+function parseExpression(tokens) {
+  let left = parseTerm(tokens);
+  while (tokens.pos < tokens.list.length) {
+    const tok = tokens.list[tokens.pos];
+    if (tok.type === 'op' && (tok.value === '+' || tok.value === '-')) {
+      tokens.pos++;
+      const right = parseTerm(tokens);
+      left = tok.value === '+' ? left + right : left - right;
+    } else {
+      break;
+    }
+  }
+  return left;
+}
+
+function parseTerm(tokens) {
+  let left = parseUnary(tokens);
+  while (tokens.pos < tokens.list.length) {
+    const tok = tokens.list[tokens.pos];
+    if (tok.type === 'op' && (tok.value === '*' || tok.value === '/')) {
+      tokens.pos++;
+      const right = parseUnary(tokens);
+      left = tok.value === '*' ? left * right : left / right;
+    } else {
+      break;
+    }
+  }
+  return left;
+}
+
+function parseUnary(tokens) {
+  if (tokens.pos < tokens.list.length) {
+    const tok = tokens.list[tokens.pos];
+    if (tok.type === 'op' && (tok.value === '-' || tok.value === '+')) {
+      tokens.pos++;
+      const val = parseFactor(tokens);
+      return tok.value === '-' ? -val : val;
+    }
+  }
+  return parseFactor(tokens);
+}
+
+function parseFactor(tokens) {
+  if (tokens.pos >= tokens.list.length) {
+    throw new Error('Unexpected end of expression');
+  }
+  const tok = tokens.list[tokens.pos];
+  if (tok.type === 'num') {
+    tokens.pos++;
+    return tok.value;
+  }
+  if (tok.type === 'op' && tok.value === '(') {
+    tokens.pos++;
+    const val = parseExpression(tokens);
+    if (tokens.pos >= tokens.list.length || tokens.list[tokens.pos].value !== ')') {
+      throw new Error('Missing closing parenthesis');
+    }
+    tokens.pos++;
+    return val;
+  }
+  throw new Error('Unexpected token');
 }
 
 function formatNumber(num) {

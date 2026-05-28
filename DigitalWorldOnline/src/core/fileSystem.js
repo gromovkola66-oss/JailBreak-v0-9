@@ -153,13 +153,27 @@ export function permanentDelete(path) {
   const node = fs[path];
   if (!node) return false;
 
+  // Recursively remove all nodes from in-memory map without saving
+  permanentDeleteRecursive(path);
+
+  // Save once after entire tree is removed
+  save();
+  return true;
+}
+
+function permanentDeleteRecursive(path) {
+  const node = fs[path];
+  if (!node) return;
+
   const parentPath = getParentPath(path);
   const parent = fs[parentPath];
   const fileName = getFileName(path);
 
   if (node.type === 'folder' && node.children) {
-    node.children.forEach(child => {
-      permanentDelete(path + '/' + child);
+    // Copy children array since we modify it during iteration
+    const children = [...node.children];
+    children.forEach(child => {
+      permanentDeleteRecursive(path + '/' + child);
     });
   }
 
@@ -172,8 +186,6 @@ export function permanentDelete(path) {
   }
 
   delete fs[path];
-  save();
-  return true;
 }
 
 export function restoreFile(fileName) {

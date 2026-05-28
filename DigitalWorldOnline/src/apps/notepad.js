@@ -1,4 +1,4 @@
-import { createWindow } from '../core/windowManager.js';
+import { createWindow, registerCleanup } from '../core/windowManager.js';
 import * as fileSystem from '../core/fileSystem.js';
 
 export function open(filePath) {
@@ -22,6 +22,11 @@ export function open(filePath) {
 
   const container = win.element.querySelector('.app-notepad');
   render(container, state, win);
+
+  // Register cleanup to remove any orphaned overlays on window close
+  registerCleanup(win.id, () => {
+    document.querySelectorAll(`.notepad-dropdown[data-window-id="${win.id}"], .notepad-file-picker[data-window-id="${win.id}"]`).forEach(el => el.remove());
+  });
 }
 
 function render(container, state, win) {
@@ -62,7 +67,7 @@ function setupMenus(container, state, win, textarea) {
       { label: 'Open...', action: () => doOpen(container, state, win) },
       { label: 'Save', action: () => doSave(state, win) },
       { label: 'Save As...', action: () => doSaveAs(state, win) }
-    ]);
+    ], win.id);
   });
 
   formatBtn.addEventListener('click', (e) => {
@@ -73,17 +78,18 @@ function setupMenus(container, state, win, textarea) {
         textarea.style.overflowX = state.wordWrap ? 'hidden' : 'auto';
         container.querySelector('.notepad-status-wrap').textContent = state.wordWrap ? 'Word Wrap: On' : 'Word Wrap: Off';
       }}
-    ]);
+    ], win.id);
   });
 }
 
-function showDropdown(anchor, items) {
+function showDropdown(anchor, items, windowId) {
   const existing = document.querySelector('.notepad-dropdown');
   if (existing) existing.remove();
 
   const rect = anchor.getBoundingClientRect();
   const dropdown = document.createElement('div');
   dropdown.className = 'notepad-dropdown';
+  if (windowId) dropdown.dataset.windowId = windowId;
   dropdown.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.bottom}px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:4px;z-index:99999;min-width:140px;`;
 
   items.forEach(item => {
@@ -130,6 +136,7 @@ function doOpen(container, state, win) {
 
   const picker = document.createElement('div');
   picker.className = 'notepad-file-picker';
+  picker.dataset.windowId = win.id;
   picker.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-primary);border:1px solid var(--border-color);border-radius:var(--radius-lg);box-shadow:var(--shadow-xl);padding:16px;z-index:99999;min-width:300px;max-height:400px;overflow-y:auto;';
   picker.innerHTML = `<h3 style="margin-bottom:12px;font-size:14px;">Open File</h3>`;
 
