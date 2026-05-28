@@ -10,6 +10,7 @@ import { open as openRecycleBin } from '../apps/recycleBin.js';
 import { open as openWallet } from '../apps/wallet.js';
 import { open as openAntivirus } from '../apps/antivirus.js';
 import { open as openVpn } from '../apps/vpn.js';
+import { open as openMessenger } from '../apps/messenger.js';
 
 const appOpeners = {
   fileExplorer: openFileExplorer,
@@ -21,7 +22,8 @@ const appOpeners = {
   recycleBin: openRecycleBin,
   wallet: openWallet,
   antivirus: openAntivirus,
-  vpn: openVpn
+  vpn: openVpn,
+  messenger: openMessenger
 };
 
 const desktopIcons = [
@@ -34,7 +36,8 @@ const desktopIcons = [
   { id: 'calculator', name: 'Калькулятор', icon: '/icons/calculator.svg', appId: 'calculator' },
   { id: 'wallet', name: 'Кошелёк', icon: '/icons/wallet.svg', appId: 'wallet' },
   { id: 'antivirus', name: 'Антивирус', icon: '/icons/antivirus.svg', appId: 'antivirus' },
-  { id: 'vpn', name: 'VPN', icon: '/icons/vpn.svg', appId: 'vpn' }
+  { id: 'vpn', name: 'VPN', icon: '/icons/vpn.svg', appId: 'vpn' },
+  { id: 'messenger', name: 'Мессенджер', icon: '/icons/messenger.svg', appId: 'messenger' }
 ];
 
 let desktopEl = null;

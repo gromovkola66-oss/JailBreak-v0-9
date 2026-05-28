@@ -10,7 +10,8 @@ const apps = [
   { id: 'recycleBin', name: 'Корзина', icon: '/icons/recycle-bin.svg' },
   { id: 'wallet', name: 'Кошелёк', icon: '/icons/wallet.svg' },
   { id: 'antivirus', name: 'Антивирус', icon: '/icons/antivirus.svg' },
-  { id: 'vpn', name: 'VPN', icon: '/icons/vpn.svg' }
+  { id: 'vpn', name: 'VPN', icon: '/icons/vpn.svg' },
+  { id: 'messenger', name: 'Мессенджер', icon: '/icons/messenger.svg' }
 ];
 
 let startMenuEl = null;

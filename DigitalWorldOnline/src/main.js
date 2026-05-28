@@ -13,6 +13,8 @@ import './styles/apps/wallet.css';
 import './styles/apps/antivirus.css';
 import './styles/apps/vpn.css';
 import './styles/apps/hacking-minigames.css';
+import './styles/notifications.css';
+import './styles/apps/messenger.css';
 
 import { initFileSystem } from './core/fileSystem.js';
 import { initDesktop } from './core/desktop.js';
@@ -20,14 +22,18 @@ import { initTaskbar } from './core/taskbar.js';
 import { initStartMenu } from './core/startMenu.js';
 import { initWindowManager } from './core/windowManager.js';
 import { initTheme } from './apps/settings.js';
+import { initNotifications } from './core/notifications.js';
+import { initQuestSystem } from './core/questSystem.js';
 
 function init() {
   initFileSystem();
   initWindowManager();
   initTheme();
+  initNotifications();
   initDesktop();
   initTaskbar();
   initStartMenu();
+  initQuestSystem();
 }
 
 document.addEventListener('DOMContentLoaded', init);
