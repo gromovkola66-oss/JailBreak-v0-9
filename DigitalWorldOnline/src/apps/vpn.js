@@ -26,14 +26,15 @@ export function open() {
 function renderApp(container) {
   const state = {
     connecting: false,
-    selectedServer: 0
+    selectedServer: 0,
+    currentIp: null
   };
 
   function render() {
     const isConnected = storage.get('vpn_active') || false;
     const server = servers[state.selectedServer];
     const fakeIp = isConnected
-      ? `${server.prefix}.${Math.floor(Math.random() * 200) + 10}.${Math.floor(Math.random() * 200) + 10}`
+      ? (state.currentIp || '192.168.1.100')
       : '192.168.1.100';
     const speed = isConnected ? Math.floor(Math.random() * 150) + 50 : 0;
 
@@ -72,6 +73,7 @@ function renderApp(container) {
     toggleBtn.addEventListener('click', () => {
       if (isConnected) {
         storage.set('vpn_active', false);
+        state.currentIp = null;
         render();
       } else {
         state.connecting = true;
@@ -79,6 +81,8 @@ function renderApp(container) {
         setTimeout(() => {
           state.connecting = false;
           storage.set('vpn_active', true);
+          const srv = servers[state.selectedServer];
+          state.currentIp = `${srv.prefix}.${Math.floor(Math.random() * 200) + 10}.${Math.floor(Math.random() * 200) + 10}`;
           render();
         }, 2000);
       }

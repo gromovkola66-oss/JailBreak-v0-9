@@ -230,7 +230,11 @@ function connectedDownload(filename, output, state) {
     appendLine(output, `Файл '${filename}' не найден.`, '#f44747');
     return;
   }
-  fileSystem.createFile('/Downloads/' + filename, file.content);
+  const created = fileSystem.createFile('/Downloads/' + filename, file.content);
+  if (!created) {
+    appendLine(output, 'Файл уже был загружен ранее.', '#ffff00');
+    return;
+  }
   appendLine(output, 'Файл загружен: ' + filename, '#00ff88');
 
   addMoney(10, 'Скачивание: ' + filename);
@@ -305,7 +309,8 @@ function doBruteforce(parts, output, state, container) {
   appendLine(output, `Подбор пароля к ${ip}:${port}...`, state.textColor);
   appendLine(output, 'Запуск модуля взлома...', state.textColor);
 
-  bruteforceMinigame().then(success => {
+  const bfTools = hackingSystem.getHackingTools();
+  bruteforceMinigame({ enhanced: !!bfTools.bruteforceV2 }).then(success => {
     if (success) {
       hackingSystem.markPortHacked(ip, port);
       reputation.addBlackRep(5, `Взлом порта ${port} на ${ip}`);
@@ -367,6 +372,10 @@ function doExploit(parts, output, state, container) {
     appendLine(output, `Хост ${ip} не найден в сети.`, '#f44747');
     return;
   }
+  if (target.fullyHacked) {
+    appendLine(output, 'Цель уже полностью взломана.', '#ffff00');
+    return;
+  }
   const hasVuln = target.ports.some(p => p.vulnerability === vuln);
   if (!hasVuln) {
     appendLine(output, `Уязвимость '${vuln}' не найдена на ${ip}.`, '#f44747');
@@ -381,7 +390,6 @@ function doExploit(parts, output, state, container) {
   exploitMinigame().then(success => {
     if (success) {
       hackingSystem.markTargetFullyHacked(ip);
-      reputation.addBlackRep(10, `Эксплойт ${vuln} на ${ip}`);
       storage.set('last_hack_time', Date.now());
       addMoney(target.reward, 'Взлом: ' + target.name);
       reputation.addBlackRep(target.difficulty * 10, 'Взлом: ' + target.name);
@@ -399,7 +407,8 @@ function doExploit(parts, output, state, container) {
 function doTrace(output, state) {
   const tools = hackingSystem.getHackingTools();
   const vpnActive = storage.get('vpn_active');
-  if (tools.cryptor || vpnActive) {
+  const firewallActive = storage.get('firewall_active');
+  if (tools.cryptor || vpnActive || firewallActive) {
     appendLine(output, 'Отслеживание: не обнаружено', '#00ff88');
     return;
   }

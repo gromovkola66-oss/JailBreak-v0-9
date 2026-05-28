@@ -3,6 +3,7 @@ import * as storage from './storage.js';
 
 let taskbarEl = null;
 let clockInterval = null;
+let trayIndicatorInterval = null;
 
 const pinnedApps = [
   { id: 'fileExplorer', name: 'Проводник', icon: '/icons/file-explorer.svg' },
@@ -154,8 +155,9 @@ function updateClock() {
 }
 
 function startTrayIndicators() {
+  if (trayIndicatorInterval) clearInterval(trayIndicatorInterval);
   updateTrayIndicators();
-  setInterval(updateTrayIndicators, 2000);
+  trayIndicatorInterval = setInterval(updateTrayIndicators, 2000);
 }
 
 function updateTrayIndicators() {

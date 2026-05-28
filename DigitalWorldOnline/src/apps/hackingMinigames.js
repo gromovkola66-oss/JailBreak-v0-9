@@ -1,11 +1,12 @@
-export function bruteforceMinigame() {
+export function bruteforceMinigame(options = {}) {
   return new Promise((resolve) => {
     const overlay = createOverlay();
     const content = document.createElement('div');
     content.className = 'minigame-content minigame-bruteforce';
 
     let round = 0;
-    const intervals = [1200, 800, 500];
+    const baseIntervals = options.enhanced ? [1500, 1000, 700] : [1200, 800, 500];
+    const intervals = baseIntervals;
     let currentInterval = null;
     let targetSequence = '';
     let scrolling = true;
@@ -315,6 +316,39 @@ function generateConnections(gridSize) {
     connections.push([current, next]);
     visited.add(next);
     current = next;
+  }
+
+  // If path dead-ended before reaching end, force a connection chain to end
+  if (current !== end) {
+    let walker = current;
+    while (walker !== end) {
+      const neighbors = getNeighbors(walker, gridSize);
+      // Prefer unvisited nodes closer to end
+      const sorted = neighbors
+        .filter(n => n !== walker)
+        .sort((a, b) => {
+          const aVisited = visited.has(a) ? 1 : 0;
+          const bVisited = visited.has(b) ? 1 : 0;
+          if (aVisited !== bVisited) return aVisited - bVisited;
+          const aRow = Math.floor(a / gridSize);
+          const aCol = a % gridSize;
+          const bRow = Math.floor(b / gridSize);
+          const bCol = b % gridSize;
+          const aDist = Math.abs(aRow - (gridSize - 1)) + Math.abs(aCol - (gridSize - 1));
+          const bDist = Math.abs(bRow - (gridSize - 1)) + Math.abs(bCol - (gridSize - 1));
+          return aDist - bDist;
+        });
+
+      const next = sorted[0];
+      const exists = connections.some(c =>
+        (c[0] === walker && c[1] === next) || (c[0] === next && c[1] === walker)
+      );
+      if (!exists) {
+        connections.push([walker, next]);
+      }
+      visited.add(next);
+      walker = next;
+    }
   }
 
   // Add some random extra connections
