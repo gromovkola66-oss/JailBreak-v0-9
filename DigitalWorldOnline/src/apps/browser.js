@@ -1,6 +1,10 @@
 import { createWindow } from '../core/windowManager.js';
-import { getBalance, getTransactions, addMoney, canAfford, spendMoney } from '../core/economy.js';
+import { getBalance, getTransactions, addMoney, spendMoney } from '../core/economy.js';
 import * as storage from '../core/storage.js';
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 export function open() {
   const win = createWindow({
@@ -194,6 +198,9 @@ function getActiveTab(state) {
 }
 
 function loadPage(container, state, win) {
+  clearInterval(state.jobTimer);
+  state.jobTimer = null;
+
   const content = container.querySelector('.browser-content');
   const tab = getActiveTab(state);
   if (!tab) return;
@@ -279,7 +286,7 @@ function renderSearchResults(content, query, container, state, win) {
       <div class="search-results-header">
         <h1 class="browser-site-logo" style="font-size:24px;">ПоискВс<span style="color:var(--accent-color)">ё</span></h1>
         <form class="browser-search-form" style="max-width:100%;">
-          <input class="browser-search-input" type="text" value="${query}" />
+          <input class="browser-search-input" type="text" value="${escapeHtml(query)}" />
           <button type="submit" class="browser-search-btn">Найти</button>
         </form>
       </div>
@@ -743,12 +750,10 @@ function renderMarket(content, container, state, win) {
       const item = marketItems.find(i => i.id === itemId);
       if (!item) return;
 
-      if (!canAfford(item.price)) {
+      if (spendMoney(item.price, item.name) === false) {
         alert('Недостаточно средств!');
         return;
       }
-
-      spendMoney(item.price, item.name);
 
       if (item.category === 'wallpapers') {
         const wallpapers = storage.get('purchased_wallpapers') || [];
@@ -771,7 +776,7 @@ function renderNotFound(content, url, container, state, win) {
     <div class="browser-not-found">
       <h1 class="browser-not-found-code">404</h1>
       <p class="browser-not-found-text">Страница не найдена</p>
-      <p class="browser-not-found-url">Адрес "${url}" недоступен.</p>
+      <p class="browser-not-found-url">Адрес "${escapeHtml(url)}" недоступен.</p>
       <button class="browser-not-found-btn" data-link="searchall.dw">Перейти на ПоискВсё</button>
     </div>
   `;

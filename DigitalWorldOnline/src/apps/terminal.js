@@ -3,7 +3,7 @@ import * as fileSystem from '../core/fileSystem.js';
 
 export function open() {
   const win = createWindow({
-    title: 'Terminal',
+    title: 'Терминал',
     icon: '/icons/terminal.svg',
     appId: 'terminal',
     width: 750,

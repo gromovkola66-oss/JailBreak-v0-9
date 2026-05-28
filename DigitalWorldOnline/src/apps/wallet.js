@@ -1,4 +1,4 @@
-import { createWindow } from '../core/windowManager.js';
+import { createWindow, registerCleanup } from '../core/windowManager.js';
 import { getBalance, getTransactions } from '../core/economy.js';
 
 export function open() {
@@ -15,6 +15,14 @@ export function open() {
 
   const container = win.element.querySelector('.app-wallet');
   render(container);
+
+  const pollInterval = setInterval(() => {
+    render(container);
+  }, 2000);
+
+  registerCleanup(win.id, () => {
+    clearInterval(pollInterval);
+  });
 }
 
 function render(container) {
