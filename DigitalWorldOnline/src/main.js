@@ -15,10 +15,12 @@ import { initDesktop } from './core/desktop.js';
 import { initTaskbar } from './core/taskbar.js';
 import { initStartMenu } from './core/startMenu.js';
 import { initWindowManager } from './core/windowManager.js';
+import { initTheme } from './apps/settings.js';
 
 function init() {
   initFileSystem();
   initWindowManager();
+  initTheme();
   initDesktop();
   initTaskbar();
   initStartMenu();

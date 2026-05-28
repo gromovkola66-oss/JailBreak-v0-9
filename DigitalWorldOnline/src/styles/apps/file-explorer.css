@@ -18,13 +18,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  padding: 4px 8px;
   border: none;
   background: transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background var(--transition-fast);
+  font-size: 12px;
+  color: var(--text-primary);
 }
 
 .file-explorer-toolbar button:hover {
@@ -68,6 +69,11 @@
 
 .file-explorer-sidebar-item:hover {
   background: var(--bg-tertiary);
+}
+
+.file-explorer-sidebar-item.active {
+  background: rgba(0, 120, 212, 0.08);
+  color: var(--accent-color);
 }
 
 .file-explorer-sidebar-item img {

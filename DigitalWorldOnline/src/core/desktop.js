@@ -1,5 +1,22 @@
 import { createWindow } from './windowManager.js';
 import * as storage from './storage.js';
+import { open as openFileExplorer } from '../apps/fileExplorer.js';
+import { open as openNotepad } from '../apps/notepad.js';
+import { open as openTerminal } from '../apps/terminal.js';
+import { open as openBrowser } from '../apps/browser.js';
+import { open as openSettings } from '../apps/settings.js';
+import { open as openCalculator } from '../apps/calculator.js';
+import { open as openRecycleBin } from '../apps/recycleBin.js';
+
+const appOpeners = {
+  fileExplorer: openFileExplorer,
+  notepad: openNotepad,
+  terminal: openTerminal,
+  browser: openBrowser,
+  settings: openSettings,
+  calculator: openCalculator,
+  recycleBin: openRecycleBin
+};
 
 const desktopIcons = [
   { id: 'file-explorer', name: 'File Explorer', icon: '/icons/file-explorer.svg', appId: 'fileExplorer' },
@@ -62,12 +79,17 @@ function renderIcons() {
 }
 
 export function openApp(appId, title, icon) {
-  createWindow({
-    title: title || appId,
-    icon: icon || '/icons/file.svg',
-    appId,
-    content: `<div class="app-container" data-app="${appId}"><p style="padding:20px;color:#666;">App "${appId}" loading...</p></div>`
-  });
+  const opener = appOpeners[appId];
+  if (opener) {
+    opener();
+  } else {
+    createWindow({
+      title: title || appId,
+      icon: icon || '/icons/file.svg',
+      appId,
+      content: `<div class="app-container" data-app="${appId}"><p style="padding:20px;color:#666;">App "${appId}" loading...</p></div>`
+    });
+  }
 }
 
 function setupContextMenu() {
