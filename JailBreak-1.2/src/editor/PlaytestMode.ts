@@ -918,7 +918,7 @@ export class PlaytestMode {
         const itemPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
         const obj = objType.create();
         obj.position.copy(itemPos);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         obj.userData.__interactive = true;
         this.scene.add(obj);
         this.droppedItems.push({ mesh: obj, itemType: 'money_bag', position: itemPos });
@@ -933,7 +933,7 @@ export class PlaytestMode {
         const itemPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
         const obj = objType.create();
         obj.position.copy(itemPos);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         obj.userData.__interactive = true;
         this.scene.add(obj);
         this.droppedItems.push({ mesh: obj, itemType: objData.type, position: itemPos });
@@ -945,7 +945,7 @@ export class PlaytestMode {
         const obj = objType.create();
         obj.userData.__interactive = true;
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         this.scene.add(obj);
         obj.updateMatrixWorld(true);
         this.addColliders(obj);
@@ -965,11 +965,11 @@ export class PlaytestMode {
         const obj = objType.create();
         obj.userData.__interactive = true;
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         this.scene.add(obj);
         // Offset the viewpoint forward along the camera's facing direction
         // so the view clears the camera model geometry.
-        const rotRad = THREE.MathUtils.degToRad(objData.rotation);
+        const rotRad = THREE.MathUtils.degToRad(objData.rotation || 0);
         const forwardOffset = 0.4;
         const camPos = new THREE.Vector3(
           objData.position.x + Math.sin(rotRad) * forwardOffset,
@@ -996,7 +996,7 @@ export class PlaytestMode {
         const obj = objType.create();
         obj.userData.__interactive = true;
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         this.scene.add(obj);
         obj.updateMatrixWorld(true);
 
@@ -1004,7 +1004,7 @@ export class PlaytestMode {
         this.addColliders(obj);
         const doorBoxes = this.colliders.slice(prevLen);
 
-        const rotRad = THREE.MathUtils.degToRad(objData.rotation);
+        const rotRad = THREE.MathUtils.degToRad(objData.rotation || 0);
         const pos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
         const door = this.doorSystem.registerDoor(doorCellIndex, obj, pos, rotRad);
         this.doorColliders.set(door.id, doorBoxes);
@@ -1017,7 +1017,7 @@ export class PlaytestMode {
         const obj = objType.create();
         obj.userData.__interactive = true;
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         this.scene.add(obj);
         obj.updateMatrixWorld(true);
         this.addColliders(obj);
@@ -1033,7 +1033,7 @@ export class PlaytestMode {
         const obj = objType.create();
         obj.userData.__interactive = true;
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         this.scene.add(obj);
         obj.updateMatrixWorld(true);
         this.addColliders(obj);
@@ -1046,7 +1046,7 @@ export class PlaytestMode {
         const obj = objType.create();
         obj.userData.__interactive = true;
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         this.scene.add(obj);
         obj.updateMatrixWorld(true);
 
@@ -1054,7 +1054,7 @@ export class PlaytestMode {
         this.addColliders(obj);
         const doorBoxes = this.colliders.slice(prevLen);
 
-        const rotRad = THREE.MathUtils.degToRad(objData.rotation);
+        const rotRad = THREE.MathUtils.degToRad(objData.rotation || 0);
         const doorPos = new THREE.Vector3(objData.position.x, objData.position.y, objData.position.z);
         const rentalDoorId = `rental_door_${objData.id}`;
         const rDoor = this.rentalDoorSystem.registerDoor(rentalDoorId, objData.label || '\u041a\u0430\u043c\u0435\u0440\u0430', obj, doorPos, rotRad, objData.groupId || 0);
@@ -1067,7 +1067,7 @@ export class PlaytestMode {
         const obj = objType.create();
         obj.userData.__interactive = true;
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         this.scene.add(obj);
         obj.updateMatrixWorld(true);
         const ladderBox = new THREE.Box3().setFromObject(obj);
@@ -1082,7 +1082,7 @@ export class PlaytestMode {
         const obj = objType.create();
         obj.userData.__interactive = true;
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         this.scene.add(obj);
         obj.updateMatrixWorld(true);
         let glassMesh: THREE.Mesh | null = null;
@@ -1121,7 +1121,7 @@ export class PlaytestMode {
         const obj = objType.create();
         obj.userData.__interactive = true;
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         this.scene.add(obj);
         obj.updateMatrixWorld(true);
         const wireBox = new THREE.Box3().setFromObject(obj);
@@ -1134,7 +1134,7 @@ export class PlaytestMode {
       if (objData.type === 'water_shallow' || objData.type === 'water_deep') {
         const obj = objType.create();
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         this.scene.add(obj);
         // Register in water system for player interaction
         if (!this.waterSystem) {
@@ -1151,7 +1151,7 @@ export class PlaytestMode {
         const obj = objType.create();
         obj.userData.__interactive = true;
         obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+        obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
         this.scene.add(obj);
         obj.updateMatrixWorld(true);
 
@@ -1170,7 +1170,7 @@ export class PlaytestMode {
       // Обычные объекты — рендерим и делаем коллизии
       const obj = objType.create();
       obj.position.set(objData.position.x, objData.position.y, objData.position.z);
-      obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation);
+      obj.rotation.y = THREE.MathUtils.degToRad(objData.rotation || 0);
       if (objData.rotationX !== undefined) obj.rotation.x = THREE.MathUtils.degToRad(objData.rotationX);
       if (objData.rotationZ !== undefined) obj.rotation.z = THREE.MathUtils.degToRad(objData.rotationZ);
       if (objData.scaleX !== undefined || objData.scaleY !== undefined || objData.scaleZ !== undefined) {
