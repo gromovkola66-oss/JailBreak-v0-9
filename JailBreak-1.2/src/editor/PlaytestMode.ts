@@ -52,6 +52,9 @@ export class PlaytestMode {
   private lockerMeshes: Map<string, THREE.Object3D> = new Map();
   private inTerminalMode = false;
 
+  // Flag to indicate pointer lock was released by a UI panel (not ESC)
+  public uiPointerLockRelease = false;
+
   // Armory locker
   private armoryLockerPositions: THREE.Vector3[] = [];
   private armoryOpen = false;
@@ -412,6 +415,7 @@ export class PlaytestMode {
       soundSystem.playDeath();
 
       // Exit pointer lock
+      this.uiPointerLockRelease = true;
       document.exitPointerLock();
 
       // Notify UI
@@ -429,6 +433,7 @@ export class PlaytestMode {
       this.onInventoryUpdate?.(state);
     };
     this.inventory.onOpen = () => {
+      this.uiPointerLockRelease = true;
       document.exitPointerLock();
     };
     this.inventory.onClose = () => {
@@ -627,6 +632,7 @@ export class PlaytestMode {
       if (document.pointerLockElement === null) return;
       if (this.cameraSystem.terminalHighlighted) {
         const playerPos = this.controller.camera.position;
+        this.uiPointerLockRelease = true;
         this.cameraSystem.enterTerminalMode(playerPos);
         return;
       }
@@ -685,6 +691,7 @@ export class PlaytestMode {
             if (!opened) {
               this.onLockerAccessDenied?.();
             } else {
+              this.uiPointerLockRelease = true;
               document.exitPointerLock();
             }
             return;
@@ -701,6 +708,7 @@ export class PlaytestMode {
           if (dist < 2.5) {
             this.armoryOpen = true;
             this.onArmoryOpen?.();
+            this.uiPointerLockRelease = true;
             document.exitPointerLock();
             return;
           }
@@ -719,6 +727,7 @@ export class PlaytestMode {
               this.rentalDoorSystem.toggleDoor(rentalDoor.id, 'prisoner');
             } else if (result.type === 'menu') {
               this.onShowRentalMenu?.(rentalDoor);
+              this.uiPointerLockRelease = true;
               document.exitPointerLock();
             }
           }

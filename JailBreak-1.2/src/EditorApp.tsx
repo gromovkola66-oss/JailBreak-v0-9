@@ -431,8 +431,13 @@ export const EditorApp = ({ onBackToGame, multiplayerClient, multiplayerTeam }: 
       setPtLocked(locked);
       // In multiplayer mode, auto-open pause menu when pointer lock is released
       if (!locked && multiplayerClient) {
-        setPauseMenuOpen(true);
-        setPauseMenuSettings(false);
+        const pt = playtestRef.current;
+        if (pt && pt.uiPointerLockRelease) {
+          pt.uiPointerLockRelease = false;
+        } else {
+          setPauseMenuOpen(true);
+          setPauseMenuSettings(false);
+        }
       }
     };
     document.addEventListener('pointerlockchange', handlePointerLock);
