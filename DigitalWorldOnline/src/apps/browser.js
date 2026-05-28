@@ -1,4 +1,4 @@
-import { createWindow } from '../core/windowManager.js';
+import { createWindow, registerCleanup } from '../core/windowManager.js';
 import { getBalance, getTransactions, addMoney, spendMoney } from '../core/economy.js';
 import * as storage from '../core/storage.js';
 
@@ -29,6 +29,13 @@ export function open() {
   };
 
   render(container, state, win);
+
+  registerCleanup(win.id, () => {
+    if (state.jobTimer) {
+      clearInterval(state.jobTimer);
+      state.jobTimer = null;
+    }
+  });
 }
 
 function render(container, state, win) {
@@ -68,7 +75,7 @@ function renderTabs(container, state, win) {
     const tabEl = document.createElement('div');
     tabEl.className = 'browser-tab' + (tab.id === state.activeTab ? ' active' : '');
     tabEl.innerHTML = `
-      <span class="browser-tab-title">${tab.title}</span>
+      <span class="browser-tab-title">${escapeHtml(tab.title)}</span>
       ${state.tabs.length > 1 ? '<button class="browser-tab-close">&times;</button>' : ''}
     `;
 
