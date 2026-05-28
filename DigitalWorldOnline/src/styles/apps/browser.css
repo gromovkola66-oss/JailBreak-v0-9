@@ -936,3 +936,679 @@
 .browser-not-found-btn:hover {
   opacity: 0.9;
 }
+
+/* СетьЛайф - Social Network */
+.social-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr 200px;
+  gap: 16px;
+  min-height: 100%;
+}
+
+.social-sidebar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.social-user-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.social-user-avatar {
+  font-size: 24px;
+}
+
+.social-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.social-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.social-nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #555;
+  transition: background 0.2s;
+}
+
+.social-nav-item:hover {
+  background: #f0f0f0;
+}
+
+.social-nav-item.active {
+  background: var(--accent-color);
+  color: white;
+}
+
+.social-main {
+  min-width: 0;
+}
+
+.social-sidebar-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.social-sidebar-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.social-sidebar-section h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  margin: 0 0 10px;
+}
+
+.social-recommend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.social-recommend-avatar {
+  font-size: 18px;
+}
+
+.social-recommend-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.social-recommend-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+}
+
+.social-recommend-name:hover {
+  color: var(--accent-color);
+}
+
+.social-recommend-occ {
+  font-size: 10px;
+  color: #888;
+}
+
+.social-add-friend-btn-sm {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--accent-color);
+  background: none;
+  color: var(--accent-color);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: all 0.2s;
+}
+
+.social-add-friend-btn-sm:hover {
+  background: var(--accent-color);
+  color: white;
+}
+
+.social-online-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #333;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.social-online-item:hover {
+  color: var(--accent-color);
+}
+
+.social-online-dot {
+  width: 8px;
+  height: 8px;
+  background: #2ecc71;
+  border-radius: 50%;
+}
+
+.social-no-online {
+  font-size: 11px;
+  color: #999;
+}
+
+/* Social Setup Form */
+.social-setup-form {
+  max-width: 400px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+.social-setup-title {
+  font-size: 24px;
+  color: #333;
+  margin: 0 0 8px;
+}
+
+.social-setup-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 24px;
+}
+
+.social-setup-field {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.social-setup-field label {
+  display: block;
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.social-setup-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.social-setup-input:focus {
+  border-color: var(--accent-color);
+}
+
+.social-avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.social-avatar-option {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #ddd;
+  border-radius: 50%;
+  background: #f8f9fa;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s;
+}
+
+.social-avatar-option:hover {
+  border-color: var(--accent-color);
+}
+
+.social-avatar-option.selected {
+  border-color: var(--accent-color);
+  background: #e8f4ff;
+}
+
+.social-setup-submit {
+  padding: 10px 24px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.social-setup-submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.social-setup-submit:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Social Posts */
+.social-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px;
+}
+
+.social-section-subtitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin: 16px 0 12px;
+}
+
+.social-post {
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.social-post-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.social-post-avatar {
+  font-size: 28px;
+}
+
+.social-post-author-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.social-post-author {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.social-post-author:hover {
+  color: var(--accent-color);
+}
+
+.social-post-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.social-post-text {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.social-post-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.social-like-btn,
+.social-comment-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #888;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.social-like-btn:hover,
+.social-comment-btn:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.social-like-btn.liked {
+  color: #e74c3c;
+}
+
+.social-post-comments {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.social-comment-item {
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.social-empty-text {
+  font-size: 14px;
+  color: #888;
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* Social Profile */
+.social-profile-card {
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.social-profile-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.social-profile-avatar {
+  font-size: 48px;
+}
+
+.social-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.social-profile-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #222;
+  margin: 0;
+}
+
+.social-profile-occ {
+  font-size: 12px;
+  color: #666;
+}
+
+.social-profile-friends {
+  font-size: 12px;
+  color: #888;
+}
+
+.social-profile-bio-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.social-profile-bio-section label {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+}
+
+.social-profile-bio {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.social-profile-bio:focus {
+  border-color: var(--accent-color);
+}
+
+.social-save-bio-btn {
+  align-self: flex-start;
+  padding: 6px 14px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.social-save-bio-btn:hover {
+  opacity: 0.9;
+}
+
+.social-profile-bio-text {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.social-profile-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
+/* Social Friends */
+.social-friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.social-friend-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.social-friend-avatar {
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.social-friend-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.social-friend-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+}
+
+.social-friend-name:hover {
+  color: var(--accent-color);
+}
+
+.social-friend-status {
+  font-size: 11px;
+  color: #999;
+}
+
+.social-friend-status.online {
+  color: #2ecc71;
+}
+
+.social-friend-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.social-msg-btn {
+  padding: 5px 10px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.social-msg-btn:hover {
+  opacity: 0.9;
+}
+
+.social-remove-friend-btn {
+  padding: 5px 10px;
+  background: none;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.social-remove-friend-btn:hover {
+  background: #e74c3c;
+  color: white;
+}
+
+/* Social Search */
+.social-search-bar {
+  margin-bottom: 16px;
+}
+
+.social-search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.social-search-input:focus {
+  border-color: var(--accent-color);
+}
+
+.social-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.social-search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.social-search-result-avatar {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.social-search-result-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.social-search-result-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+}
+
+.social-search-result-name:hover {
+  color: var(--accent-color);
+}
+
+.social-search-result-occ {
+  font-size: 11px;
+  color: #888;
+}
+
+.social-add-friend-btn {
+  padding: 5px 12px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.social-add-friend-btn:hover {
+  opacity: 0.9;
+}
+
+.social-already-friend-btn {
+  padding: 5px 12px;
+  background: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: default;
+}
+
+.social-msg-profile-btn {
+  padding: 6px 14px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.social-msg-profile-btn:hover {
+  opacity: 0.9;
+}
+
+.social-back-btn {
+  background: none;
+  border: 1px solid #ddd;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 12px;
+}
+
+.social-back-btn:hover {
+  background: #f5f5f5;
+}
+
+.social-npc-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

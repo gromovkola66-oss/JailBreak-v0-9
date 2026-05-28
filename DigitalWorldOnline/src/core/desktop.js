@@ -11,6 +11,7 @@ import { open as openWallet } from '../apps/wallet.js';
 import { open as openAntivirus } from '../apps/antivirus.js';
 import { open as openVpn } from '../apps/vpn.js';
 import { open as openMessenger } from '../apps/messenger.js';
+import { open as openJournal } from '../apps/journal.js';
 
 const appOpeners = {
   fileExplorer: openFileExplorer,
@@ -23,7 +24,8 @@ const appOpeners = {
   wallet: openWallet,
   antivirus: openAntivirus,
   vpn: openVpn,
-  messenger: openMessenger
+  messenger: openMessenger,
+  journal: openJournal
 };
 
 const desktopIcons = [
@@ -37,7 +39,8 @@ const desktopIcons = [
   { id: 'wallet', name: 'Кошелёк', icon: '/icons/wallet.svg', appId: 'wallet' },
   { id: 'antivirus', name: 'Антивирус', icon: '/icons/antivirus.svg', appId: 'antivirus' },
   { id: 'vpn', name: 'VPN', icon: '/icons/vpn.svg', appId: 'vpn' },
-  { id: 'messenger', name: 'Мессенджер', icon: '/icons/messenger.svg', appId: 'messenger' }
+  { id: 'messenger', name: 'Мессенджер', icon: '/icons/messenger.svg', appId: 'messenger' },
+  { id: 'journal', name: '\u0416\u0443\u0440\u043d\u0430\u043b', icon: '/icons/journal.svg', appId: 'journal' }
 ];
 
 let desktopEl = null;

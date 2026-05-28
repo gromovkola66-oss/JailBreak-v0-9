@@ -11,7 +11,8 @@ const apps = [
   { id: 'wallet', name: 'Кошелёк', icon: '/icons/wallet.svg' },
   { id: 'antivirus', name: 'Антивирус', icon: '/icons/antivirus.svg' },
   { id: 'vpn', name: 'VPN', icon: '/icons/vpn.svg' },
-  { id: 'messenger', name: 'Мессенджер', icon: '/icons/messenger.svg' }
+  { id: 'messenger', name: 'Мессенджер', icon: '/icons/messenger.svg' },
+  { id: 'journal', name: '\u0416\u0443\u0440\u043d\u0430\u043b', icon: '/icons/journal.svg' }
 ];
 
 let startMenuEl = null;

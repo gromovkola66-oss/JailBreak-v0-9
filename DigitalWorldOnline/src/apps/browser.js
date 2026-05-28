@@ -4,6 +4,8 @@ import * as storage from '../core/storage.js';
 import { getHackingTools, purchaseTool } from '../core/hackingSystem.js';
 import { getReputation, addBlackRep } from '../core/reputation.js';
 import * as fileSystem from '../core/fileSystem.js';
+import { getNpcs, getNpcById, getNpcPosts, addNpcPost, getRelationship, updateRelationship } from '../core/npcSystem.js';
+import { open as openMessenger } from './messenger.js';
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -61,6 +63,7 @@ function render(container, state, win) {
       <button class="browser-bookmark" data-url="bank.dw">\u041a\u0440\u0438\u043f\u0442\u043e\u0411\u0430\u043d\u043a</button>
       <button class="browser-bookmark" data-url="freelance.dw">\u0424\u0440\u0438\u043b\u0430\u043d\u0441\u0411\u0438\u0440\u0436\u0430</button>
       <button class="browser-bookmark" data-url="market.dw">\u041c\u0430\u0440\u043a\u0435\u0442\u041f\u043b\u0435\u0439\u0441</button>
+      <button class="browser-bookmark" data-url="sociallife.dw">СетьЛайф</button>
       ${storage.get('vpn_active') ? `
         <button class="browser-bookmark" data-url="shadow.onion" style="color:#9333ea;border-color:#9333ea;">ТеневойРынок</button>
         <button class="browser-bookmark" data-url="hackforum.onion" style="color:#9333ea;border-color:#9333ea;">ХакФорум</button>
@@ -204,7 +207,8 @@ function updateTabTitle(state) {
     'freelance.dw': '\u0424\u0440\u0438\u043b\u0430\u043d\u0441\u0411\u0438\u0440\u0436\u0430',
     'market.dw': '\u041c\u0430\u0440\u043a\u0435\u0442\u041f\u043b\u0435\u0439\u0441',
     'shadow.onion': 'ТеневойРынок',
-    'hackforum.onion': 'ХакФорум'
+    'hackforum.onion': 'ХакФорум',
+    'sociallife.dw': 'СетьЛайф'
   };
   tab.title = titles[tab.url] || tab.url;
 }
@@ -235,6 +239,8 @@ function loadPage(container, state, win) {
     renderFreelance(content, container, state, win);
   } else if (url === 'market.dw') {
     renderMarket(content, container, state, win);
+  } else if (url === 'sociallife.dw') {
+    renderSocialLife(content, container, state, win);
   } else if (url.endsWith('.onion')) {
     const vpnActive = storage.get('vpn_active');
     if (!vpnActive) {
@@ -301,7 +307,8 @@ function renderSearchResults(content, query, container, state, win) {
     { url: 'bank.dw', title: 'КриптоБанк - Онлайн банкинг', desc: 'Управление балансом, история транзакций, переводы.', keywords: ['банк', 'деньги', 'баланс', 'транзакции', 'bank', 'оплата'] },
     { url: 'freelance.dw', title: 'ФрилансБиржа - Заработок в цифровом мире', desc: 'Найдите работу: дизайн, программирование, тексты, тестирование.', keywords: ['работа', 'фриланс', 'заработок', 'задания', 'freelance', 'деньги'] },
     { url: 'market.dw', title: 'МаркетПлейс - Цифровой магазин', desc: 'Софт, обои, утилиты. Покупки за ДигиКоины.', keywords: ['магазин', 'купить', 'софт', 'обои', 'market', 'покупки'] },
-    { url: 'searchall.dw', title: 'ПоискВсё - Поисковая система', desc: 'Поиск информации в цифровом мире.', keywords: ['поиск', 'найти', 'search'] }
+    { url: 'searchall.dw', title: 'ПоискВсё - Поисковая система', desc: 'Поиск информации в цифровом мире.', keywords: ['поиск', 'найти', 'search'] },
+    { url: 'sociallife.dw', title: 'СетьЛайф - Социальная сеть', desc: 'Общайтесь с друзьями, делитесь новостями, находите единомышленников.', keywords: ['социальная', 'сеть', 'друзья', 'профиль', 'лента', 'social'] }
   ];
 
   if (storage.get('vpn_active')) {
@@ -1025,4 +1032,533 @@ function renderNotFound(content, url, container, state, win) {
     </div>
   `;
   setupInternalLinks(content, container, state, win);
+}
+
+// ==================== Site 7: СетьЛайф ====================
+const socialAvatars = ['\u{1F464}', '\u{1F468}', '\u{1F469}', '\u{1F468}\u200D\u{1F4BB}', '\u{1F469}\u200D\u{1F4BB}', '\u{1F9D1}\u200D\u{1F393}', '\u{1F468}\u200D\u{1F3A8}', '\u{1F469}\u200D\u{1F52C}'];
+
+function getSocialProfile() {
+  return storage.get('social_profile') || null;
+}
+
+function setSocialProfile(profile) {
+  storage.set('social_profile', profile);
+}
+
+function getSocialFriends() {
+  return storage.get('social_friends') || [];
+}
+
+function setSocialFriends(friends) {
+  storage.set('social_friends', friends);
+}
+
+function getSocialLikes() {
+  return storage.get('social_likes') || {};
+}
+
+function setSocialLikes(likes) {
+  storage.set('social_likes', likes);
+}
+
+function getSocialComments() {
+  return storage.get('social_comments') || {};
+}
+
+function setSocialComments(comments) {
+  storage.set('social_comments', comments);
+}
+
+function generateRandomPost(friends) {
+  if (friends.length === 0) return;
+  const randomNpcId = friends[Math.floor(Math.random() * friends.length)];
+  const npc = getNpcById(randomNpcId);
+  if (!npc) return;
+  const posts = getNpcPosts(randomNpcId);
+  if (posts.length > 6) return;
+  const phrases = [
+    'Отличный день! Всем хорошего настроения!',
+    'Работаю над интересным проектом...',
+    'Кто сегодня онлайн? Давайте пообщаемся!',
+    'Новости дня впечатляют.',
+    'Цифровой мир становится лучше каждый день.'
+  ];
+  const text = phrases[Math.floor(Math.random() * phrases.length)];
+  addNpcPost(randomNpcId, text);
+}
+
+function renderSocialLife(content, container, state, win) {
+  const profile = getSocialProfile();
+
+  if (!profile) {
+    renderSocialSetup(content, container, state, win);
+    return;
+  }
+
+  if (!state.socialSection) state.socialSection = 'feed';
+
+  // Generate a random post on visit
+  const friends = getSocialFriends();
+  if (friends.length > 0 && Math.random() > 0.5) {
+    generateRandomPost(friends);
+  }
+
+  const allNpcs = getNpcs();
+  const onlineFriends = friends
+    .map(id => getNpcById(id))
+    .filter(npc => npc && npc.onlineStatus === 'online');
+
+  const nonFriendNpcs = allNpcs.filter(npc => !npc.hidden && !friends.includes(npc.id)).slice(0, 4);
+
+  content.innerHTML = `
+    <div class="social-layout">
+      <div class="social-sidebar-left">
+        <div class="social-user-card">
+          <span class="social-user-avatar">${profile.avatar}</span>
+          <span class="social-user-name">${escapeHtml(profile.name)}</span>
+        </div>
+        <nav class="social-nav">
+          <button class="social-nav-item ${state.socialSection === 'feed' ? 'active' : ''}" data-section="feed">\u{1F4F0} Лента</button>
+          <button class="social-nav-item ${state.socialSection === 'profile' ? 'active' : ''}" data-section="profile">\u{1F464} Мой профиль</button>
+          <button class="social-nav-item ${state.socialSection === 'friends' ? 'active' : ''}" data-section="friends">\u{1F465} Друзья</button>
+          <button class="social-nav-item ${state.socialSection === 'search' ? 'active' : ''}" data-section="search">\u{1F50D} Поиск</button>
+        </nav>
+      </div>
+      <div class="social-main"></div>
+      <div class="social-sidebar-right">
+        <div class="social-sidebar-section">
+          <h4>Рекомендации друзей</h4>
+          ${nonFriendNpcs.map(npc => `
+            <div class="social-recommend-item">
+              <span class="social-recommend-avatar">${npc.avatar}</span>
+              <div class="social-recommend-info">
+                <span class="social-recommend-name" data-npc-profile="${npc.id}">${npc.name.split(' ')[0]}</span>
+                <span class="social-recommend-occ">${npc.occupation}</span>
+              </div>
+              <button class="social-add-friend-btn-sm" data-add-friend="${npc.id}">+</button>
+            </div>
+          `).join('')}
+        </div>
+        <div class="social-sidebar-section">
+          <h4>Онлайн</h4>
+          ${onlineFriends.length > 0 ? onlineFriends.map(npc => `
+            <div class="social-online-item" data-npc-profile="${npc.id}">
+              <span class="social-online-dot"></span>
+              <span>${npc.avatar} ${npc.name.split(' ')[0]}</span>
+            </div>
+          `).join('') : '<span class="social-no-online">Нет друзей онлайн</span>'}
+        </div>
+      </div>
+    </div>
+  `;
+
+  const mainEl = content.querySelector('.social-main');
+
+  // Render active section
+  if (state.socialSection === 'feed') {
+    renderSocialFeed(mainEl, container, state, win, content);
+  } else if (state.socialSection === 'profile') {
+    renderSocialProfile(mainEl, container, state, win, content);
+  } else if (state.socialSection === 'friends') {
+    renderSocialFriends(mainEl, container, state, win, content);
+  } else if (state.socialSection === 'search') {
+    renderSocialSearch(mainEl, container, state, win, content);
+  } else if (state.socialSection === 'npc-profile') {
+    renderSocialNpcProfile(mainEl, container, state, win, content);
+  }
+
+  // Navigation events
+  content.querySelectorAll('.social-nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.socialSection = btn.dataset.section;
+      renderSocialLife(content, container, state, win);
+    });
+  });
+
+  // NPC profile links
+  content.querySelectorAll('[data-npc-profile]').forEach(el => {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', () => {
+      state.socialSection = 'npc-profile';
+      state.viewingNpc = el.dataset.npcProfile;
+      renderSocialLife(content, container, state, win);
+    });
+  });
+
+  // Add friend buttons in sidebar
+  content.querySelectorAll('[data-add-friend]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const npcId = btn.dataset.addFriend;
+      const currentFriends = getSocialFriends();
+      if (!currentFriends.includes(npcId)) {
+        currentFriends.push(npcId);
+        setSocialFriends(currentFriends);
+        updateRelationship(npcId, 5);
+      }
+      renderSocialLife(content, container, state, win);
+    });
+  });
+}
+
+function renderSocialSetup(content, container, state, win) {
+  content.innerHTML = `
+    <div class="social-setup-form">
+      <h1 class="social-setup-title">Добро пожаловать в СетьЛайф!</h1>
+      <p class="social-setup-subtitle">Создайте свой профиль</p>
+      <div class="social-setup-field">
+        <label>Ваше имя:</label>
+        <input type="text" class="social-setup-input" placeholder="Введите имя..." maxlength="30" />
+      </div>
+      <div class="social-setup-field">
+        <label>Выберите аватар:</label>
+        <div class="social-avatar-grid">
+          ${socialAvatars.map((av, i) => `
+            <button class="social-avatar-option ${i === 0 ? 'selected' : ''}" data-avatar="${av}">${av}</button>
+          `).join('')}
+        </div>
+      </div>
+      <button class="social-setup-submit" disabled>Создать профиль</button>
+    </div>
+  `;
+
+  let selectedAvatar = socialAvatars[0];
+  const input = content.querySelector('.social-setup-input');
+  const submitBtn = content.querySelector('.social-setup-submit');
+
+  content.querySelectorAll('.social-avatar-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      content.querySelectorAll('.social-avatar-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedAvatar = btn.dataset.avatar;
+    });
+  });
+
+  input.addEventListener('input', () => {
+    submitBtn.disabled = input.value.trim().length < 2;
+  });
+
+  submitBtn.addEventListener('click', () => {
+    const name = input.value.trim();
+    if (name.length >= 2) {
+      setSocialProfile({ name, avatar: selectedAvatar, bio: '' });
+      renderSocialLife(content, container, state, win);
+    }
+  });
+}
+
+function renderSocialFeed(mainEl, container, state, win, content) {
+  const friends = getSocialFriends();
+  const likes = getSocialLikes();
+  const comments = getSocialComments();
+
+  let allPosts = [];
+  friends.forEach(npcId => {
+    const npc = getNpcById(npcId);
+    if (!npc) return;
+    const posts = getNpcPosts(npcId);
+    posts.forEach((post, idx) => {
+      allPosts.push({ npcId, npc, post, postKey: `${npcId}_${idx}` });
+    });
+  });
+
+  mainEl.innerHTML = `
+    <h2 class="social-section-title">Лента</h2>
+    ${allPosts.length > 0 ? allPosts.map(({ npc, post, postKey }) => {
+      const liked = likes[postKey] || false;
+      const likeCount = liked ? 1 : 0;
+      const postComments = comments[postKey] || [];
+      return `
+        <div class="social-post">
+          <div class="social-post-header">
+            <span class="social-post-avatar" data-npc-profile="${npc.id}">${npc.avatar}</span>
+            <div class="social-post-author-info">
+              <span class="social-post-author" data-npc-profile="${npc.id}">${npc.name}</span>
+              <span class="social-post-time">${post.time}</span>
+            </div>
+          </div>
+          <p class="social-post-text">${escapeHtml(post.text)}</p>
+          <div class="social-post-actions">
+            <button class="social-like-btn ${liked ? 'liked' : ''}" data-post-key="${postKey}">\u2764 ${likeCount}</button>
+            <button class="social-comment-btn" data-post-key="${postKey}">\u{1F4AC} ${postComments.length}</button>
+          </div>
+          ${postComments.length > 0 ? `
+            <div class="social-post-comments">
+              ${postComments.map(c => `<div class="social-comment-item"><strong>${escapeHtml(c.author)}:</strong> ${escapeHtml(c.text)}</div>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('') : '<p class="social-empty-text">Лента пуста. Добавьте друзей, чтобы видеть их посты!</p>'}
+  `;
+
+  // Like buttons
+  mainEl.querySelectorAll('.social-like-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.postKey;
+      const currentLikes = getSocialLikes();
+      currentLikes[key] = !currentLikes[key];
+      setSocialLikes(currentLikes);
+      renderSocialLife(content, container, state, win);
+    });
+  });
+
+  // Comment buttons
+  mainEl.querySelectorAll('.social-comment-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.postKey;
+      const text = prompt('Ваш комментарий:');
+      if (text && text.trim()) {
+        const currentComments = getSocialComments();
+        if (!currentComments[key]) currentComments[key] = [];
+        const profile = getSocialProfile();
+        currentComments[key].push({ author: profile.name, text: text.trim() });
+        setSocialComments(currentComments);
+        renderSocialLife(content, container, state, win);
+      }
+    });
+  });
+
+  // NPC profile links inside posts
+  mainEl.querySelectorAll('[data-npc-profile]').forEach(el => {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', () => {
+      state.socialSection = 'npc-profile';
+      state.viewingNpc = el.dataset.npcProfile;
+      renderSocialLife(content, container, state, win);
+    });
+  });
+}
+
+function renderSocialProfile(mainEl, container, state, win, content) {
+  const profile = getSocialProfile();
+  const friends = getSocialFriends();
+
+  mainEl.innerHTML = `
+    <div class="social-profile-card">
+      <div class="social-profile-top">
+        <span class="social-profile-avatar">${profile.avatar}</span>
+        <div class="social-profile-info">
+          <h2 class="social-profile-name">${escapeHtml(profile.name)}</h2>
+          <span class="social-profile-friends">${friends.length} друзей</span>
+        </div>
+      </div>
+      <div class="social-profile-bio-section">
+        <label>О себе:</label>
+        <textarea class="social-profile-bio" placeholder="Расскажите о себе..." maxlength="200">${escapeHtml(profile.bio || '')}</textarea>
+        <button class="social-save-bio-btn">Сохранить</button>
+      </div>
+    </div>
+  `;
+
+  mainEl.querySelector('.social-save-bio-btn').addEventListener('click', () => {
+    const bio = mainEl.querySelector('.social-profile-bio').value.trim();
+    const current = getSocialProfile();
+    current.bio = bio;
+    setSocialProfile(current);
+  });
+}
+
+function renderSocialFriends(mainEl, container, state, win, content) {
+  const friends = getSocialFriends();
+  const friendNpcs = friends.map(id => getNpcById(id)).filter(Boolean);
+
+  mainEl.innerHTML = `
+    <h2 class="social-section-title">Друзья (${friendNpcs.length})</h2>
+    <div class="social-friends-list">
+      ${friendNpcs.length > 0 ? friendNpcs.map(npc => `
+        <div class="social-friend-card">
+          <span class="social-friend-avatar" data-npc-profile="${npc.id}">${npc.avatar}</span>
+          <div class="social-friend-info">
+            <span class="social-friend-name" data-npc-profile="${npc.id}">${npc.name}</span>
+            <span class="social-friend-status ${npc.onlineStatus === 'online' ? 'online' : ''}">${npc.onlineStatus === 'online' ? 'В сети' : npc.onlineStatus === 'away' ? 'Отошёл' : 'Не в сети'}</span>
+          </div>
+          <div class="social-friend-actions">
+            <button class="social-msg-btn" data-msg-npc="${npc.id}">Написать</button>
+            <button class="social-remove-friend-btn" data-remove-friend="${npc.id}">Удалить</button>
+          </div>
+        </div>
+      `).join('') : '<p class="social-empty-text">У вас пока нет друзей. Найдите их через поиск!</p>'}
+    </div>
+  `;
+
+  // Message buttons
+  mainEl.querySelectorAll('[data-msg-npc]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openMessenger();
+    });
+  });
+
+  // Remove friend buttons
+  mainEl.querySelectorAll('[data-remove-friend]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const npcId = btn.dataset.removeFriend;
+      const currentFriends = getSocialFriends().filter(id => id !== npcId);
+      setSocialFriends(currentFriends);
+      renderSocialLife(content, container, state, win);
+    });
+  });
+
+  // NPC profile links
+  mainEl.querySelectorAll('[data-npc-profile]').forEach(el => {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', () => {
+      state.socialSection = 'npc-profile';
+      state.viewingNpc = el.dataset.npcProfile;
+      renderSocialLife(content, container, state, win);
+    });
+  });
+}
+
+function renderSocialSearch(mainEl, container, state, win, content) {
+  mainEl.innerHTML = `
+    <h2 class="social-section-title">Поиск людей</h2>
+    <div class="social-search-bar">
+      <input type="text" class="social-search-input" placeholder="Введите имя..." />
+    </div>
+    <div class="social-search-results"></div>
+  `;
+
+  const input = mainEl.querySelector('.social-search-input');
+  const resultsEl = mainEl.querySelector('.social-search-results');
+
+  function doSearch() {
+    const query = input.value.trim().toLowerCase();
+    const friends = getSocialFriends();
+    const allNpcs = getNpcs();
+    const results = allNpcs.filter(npc => {
+      if (npc.hidden) return false;
+      if (!query) return true;
+      return npc.name.toLowerCase().includes(query) || npc.occupation.toLowerCase().includes(query);
+    });
+
+    resultsEl.innerHTML = results.map(npc => {
+      const isFriend = friends.includes(npc.id);
+      return `
+        <div class="social-search-result-item">
+          <span class="social-search-result-avatar" data-npc-profile="${npc.id}">${npc.avatar}</span>
+          <div class="social-search-result-info">
+            <span class="social-search-result-name" data-npc-profile="${npc.id}">${npc.name}</span>
+            <span class="social-search-result-occ">${npc.occupation}</span>
+          </div>
+          ${isFriend
+            ? '<button class="social-already-friend-btn" disabled>Уже в друзьях</button>'
+            : `<button class="social-add-friend-btn" data-add-friend="${npc.id}">Добавить в друзья</button>`}
+        </div>
+      `;
+    }).join('');
+
+    // Re-bind events
+    resultsEl.querySelectorAll('[data-add-friend]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const npcId = btn.dataset.addFriend;
+        const currentFriends = getSocialFriends();
+        if (!currentFriends.includes(npcId)) {
+          currentFriends.push(npcId);
+          setSocialFriends(currentFriends);
+          updateRelationship(npcId, 5);
+        }
+        doSearch();
+      });
+    });
+
+    resultsEl.querySelectorAll('[data-npc-profile]').forEach(el => {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => {
+        state.socialSection = 'npc-profile';
+        state.viewingNpc = el.dataset.npcProfile;
+        renderSocialLife(content, container, state, win);
+      });
+    });
+  }
+
+  input.addEventListener('input', doSearch);
+  doSearch(); // Show all initially
+}
+
+function renderSocialNpcProfile(mainEl, container, state, win, content) {
+  const npcId = state.viewingNpc;
+  const npc = getNpcById(npcId);
+  if (!npc) {
+    state.socialSection = 'feed';
+    renderSocialLife(content, container, state, win);
+    return;
+  }
+
+  const friends = getSocialFriends();
+  const isFriend = friends.includes(npcId);
+  const posts = getNpcPosts(npcId);
+  const relationship = getRelationship(npcId);
+
+  mainEl.innerHTML = `
+    <button class="social-back-btn">\u2190 Назад</button>
+    <div class="social-profile-card">
+      <div class="social-profile-top">
+        <span class="social-profile-avatar">${npc.avatar}</span>
+        <div class="social-profile-info">
+          <h2 class="social-profile-name">${npc.name}</h2>
+          <span class="social-profile-occ">${npc.occupation}, ${npc.age} лет</span>
+          <span class="social-profile-friends">Отношения: ${relationship}/100</span>
+        </div>
+      </div>
+      <p class="social-profile-bio-text">${npc.bio}</p>
+      <div class="social-profile-actions">
+        ${isFriend
+          ? `<button class="social-remove-friend-btn" data-remove-friend="${npcId}">Удалить из друзей</button>`
+          : `<button class="social-add-friend-btn" data-add-friend="${npcId}">Добавить в друзья</button>`}
+        <button class="social-msg-profile-btn" data-msg-npc="${npcId}">Написать сообщение</button>
+      </div>
+    </div>
+    <h3 class="social-section-subtitle">Записи</h3>
+    <div class="social-npc-posts">
+      ${posts.map(post => `
+        <div class="social-post">
+          <div class="social-post-header">
+            <span class="social-post-avatar">${npc.avatar}</span>
+            <div class="social-post-author-info">
+              <span class="social-post-author">${npc.name}</span>
+              <span class="social-post-time">${post.time}</span>
+            </div>
+          </div>
+          <p class="social-post-text">${escapeHtml(post.text)}</p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  mainEl.querySelector('.social-back-btn').addEventListener('click', () => {
+    state.socialSection = 'feed';
+    renderSocialLife(content, container, state, win);
+  });
+
+  // Add/remove friend
+  const addBtn = mainEl.querySelector('[data-add-friend]');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      const currentFriends = getSocialFriends();
+      if (!currentFriends.includes(npcId)) {
+        currentFriends.push(npcId);
+        setSocialFriends(currentFriends);
+        updateRelationship(npcId, 5);
+      }
+      renderSocialLife(content, container, state, win);
+    });
+  }
+
+  const removeBtn = mainEl.querySelector('[data-remove-friend]');
+  if (removeBtn) {
+    removeBtn.addEventListener('click', () => {
+      const currentFriends = getSocialFriends().filter(id => id !== npcId);
+      setSocialFriends(currentFriends);
+      renderSocialLife(content, container, state, win);
+    });
+  }
+
+  // Message button
+  const msgBtn = mainEl.querySelector('[data-msg-npc]');
+  if (msgBtn) {
+    msgBtn.addEventListener('click', () => {
+      openMessenger();
+    });
+  }
 }

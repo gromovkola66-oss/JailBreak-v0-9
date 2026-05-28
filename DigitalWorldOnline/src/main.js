@@ -15,6 +15,7 @@ import './styles/apps/vpn.css';
 import './styles/apps/hacking-minigames.css';
 import './styles/notifications.css';
 import './styles/apps/messenger.css';
+import './styles/apps/journal.css';
 
 import { initFileSystem } from './core/fileSystem.js';
 import { initDesktop } from './core/desktop.js';

@@ -1,7 +1,7 @@
 import * as storage from './storage.js';
 import { addMoney } from './economy.js';
 import { addWhiteRep, addBlackRep } from './reputation.js';
-import { updateRelationship } from './npcSystem.js';
+import { updateRelationship, addNpcPost } from './npcSystem.js';
 import { showNotification } from './notifications.js';
 import { addMessageFromNpc } from '../apps/messenger.js';
 
@@ -252,6 +252,17 @@ export function completeQuest(id) {
     description: `${quest.title}${quest.rewards.dc ? ` (+${quest.rewards.dc} DC)` : ''}`
   });
 
+  // NPC posts react to quest completion
+  if (id === 'first_steps') {
+    addNpcPost('alexey', '\u0415\u0449\u0451 \u043e\u0434\u0438\u043d \u043d\u043e\u0432\u0438\u0447\u043e\u043a \u043e\u0441\u0432\u043e\u0438\u043b\u0441\u044f! \u0420\u0430\u0434 \u043f\u043e\u043c\u043e\u0447\u044c \u{1F389}');
+  } else if (id === 'first_hack') {
+    addNpcPost('ghost', '\u041d\u043e\u0432\u044b\u0439 \u043a\u0430\u0434\u0440 \u0432 \u0434\u0435\u043b\u0435. \u0412\u043f\u0435\u0447\u0430\u0442\u043b\u044f\u0435\u0442.');
+  } else if (id === 'journalist_investigation') {
+    addNpcPost('marina', '\u041f\u043e\u043b\u0443\u0447\u0438\u043b\u0430 \u0432\u0430\u0436\u043d\u044b\u0435 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b. \u0421\u043a\u043e\u0440\u043e \u0431\u0443\u0434\u0435\u0442 \u0433\u0440\u043e\u043c\u043a\u0430\u044f \u0441\u0442\u0430\u0442\u044c\u044f!');
+  } else if (id === 'help_with_virus') {
+    addNpcPost('anna', '\u0421\u043f\u0430\u0441\u0438\u0431\u043e \u0437\u0430 \u043f\u043e\u043c\u043e\u0449\u044c \u0441 \u0432\u0438\u0440\u0443\u0441\u043e\u043c! \u0422\u0435\u043f\u0435\u0440\u044c \u0432\u0441\u0451 \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0442 \u{1F60A}');
+  }
+
   // Check if new quests become available
   checkAndUnlockQuests();
   return true;
@@ -271,6 +282,11 @@ function checkAndUnlockQuests() {
     }
 
     state.available.push(quest.id);
+    showNotification({
+      type: 'quest',
+      title: '\u041d\u043e\u0432\u044b\u0439 \u043a\u0432\u0435\u0441\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d',
+      description: quest.title
+    });
   }
   saveState(state);
 }

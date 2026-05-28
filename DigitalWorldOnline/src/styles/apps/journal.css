@@ -1,0 +1,230 @@
+/* Journal / Quest Tracker Styles */
+.app-journal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #faf8f5;
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 27px,
+    #e8e4df 27px,
+    #e8e4df 28px
+  );
+}
+
+.journal-header {
+  padding: 16px 20px 12px;
+  background: #f5f0eb;
+  border-bottom: 2px solid #d4c9be;
+}
+
+.journal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #4a3728;
+  margin: 0;
+}
+
+.journal-tabs {
+  display: flex;
+  gap: 0;
+  background: #f0ebe5;
+  border-bottom: 1px solid #d4c9be;
+}
+
+.journal-tab {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  color: #7a6555;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+.journal-tab:hover {
+  background: #ebe5de;
+}
+
+.journal-tab.active {
+  background: #faf8f5;
+  color: #4a3728;
+  border-bottom-color: #8b6914;
+}
+
+.journal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.journal-empty {
+  font-size: 14px;
+  color: #999;
+  text-align: center;
+  padding: 40px 0;
+  font-style: italic;
+}
+
+.journal-quest-card {
+  background: white;
+  border: 1px solid #e0d8d0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-left: 4px solid #2196F3;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.journal-quest-card.active {
+  border-left-color: #4caf50;
+}
+
+.journal-quest-card.available {
+  border-left-color: #2196F3;
+}
+
+.journal-quest-card.completed {
+  border-left-color: #9e9e9e;
+  opacity: 0.85;
+}
+
+.journal-quest-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.journal-quest-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.journal-quest-type {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #e8e8e8;
+  color: #666;
+}
+
+.journal-quest-badge-done {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #d4edda;
+  color: #155724;
+}
+
+.journal-quest-giver {
+  font-size: 12px;
+  color: #888;
+  margin: 0 0 8px;
+  font-style: italic;
+}
+
+.journal-quest-desc {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.journal-objectives {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.journal-objective {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #f8f6f3;
+  border-radius: 4px;
+}
+
+.journal-objective.done {
+  background: #e8f5e9;
+}
+
+.journal-objective-icon {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  color: #999;
+}
+
+.journal-objective.done .journal-objective-icon {
+  color: #4caf50;
+}
+
+.journal-objective-text {
+  flex: 1;
+  font-size: 12px;
+  color: #555;
+}
+
+.journal-objective.done .journal-objective-text {
+  color: #4caf50;
+  text-decoration: line-through;
+}
+
+.journal-objective-progress {
+  font-size: 11px;
+  color: #888;
+  font-weight: 500;
+}
+
+.journal-rewards {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.journal-reward-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: #fff3cd;
+  color: #856404;
+}
+
+.journal-reward-badge.white {
+  background: #d4edda;
+  color: #155724;
+}
+
+.journal-reward-badge.black {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.journal-reward-badge.rel {
+  background: #e8f4ff;
+  color: #0066cc;
+}
+
+.journal-start-btn {
+  padding: 8px 16px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.journal-start-btn:hover {
+  opacity: 0.9;
+}
