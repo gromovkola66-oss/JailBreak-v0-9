@@ -1,9 +1,16 @@
+// NOTE: Circular dependency with questSystem.js (questSystem imports addMessageFromNpc from here).
+// This works in ES modules because both sides only call the imported function inside event handlers,
+// never at module-evaluation time.
 import { createWindow, registerCleanup } from '../core/windowManager.js';
 import * as storage from '../core/storage.js';
 import { getNpcById } from '../core/npcSystem.js';
 import { showNotification } from '../core/notifications.js';
 import { updateQuestStep } from '../core/questSystem.js';
 import { addMoney, spendMoney } from '../core/economy.js';
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 const MSG_KEY = 'messenger_messages';
 const UNREAD_KEY = 'messenger_unread';
@@ -352,8 +359,8 @@ function renderConversations(container) {
         <span class="messenger-status-dot ${statusClass}"></span>
       </div>
       <div class="messenger-conv-info">
-        <div class="messenger-conv-name">${npc.name.split(' ')[0]}</div>
-        <div class="messenger-conv-preview">${lastMsg ? (lastMsg.sender === 'player' ? 'Вы: ' : '') + lastMsg.text.substring(0, 30) + (lastMsg.text.length > 30 ? '...' : '') : ''}</div>
+        <div class="messenger-conv-name">${escapeHtml(npc.name.split(' ')[0])}</div>
+        <div class="messenger-conv-preview">${lastMsg ? escapeHtml((lastMsg.sender === 'player' ? 'Вы: ' : '') + lastMsg.text.substring(0, 30) + (lastMsg.text.length > 30 ? '...' : '')) : ''}</div>
       </div>
       <div class="messenger-conv-meta">
         <div class="messenger-conv-time">${lastMsg ? lastMsg.time : ''}</div>
@@ -429,7 +436,7 @@ function renderMessages(chatEl, npcId) {
     const bubble = document.createElement('div');
     bubble.className = `messenger-bubble ${msg.sender === 'player' ? 'messenger-bubble-player' : 'messenger-bubble-npc'}`;
     bubble.innerHTML = `
-      <div class="messenger-bubble-text">${msg.text}</div>
+      <div class="messenger-bubble-text">${escapeHtml(msg.text)}</div>
       <div class="messenger-bubble-time">${msg.time}</div>
     `;
     messagesEl.appendChild(bubble);

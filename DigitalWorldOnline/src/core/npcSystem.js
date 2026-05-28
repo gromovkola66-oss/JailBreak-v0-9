@@ -248,9 +248,16 @@ export function getNpcPosts(npcId) {
   const customPosts = storage.get(NPC_POSTS_KEY) || {};
   const npc = getNpcById(npcId);
   if (!npc) return [];
-  const base = [...npc.posts];
+  const base = npc.posts.map((post, idx) => ({
+    ...post,
+    id: post.id || `${npcId}_static_${idx}`
+  }));
   if (customPosts[npcId]) {
-    return [...customPosts[npcId], ...base];
+    const custom = customPosts[npcId].map(post => ({
+      ...post,
+      id: post.id || `${npcId}_custom_${post.time}_${post.text.substring(0, 10)}`
+    }));
+    return [...custom, ...base];
   }
   return base;
 }
@@ -258,6 +265,6 @@ export function getNpcPosts(npcId) {
 export function addNpcPost(npcId, text) {
   const customPosts = storage.get(NPC_POSTS_KEY) || {};
   if (!customPosts[npcId]) customPosts[npcId] = [];
-  customPosts[npcId].unshift({ text, time: 'только что' });
+  customPosts[npcId].unshift({ text, time: 'только что', id: `${npcId}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}` });
   storage.set(NPC_POSTS_KEY, customPosts);
 }

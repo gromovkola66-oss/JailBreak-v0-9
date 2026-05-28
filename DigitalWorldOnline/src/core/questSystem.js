@@ -1,3 +1,6 @@
+// NOTE: Circular dependency with ../apps/messenger.js (messenger imports updateQuestStep from here).
+// This works in ES modules because both sides only call the imported function inside event handlers,
+// never at module-evaluation time.
 import * as storage from './storage.js';
 import { addMoney } from './economy.js';
 import { addWhiteRep, addBlackRep } from './reputation.js';

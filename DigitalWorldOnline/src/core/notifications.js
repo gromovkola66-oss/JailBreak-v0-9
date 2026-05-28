@@ -35,14 +35,31 @@ function renderNotification(notification) {
   const el = document.createElement('div');
   el.className = `notification notification-${type} notification-enter`;
 
-  el.innerHTML = `
-    <div class="notification-icon">${ICONS[type] || ICONS.message}</div>
-    <div class="notification-body">
-      <div class="notification-title">${title}</div>
-      <div class="notification-description">${description}</div>
-    </div>
-    <button class="notification-close">\u00D7</button>
-  `;
+  const iconEl = document.createElement('div');
+  iconEl.className = 'notification-icon';
+  iconEl.textContent = ICONS[type] || ICONS.message;
+
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'notification-body';
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'notification-title';
+  titleEl.textContent = title;
+
+  const descEl = document.createElement('div');
+  descEl.className = 'notification-description';
+  descEl.textContent = description;
+
+  bodyEl.appendChild(titleEl);
+  bodyEl.appendChild(descEl);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'notification-close';
+  closeBtn.textContent = '\u00D7';
+
+  el.appendChild(iconEl);
+  el.appendChild(bodyEl);
+  el.appendChild(closeBtn);
 
   el.addEventListener('click', (e) => {
     if (e.target.closest('.notification-close')) {

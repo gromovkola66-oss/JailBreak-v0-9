@@ -1267,8 +1267,8 @@ function renderSocialFeed(mainEl, container, state, win, content) {
     const npc = getNpcById(npcId);
     if (!npc) return;
     const posts = getNpcPosts(npcId);
-    posts.forEach((post, idx) => {
-      allPosts.push({ npcId, npc, post, postKey: `${npcId}_${idx}` });
+    posts.forEach((post) => {
+      allPosts.push({ npcId, npc, post, postKey: post.id });
     });
   });
 

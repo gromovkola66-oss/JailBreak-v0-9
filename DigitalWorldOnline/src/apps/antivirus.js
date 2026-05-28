@@ -203,8 +203,10 @@ function runScan(container, duration, threatChance, render) {
       storage.set('last_scan_time', Date.now());
 
       // Quest trigger: antivirus_scan
-      updateQuestStep('help_with_virus', 'antivirus_scan', null);
-      addMessageFromNpc('anna', 'Ой, спасибо огромное! Всё заработало! Ты лучший \u{1F60A}');
+      const updated = updateQuestStep('help_with_virus', 'antivirus_scan', null);
+      if (updated) {
+        addMessageFromNpc('anna', 'Ой, спасибо огромное! Всё заработало! Ты лучший \u{1F60A}');
+      }
 
       const found = Math.random() < threatChance;
       if (found) {
