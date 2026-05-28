@@ -7,7 +7,8 @@ const apps = [
   { id: 'browser', name: 'Браузер', icon: '/icons/browser.svg' },
   { id: 'settings', name: 'Настройки', icon: '/icons/settings.svg' },
   { id: 'calculator', name: 'Калькулятор', icon: '/icons/calculator.svg' },
-  { id: 'recycleBin', name: 'Корзина', icon: '/icons/recycle-bin.svg' }
+  { id: 'recycleBin', name: 'Корзина', icon: '/icons/recycle-bin.svg' },
+  { id: 'wallet', name: 'Кошелёк', icon: '/icons/wallet.svg' }
 ];
 
 let startMenuEl = null;

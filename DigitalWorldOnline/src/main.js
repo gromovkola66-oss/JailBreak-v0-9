@@ -9,6 +9,7 @@ import './styles/apps/terminal.css';
 import './styles/apps/browser.css';
 import './styles/apps/settings.css';
 import './styles/apps/calculator.css';
+import './styles/apps/wallet.css';
 
 import { initFileSystem } from './core/fileSystem.js';
 import { initDesktop } from './core/desktop.js';

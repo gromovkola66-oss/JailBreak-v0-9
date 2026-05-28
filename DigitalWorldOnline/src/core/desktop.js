@@ -7,6 +7,7 @@ import { open as openBrowser } from '../apps/browser.js';
 import { open as openSettings } from '../apps/settings.js';
 import { open as openCalculator } from '../apps/calculator.js';
 import { open as openRecycleBin } from '../apps/recycleBin.js';
+import { open as openWallet } from '../apps/wallet.js';
 
 const appOpeners = {
   fileExplorer: openFileExplorer,
@@ -15,7 +16,8 @@ const appOpeners = {
   browser: openBrowser,
   settings: openSettings,
   calculator: openCalculator,
-  recycleBin: openRecycleBin
+  recycleBin: openRecycleBin,
+  wallet: openWallet
 };
 
 const desktopIcons = [
@@ -25,7 +27,8 @@ const desktopIcons = [
   { id: 'browser', name: 'Браузер', icon: '/icons/browser.svg', appId: 'browser' },
   { id: 'settings', name: 'Настройки', icon: '/icons/settings.svg', appId: 'settings' },
   { id: 'recycle-bin', name: 'Корзина', icon: '/icons/recycle-bin.svg', appId: 'recycleBin' },
-  { id: 'calculator', name: 'Калькулятор', icon: '/icons/calculator.svg', appId: 'calculator' }
+  { id: 'calculator', name: 'Калькулятор', icon: '/icons/calculator.svg', appId: 'calculator' },
+  { id: 'wallet', name: 'Кошелёк', icon: '/icons/wallet.svg', appId: 'wallet' }
 ];
 
 let desktopEl = null;
