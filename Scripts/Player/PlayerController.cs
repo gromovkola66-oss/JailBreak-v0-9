@@ -173,7 +173,8 @@ public class PlayerController : MonoBehaviour
     public void SetDead()
     {
         isDead = true;
-        GetComponentInChildren<Camera>().enabled = false;
+        Camera cam = GetComponentInChildren<Camera>();
+        if (cam != null) cam.enabled = false;
         SpectateCamera spectate = FindFirstObjectByType<SpectateCamera>();
         if (spectate != null)
         {
@@ -188,8 +189,8 @@ public class PlayerController : MonoBehaviour
         transform.position = position;
         controller.enabled = true;
         velocity = Vector3.zero;
-        GetComponentInChildren<Camera>().enabled = true;
-        EnableInput();
+        Camera cam = GetComponentInChildren<Camera>();
+        if (cam != null) cam.enabled = true;
     }
 
     public void EnableInput()
