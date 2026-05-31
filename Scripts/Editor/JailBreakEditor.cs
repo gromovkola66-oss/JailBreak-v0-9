@@ -356,6 +356,88 @@ public class JailBreakEditor : EditorWindow
     }
 
     // ============================================================
+    // STEP 4: Setup Inventory
+    // ============================================================
+    [MenuItem("JailBreak/Step 4 - Setup Inventory")]
+    public static void SetupInventory()
+    {
+        GameObject player = GameObject.Find("Player");
+        if (player == null)
+        {
+            EditorUtility.DisplayDialog("Error", "Player not found! Run Step 1 first.", "OK");
+            return;
+        }
+
+        // Add InventorySystem to player
+        InventorySystem inv = player.GetComponent<InventorySystem>();
+        if (inv == null) inv = player.AddComponent<InventorySystem>();
+
+        // Add InventoryUI (global)
+        DestroyIfExists("InventoryUI");
+        GameObject uiObj = new GameObject("InventoryUI");
+        uiObj.AddComponent<InventoryUI>();
+
+        // Clean old pickups
+        GameObject oldPickups = GameObject.Find("Pickups");
+        if (oldPickups != null) DestroyImmediate(oldPickups);
+
+        // Create parent for pickups
+        GameObject pickups = new GameObject("Pickups");
+        pickups.transform.position = Vector3.zero;
+
+        // Spawn items around the map
+        // Corridor items
+        CreatePickup("Pickup_Pistol", pickups, new Vector3(0f, 0.7f, -10f), ItemData.Pistol(), new Color(0.25f, 0.25f, 0.3f));
+        CreatePickup("Pickup_Medkit1", pickups, new Vector3(1.5f, 0.7f, -4f), ItemData.Medkit(), new Color(0.9f, 0.2f, 0.2f));
+        CreatePickup("Pickup_Ammo1", pickups, new Vector3(-1f, 0.7f, 2f), ItemData.AmmoBox(), new Color(0.5f, 0.5f, 0.2f));
+
+        // Guard room items
+        float guardX = -8.5f;
+        float guardZ = -12f;
+        CreatePickup("Pickup_AK47", pickups, new Vector3(guardX - 1f, 0.9f, guardZ), ItemData.AK47(), new Color(0.3f, 0.3f, 0.3f));
+        CreatePickup("Pickup_CellKey", pickups, new Vector3(guardX + 1f, 0.9f, guardZ + 1f), ItemData.CellKey(), new Color(0.8f, 0.7f, 0.2f));
+        CreatePickup("Pickup_Taser", pickups, new Vector3(guardX, 0.9f, guardZ - 1f), ItemData.Taser(), new Color(0.9f, 0.9f, 0.2f));
+
+        // Yard items
+        float yardZ = 26f;
+        CreatePickup("Pickup_Shotgun", pickups, new Vector3(3f, 0.7f, yardZ), ItemData.Shotgun(), new Color(0.4f, 0.3f, 0.2f));
+        CreatePickup("Pickup_Money1", pickups, new Vector3(-2f, 0.7f, yardZ + 3f), ItemData.Money(100), new Color(0.2f, 0.7f, 0.3f));
+        CreatePickup("Pickup_Medkit2", pickups, new Vector3(5f, 0.7f, yardZ - 2f), ItemData.Medkit(), new Color(0.9f, 0.2f, 0.2f));
+
+        // Cell items
+        CreatePickup("Pickup_Shiv", pickups, new Vector3(-4f, 0.5f, -12f), ItemData.Shiv(), new Color(0.6f, 0.6f, 0.6f));
+        CreatePickup("Pickup_Money2", pickups, new Vector3(4f, 0.5f, 0f), ItemData.Money(50), new Color(0.2f, 0.7f, 0.3f));
+
+        EditorUtility.DisplayDialog(
+            "JailBreak - Step 4 Complete",
+            "Inventory system created!\n\n" +
+            "- 4 hotbar slots (bottom of screen)\n" +
+            "- 8 inventory slots\n" +
+            "- Pickup items placed on map\n\n" +
+            "Controls:\n" +
+            "Tab - Open/close inventory\n" +
+            "E - Pick up items (when near)\n" +
+            "Click slots to move items\n\n" +
+            "Press PLAY to test!",
+            "OK"
+        );
+    }
+
+    private static void CreatePickup(string name, GameObject parent, Vector3 position, ItemData item, Color color)
+    {
+        GameObject pickup = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        pickup.name = name;
+        pickup.transform.SetParent(parent.transform);
+        pickup.transform.position = position;
+        pickup.transform.localScale = new Vector3(0.4f, 0.4f, 0.4f);
+        pickup.GetComponent<Renderer>().material = CreateMat(color);
+
+        // Add pickup script
+        PickupItem pi = pickup.AddComponent<PickupItem>();
+        pi.itemData = item;
+    }
+
+    // ============================================================
     // HELPERS
     // ============================================================
     private static void BuildCell(string name, GameObject parent, Vector3 center, float width, float depth, float height, Material wallMat, Material floorMat, Material ceilMat, Material barsMat, Material frameMat, Material bedMat, Material mattressMat, Material toiletMat, bool isLeft)
