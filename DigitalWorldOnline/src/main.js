@@ -30,6 +30,8 @@ import { initQuestSystem } from './core/questSystem.js';
 import { hasSkillEffect } from './core/skillSystem.js';
 import { addMoney } from './core/economy.js';
 
+let intervalsStarted = false;
+
 function init() {
   initFileSystem();
   initWindowManager();
@@ -41,20 +43,24 @@ function init() {
   initLevelSystem();
   initQuestSystem();
 
-  // Intrusion detection skill effect
-  setInterval(() => {
-    if (hasSkillEffect('intrusion_detect') && Math.random() < 0.3) {
-      showNotification({ type: 'warning', title: 'Обнаружение вторжений', description: 'Попытка сетевой атаки отражена!' });
-    }
-  }, 90000);
+  if (!intervalsStarted) {
+    intervalsStarted = true;
 
-  // Passive income skill effect
-  setInterval(() => {
-    if (hasSkillEffect('passive_income')) {
-      addMoney(50, 'Пассивный доход');
-      showNotification({ type: 'money', title: 'Пассивный доход', description: '+50 DC' });
-    }
-  }, 60000);
+    // Intrusion detection skill effect
+    setInterval(() => {
+      if (hasSkillEffect('intrusion_detect') && Math.random() < 0.3) {
+        showNotification({ type: 'warning', title: 'Обнаружение вторжений', description: 'Попытка сетевой атаки отражена!' });
+      }
+    }, 90000);
+
+    // Passive income skill effect
+    setInterval(() => {
+      if (hasSkillEffect('passive_income')) {
+        addMoney(50, 'Пассивный доход');
+        showNotification({ type: 'money', title: 'Пассивный доход', description: '+50 DC' });
+      }
+    }, 60000);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);

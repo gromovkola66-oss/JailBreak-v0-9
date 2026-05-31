@@ -768,17 +768,35 @@ function doSniff(args, output, state) {
     return;
   }
   appendLine(output, `Перехват трафика ${ip}...`, state.textColor);
-  appendLine(output, 'Перехваченные данные: login=admin, password=qwerty123', '#00ff88');
+
+  // Extract credentials from target's files
+  const files = hackingSystem.getTargetFiles(ip);
+  let foundCredentials = false;
+  for (const file of files) {
+    if (file.name === 'passwords.txt' || file.name === 'config.ini' || file.name === 'admin_panel.conf' || file.name === 'access_keys.dat') {
+      const lines = file.content.split('\n').filter(l => l.trim());
+      const credLine = lines[0] || '';
+      appendLine(output, `[${file.name}] ${credLine}`, '#00ff88');
+      foundCredentials = true;
+      break;
+    }
+  }
+  if (!foundCredentials) {
+    // Derive from target name as fallback
+    const nameHash = target.name.length + target.difficulty;
+    const fakePass = 'pass' + (nameHash * 137 % 9000 + 1000);
+    appendLine(output, `Перехваченные данные: login=user${target.difficulty}, password=${fakePass}`, '#00ff88');
+  }
 }
 
 function doCraft(args, output, state) {
+  if (!hasSkillEffect('craft_virus')) {
+    appendLine(output, 'Требуется навык: Создание вирусов', '#f44747');
+    return;
+  }
   const parts = args ? args.trim().split(/\s+/) : [];
   if (parts[0] !== 'virus' || parts.length < 2) {
     appendLine(output, 'Использование: craft virus <имя>', '#f44747');
-    return;
-  }
-  if (!hasSkillEffect('craft_virus')) {
-    appendLine(output, 'Требуется навык: Создание вирусов', '#f44747');
     return;
   }
   const virusName = parts.slice(1).join('_');

@@ -7,7 +7,7 @@ import { addWhiteRep, addBlackRep } from './reputation.js';
 import { updateRelationship, addNpcPost } from './npcSystem.js';
 import { showNotification } from './notifications.js';
 import { addMessageFromNpc } from '../apps/messenger.js';
-import { addXP } from './levelSystem.js';
+import { addXP, getLevel } from './levelSystem.js';
 import { hasSkillEffect } from './skillSystem.js';
 
 const QUEST_STATE_KEY = 'quest_state';
@@ -135,7 +135,7 @@ const quests = [
       { desc: 'Изучить 3 навыка в ветке Хакинг', type: 'learn_hacking_skills', current: 0, required: 3 }
     ],
     rewards: { dc: 400, blackRep: 20 },
-    requirements: {}
+    requirements: { minLevel: 3 }
   },
   {
     id: 'skill_shield_sword',
@@ -147,7 +147,7 @@ const quests = [
       { desc: 'Изучить 2 навыка в ветке Защита', type: 'learn_defense_skills', current: 0, required: 2 }
     ],
     rewards: { dc: 300, whiteRep: 15 },
-    requirements: {}
+    requirements: { minLevel: 3 }
   },
   {
     id: 'skill_own_business',
@@ -160,7 +160,7 @@ const quests = [
       { desc: 'Создать свой магазин', type: 'create_shop', current: 0, required: 1 }
     ],
     rewards: { dc: 1000 },
-    requirements: {}
+    requirements: { minLevel: 5 }
   },
   {
     id: 'skill_first_script',
@@ -173,7 +173,7 @@ const quests = [
       { desc: 'Выполнить команду script в терминале', type: 'use_script_command', current: 0, required: 1 }
     ],
     rewards: { dc: 250, whiteRep: 10 },
-    requirements: {}
+    requirements: { minLevel: 3 }
   },
   {
     id: 'skill_master_communication',
@@ -186,7 +186,7 @@ const quests = [
       { desc: 'Добавить 5 друзей в СетьЛайф', type: 'add_friends_count', current: 0, required: 5 }
     ],
     rewards: { dc: 200, relationship: { anna: 30, alexey: 30, marina: 30, elena: 30, igor: 30 } },
-    requirements: {}
+    requirements: { minLevel: 4 }
   }
 ];
 
@@ -347,6 +347,7 @@ export function completeQuest(id) {
 
 function checkAndUnlockQuests() {
   const state = getState();
+  const currentLevel = getLevel();
   for (const quest of quests) {
     if (state.completed.includes(quest.id)) continue;
     if (state.active[quest.id]) continue;
@@ -357,6 +358,8 @@ function checkAndUnlockQuests() {
       const allMet = quest.requirements.previousQuests.every(qId => state.completed.includes(qId));
       if (!allMet) continue;
     }
+
+    if (quest.requirements.minLevel && currentLevel < quest.requirements.minLevel) continue;
 
     state.available.push(quest.id);
     showNotification({
@@ -384,11 +387,6 @@ export function initQuestSystem() {
     state.available.push('investment');
     state.available.push('dubious_offer');
     state.available.push('stress_test');
-    state.available.push('skill_path_hacker');
-    state.available.push('skill_shield_sword');
-    state.available.push('skill_own_business');
-    state.available.push('skill_first_script');
-    state.available.push('skill_master_communication');
     saveState(state);
 
     // Send initial messages from NPCs

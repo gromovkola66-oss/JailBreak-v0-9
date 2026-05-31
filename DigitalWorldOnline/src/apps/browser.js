@@ -578,6 +578,25 @@ function renderWiki(content, container, state, win) {
 }
 
 // ==================== Site 4: КриптоБанк ====================
+
+function seededRandom(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 4294967296;
+  };
+}
+
+function getStockPrices() {
+  const minuteSeed = Math.floor(Date.now() / 60000);
+  const rng = seededRandom(minuteSeed);
+  return [
+    { name: 'ДигиТех', symbol: 'DGT', price: 80 + Math.floor(rng() * 40) },
+    { name: 'КриптоКорп', symbol: 'CRP', price: 150 + Math.floor(rng() * 100) },
+    { name: 'НейроСеть', symbol: 'NRS', price: 40 + Math.floor(rng() * 40) }
+  ];
+}
+
 function renderBank(content) {
   const balance = getBalance();
   const transactions = getTransactions();
@@ -586,11 +605,7 @@ function renderBank(content) {
   let stockSection = '';
   if (hasSkillEffect('stock_market')) {
     const playerStocks = storage.get('player_stocks') || {};
-    const stocks = [
-      { name: 'ДигиТех', symbol: 'DGT', price: 80 + Math.floor(Math.random() * 40) },
-      { name: 'КриптоКорп', symbol: 'CRP', price: 150 + Math.floor(Math.random() * 100) },
-      { name: 'НейроСеть', symbol: 'NRS', price: 40 + Math.floor(Math.random() * 40) }
-    ];
+    const stocks = getStockPrices();
     stockSection = `
       <div class="bank-stocks">
         <h3>Фондовый рынок</h3>
@@ -674,8 +689,7 @@ function renderBank(content) {
       const price = parseInt(btn.dataset.price);
       const playerStocks = storage.get('player_stocks') || {};
       if (!playerStocks[symbol] || playerStocks[symbol] <= 0) return;
-      const sellPrice = price + Math.floor(Math.random() * 20) - 10;
-      addMoney(Math.max(sellPrice, 1), 'Продажа акций: ' + symbol);
+      addMoney(price, 'Продажа акций: ' + symbol);
       playerStocks[symbol]--;
       if (playerStocks[symbol] <= 0) delete playerStocks[symbol];
       storage.set('player_stocks', playerStocks);
