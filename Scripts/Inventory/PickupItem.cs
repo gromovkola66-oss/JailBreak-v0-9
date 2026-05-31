@@ -3,15 +3,15 @@ using UnityEngine.InputSystem;
 
 public class PickupItem : MonoBehaviour
 {
-    // Item data stored as serializable fields (not class reference)
-    public string itemName;
-    public ItemType itemType;
+    // Item data stored as serializable fields
+    public string itemName = "Unknown";
+    public ItemType itemType = ItemType.Misc;
     public int quantity = 1;
     public int maxStack = 1;
     public Color displayColor = Color.white;
     public string description = "";
 
-    public float pickupRange = 2.5f;
+    public float pickupRange = 3.5f;
 
     [HideInInspector]
     public bool showPrompt = false;
@@ -23,33 +23,29 @@ public class PickupItem : MonoBehaviour
     // Visual bobbing
     private float bobOffset;
     private Vector3 startPos;
-    private bool isReady = false;
 
     void Start()
     {
         keyboard = Keyboard.current;
         startPos = transform.position;
         bobOffset = Random.Range(0f, Mathf.PI * 2f);
-
-        // Delay find to ensure scene is loaded
-        Invoke(nameof(FindPlayer), 0.1f);
-    }
-
-    void FindPlayer()
-    {
-        GameObject player = GameObject.Find("Player");
-        if (player != null)
-        {
-            playerTransform = player.transform;
-            inventory = player.GetComponent<InventorySystem>();
-            isReady = true;
-        }
     }
 
     void Update()
     {
         if (keyboard == null) keyboard = Keyboard.current;
-        if (!isReady || playerTransform == null || inventory == null) return;
+
+        // Find player every frame if not found yet (robust)
+        if (playerTransform == null || inventory == null)
+        {
+            GameObject player = GameObject.Find("Player");
+            if (player != null)
+            {
+                playerTransform = player.transform;
+                inventory = player.GetComponent<InventorySystem>();
+            }
+            if (playerTransform == null || inventory == null) return;
+        }
 
         // Bob up and down
         float bob = Mathf.Sin(Time.time * 2f + bobOffset) * 0.1f;
@@ -58,24 +54,41 @@ public class PickupItem : MonoBehaviour
         // Rotate slowly
         transform.Rotate(Vector3.up * 45f * Time.deltaTime);
 
-        // Check distance to player
-        float dist = Vector3.Distance(transform.position, playerTransform.position);
+        // Check HORIZONTAL distance only (ignore Y difference)
+        Vector3 playerPos = playerTransform.position;
+        Vector3 myPos = transform.position;
+        float dist = Vector2.Distance(
+            new Vector2(playerPos.x, playerPos.z),
+            new Vector2(myPos.x, myPos.z)
+        );
+
         showPrompt = dist <= pickupRange;
 
-        // Pickup with E
-        if (showPrompt && keyboard != null && keyboard.eKey.wasPressedThisFrame)
+        // Pickup with E or F
+        if (showPrompt && keyboard != null)
         {
-            TryPickup();
+            if (keyboard.eKey.wasPressedThisFrame || keyboard.fKey.wasPressedThisFrame)
+            {
+                TryPickup();
+            }
         }
     }
 
     void TryPickup()
     {
+        if (string.IsNullOrEmpty(itemName) || itemName == "Unknown")
+        {
+            Debug.LogError("[JailBreak] PickupItem has no itemName set! Object: " + gameObject.name);
+            return;
+        }
+
         // Create ItemData from serialized fields
         ItemData data = new ItemData(itemName, itemType, quantity, maxStack, displayColor, description);
 
-        if (inventory.AddItem(data))
+        bool success = inventory.AddItem(data);
+        if (success)
         {
+            Debug.Log("[JailBreak] Picked up: " + itemName);
             Destroy(gameObject);
         }
         else
@@ -100,10 +113,10 @@ public class PickupItem : MonoBehaviour
         // Shadow
         GUIStyle shadowStyle = new GUIStyle(style);
         shadowStyle.normal.textColor = Color.black;
-        GUI.Label(new Rect(centerX - 149, centerY + 1, 300, 30), "[E] Pick up " + itemName, shadowStyle);
+        GUI.Label(new Rect(centerX - 149, centerY + 1, 300, 30), "[E/F] Pick up " + itemName, shadowStyle);
 
         // Text
-        GUI.Label(new Rect(centerX - 150, centerY, 300, 30), "[E] Pick up " + itemName, style);
+        GUI.Label(new Rect(centerX - 150, centerY, 300, 30), "[E/F] Pick up " + itemName, style);
     }
 
     // Called from editor script to set item data
