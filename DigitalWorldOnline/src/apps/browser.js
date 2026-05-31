@@ -7,6 +7,8 @@ import * as fileSystem from '../core/fileSystem.js';
 import { getNpcs, getNpcById, getNpcPosts, addNpcPost, getRelationship, updateRelationship } from '../core/npcSystem.js';
 import { open as openMessenger, addMessageFromNpc } from './messenger.js';
 import { updateQuestStep } from '../core/questSystem.js';
+import { addXP, getLevel, getLevelUnlocks } from '../core/levelSystem.js';
+import { hasSkillEffect } from '../core/skillSystem.js';
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -581,6 +583,38 @@ function renderBank(content) {
   const transactions = getTransactions();
   const recent = transactions.slice(-10).reverse();
 
+  let stockSection = '';
+  if (hasSkillEffect('stock_market')) {
+    const playerStocks = storage.get('player_stocks') || {};
+    const stocks = [
+      { name: 'ДигиТех', symbol: 'DGT', price: 80 + Math.floor(Math.random() * 40) },
+      { name: 'КриптоКорп', symbol: 'CRP', price: 150 + Math.floor(Math.random() * 100) },
+      { name: 'НейроСеть', symbol: 'NRS', price: 40 + Math.floor(Math.random() * 40) }
+    ];
+    stockSection = `
+      <div class="bank-stocks">
+        <h3>Фондовый рынок</h3>
+        <div class="bank-stock-list">
+          ${stocks.map(s => {
+            const owned = playerStocks[s.symbol] || 0;
+            return `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:8px;">
+                <div>
+                  <div style="font-weight:600;color:var(--text-primary,#fff);">${s.name} (${s.symbol})</div>
+                  <div style="font-size:12px;color:#888;">Цена: ${s.price} DC | В портфеле: ${owned}</div>
+                </div>
+                <div style="display:flex;gap:6px;">
+                  <button class="stock-buy-btn" data-symbol="${s.symbol}" data-price="${s.price}" style="background:#2ecc71;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:12px;">Купить</button>
+                  ${owned > 0 ? `<button class="stock-sell-btn" data-symbol="${s.symbol}" data-price="${s.price}" style="background:#e74c3c;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:12px;">Продать</button>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   content.innerHTML = `
     <div class="browser-site-header bank-header">
       <h1 class="browser-site-logo">Крипто<span style="color:#d4a017">Банк</span></h1>
@@ -610,12 +644,44 @@ function renderBank(content) {
           }).join('') : '<p class="bank-no-transactions">Нет операций</p>'}
         </div>
       </div>
+      ${stockSection}
       <div class="bank-transfers">
         <h3>Переводы</h3>
         <p class="bank-transfers-placeholder">Переводы между пользователями будут доступны в будущем обновлении</p>
       </div>
     </div>
   `;
+
+  // Stock buy/sell handlers
+  content.querySelectorAll('.stock-buy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const symbol = btn.dataset.symbol;
+      const price = parseInt(btn.dataset.price);
+      if (spendMoney(price, 'Покупка акций: ' + symbol) === false) {
+        alert('Недостаточно средств!');
+        return;
+      }
+      const playerStocks = storage.get('player_stocks') || {};
+      playerStocks[symbol] = (playerStocks[symbol] || 0) + 1;
+      storage.set('player_stocks', playerStocks);
+      renderBank(content);
+    });
+  });
+
+  content.querySelectorAll('.stock-sell-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const symbol = btn.dataset.symbol;
+      const price = parseInt(btn.dataset.price);
+      const playerStocks = storage.get('player_stocks') || {};
+      if (!playerStocks[symbol] || playerStocks[symbol] <= 0) return;
+      const sellPrice = price + Math.floor(Math.random() * 20) - 10;
+      addMoney(Math.max(sellPrice, 1), 'Продажа акций: ' + symbol);
+      playerStocks[symbol]--;
+      if (playerStocks[symbol] <= 0) delete playerStocks[symbol];
+      storage.set('player_stocks', playerStocks);
+      renderBank(content);
+    });
+  });
 }
 
 // ==================== Site 5: ФрилансБиржа ====================
@@ -640,7 +706,11 @@ const difficultyTimers = { easy: 5, medium: 10, hard: 15 };
 
 function renderFreelance(content, container, state, win) {
   const completedJobs = storage.get('completed_jobs') || [];
-  const availableJobs = freelanceJobs.filter(j => !completedJobs.includes(j.id));
+  let availableJobs = freelanceJobs.filter(j => !completedJobs.includes(j.id));
+  // Level gate: hide hard jobs if level < 3
+  if (!getLevelUnlocks().harderFreelance) {
+    availableJobs = availableJobs.filter(j => j.difficulty !== 'hard');
+  }
   const activeCategory = state.freelanceCategory || 'all';
   const filteredJobs = activeCategory === 'all' ? availableJobs : availableJobs.filter(j => j.category === activeCategory);
 
@@ -697,7 +767,7 @@ function renderFreelance(content, container, state, win) {
       state.activeJob = job;
       renderFreelance(content, container, state, win);
 
-      const duration = difficultyTimers[job.difficulty] * 1000;
+      const duration = difficultyTimers[job.difficulty] * 1000 * (hasSkillEffect('freelance_faster') ? 0.7 : 1);
       const startTime = Date.now();
       const progressFill = content.querySelector('.freelance-progress-fill');
       const progressText = content.querySelector('.freelance-progress-text');
@@ -712,6 +782,7 @@ function renderFreelance(content, container, state, win) {
         if (progress >= 1) {
           clearInterval(interval);
           addMoney(job.reward, job.title);
+          addXP(job.difficulty === 'easy' ? 10 : job.difficulty === 'medium' ? 20 : 30, 'Фриланс');
           const completed = storage.get('completed_jobs') || [];
           completed.push(job.id);
           storage.set('completed_jobs', completed);
@@ -756,11 +827,12 @@ function renderMarket(content, container, state, win) {
   const purchasedWallpapers = storage.get('purchased_wallpapers') || [];
   const purchasedSoftware = storage.get('purchased_software') || [];
   const purchasedIds = [...purchasedWallpapers.map(w => w.id), ...purchasedSoftware.map(s => s.id)];
+  const hasDiscount = hasSkillEffect('discount_10');
 
   content.innerHTML = `
     <div class="browser-site-header market-header">
       <h1 class="browser-site-logo">Маркет<span style="color:#e74c3c">Плейс</span></h1>
-      <p class="browser-site-subtitle">Цифровой магазин</p>
+      <p class="browser-site-subtitle">Цифровой магазин${hasDiscount ? ' (скидка 10%)' : ''}</p>
     </div>
     <div class="market-categories">
       ${Object.keys(marketCategoryNames).map(cat => `
@@ -771,13 +843,14 @@ function renderMarket(content, container, state, win) {
     <div class="market-grid">
       ${filteredItems.map(item => {
         const purchased = purchasedIds.includes(item.id);
+        const displayPrice = hasDiscount ? Math.floor(item.price * 0.9) : item.price;
         return `
           <div class="market-item">
             <div class="market-item-icon" style="${item.gradient ? 'background:' + item.gradient : ''}">${item.icon || ''}</div>
             <h3 class="market-item-name">${item.name}</h3>
             <p class="market-item-desc">${item.desc}</p>
             <div class="market-item-footer">
-              <span class="market-item-price">${item.price} DC</span>
+              <span class="market-item-price">${displayPrice} DC${hasDiscount ? ' <s style="color:#666;font-size:11px;">' + item.price + '</s>' : ''}</span>
               ${purchased
                 ? '<button class="market-buy-btn purchased" disabled>Куплено &#10003;</button>'
                 : `<button class="market-buy-btn" data-item-id="${item.id}">Купить</button>`}
@@ -803,10 +876,13 @@ function renderMarket(content, container, state, win) {
       const item = marketItems.find(i => i.id === itemId);
       if (!item) return;
 
-      if (spendMoney(item.price, item.name) === false) {
+      const actualPrice = Math.floor(item.price * (hasSkillEffect('discount_10') ? 0.9 : 1));
+      if (spendMoney(actualPrice, item.name) === false) {
         alert('Недостаточно средств!');
         return;
       }
+
+      addXP(5, 'Покупка');
 
       if (item.category === 'wallpapers') {
         const wallpapers = storage.get('purchased_wallpapers') || [];
@@ -821,6 +897,55 @@ function renderMarket(content, container, state, win) {
       renderMarket(content, container, state, win);
     });
   });
+
+  // My Shop (entrepreneur skill)
+  if (hasSkillEffect('own_shop')) {
+    const shopEl = document.createElement('div');
+    shopEl.style.cssText = 'margin-top:20px;padding:20px;background:rgba(46,204,113,0.05);border:1px solid rgba(46,204,113,0.3);border-radius:12px;';
+    const myShopItems = storage.get('my_shop_items') || [];
+    const shopCreated = storage.get('my_shop_created') || false;
+    shopEl.innerHTML = `
+      <h3 style="color:#2ecc71;margin:0 0 12px 0;">Мой магазин</h3>
+      ${!shopCreated ? '<button class="create-shop-btn" style="background:#2ecc71;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;">Создать магазин</button>' : `
+        <div style="margin-bottom:10px;">
+          <input type="text" class="shop-item-name" placeholder="Название товара" style="padding:6px;border-radius:4px;border:1px solid #444;background:#1a1a2e;color:#fff;margin-right:6px;" />
+          <input type="number" class="shop-item-price" placeholder="Цена" style="padding:6px;width:80px;border-radius:4px;border:1px solid #444;background:#1a1a2e;color:#fff;margin-right:6px;" />
+          <button class="shop-add-item-btn" style="background:#2ecc71;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;">Выставить</button>
+        </div>
+        ${myShopItems.length > 0 ? myShopItems.map((it, i) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:rgba(0,0,0,0.2);border-radius:6px;margin-bottom:4px;">
+            <span style="color:#ccc;">${escapeHtml(it.name)} - ${it.price} DC</span>
+            <span style="color:#2ecc71;font-size:11px;">В продаже</span>
+          </div>
+        `).join('') : '<p style="color:#888;font-size:12px;">Нет товаров в продаже</p>'}
+      `}
+    `;
+    content.querySelector('.market-grid').after(shopEl);
+
+    const createBtn = shopEl.querySelector('.create-shop-btn');
+    if (createBtn) {
+      createBtn.addEventListener('click', () => {
+        storage.set('my_shop_created', true);
+        updateQuestStep('skill_own_business', 'create_shop', null);
+        renderMarket(content, container, state, win);
+      });
+    }
+
+    const addItemBtn = shopEl.querySelector('.shop-add-item-btn');
+    if (addItemBtn) {
+      addItemBtn.addEventListener('click', () => {
+        const nameInput = shopEl.querySelector('.shop-item-name');
+        const priceInput = shopEl.querySelector('.shop-item-price');
+        const name = nameInput.value.trim();
+        const price = parseInt(priceInput.value);
+        if (!name || !price || price <= 0) return;
+        const items = storage.get('my_shop_items') || [];
+        items.push({ name, price });
+        storage.set('my_shop_items', items);
+        renderMarket(content, container, state, win);
+      });
+    }
+  }
 }
 
 // ==================== Darknet: Error Page ====================
@@ -844,8 +969,8 @@ function renderShadowMarket(content, container, state, win) {
   const shopItems = [
     { id: 'scannerPro', name: 'Сканер портов Pro', price: 300, desc: 'Показывает уязвимости при сканировании целей', reqRep: 0 },
     { id: 'bruteforceV2', name: 'Брутфорс v2.0', price: 500, desc: 'Увеличивает шанс успешного подбора пароля на 20%', reqRep: 0 },
-    { id: 'exploitKit', name: 'Набор эксплоитов', price: 1000, desc: 'Открывает команду exploit для обхода защиты', reqRep: 50 },
-    { id: 'cryptor', name: 'Криптор', price: 750, desc: 'Скрывает следы вашей активности от систем отслеживания', reqRep: 30 }
+    { id: 'exploitKit', name: 'Набор эксплоитов', price: 1000, desc: 'Открывает команду exploit для обхода защиты', reqRep: 50, reqLevel: 8 },
+    { id: 'cryptor', name: 'Криптор', price: 750, desc: 'Скрывает следы вашей активности от систем отслеживания', reqRep: 30, reqLevel: 8 }
   ];
 
   const stolenData = [
@@ -868,9 +993,12 @@ function renderShadowMarket(content, container, state, win) {
           ${shopItems.map(item => {
             const owned = tools[item.id];
             const meetsRep = rep.black >= item.reqRep;
+            const meetsLevel = !item.reqLevel || getLevelUnlocks().advancedDarknet;
             let btnHtml;
             if (owned) {
               btnHtml = `<button disabled style="background:#1a3d1a;color:#00ff88;border:1px solid #00ff88;padding:6px 12px;border-radius:4px;cursor:default;font-family:monospace;">Куплено</button>`;
+            } else if (!meetsLevel) {
+              btnHtml = `<button disabled style="background:#222;color:#666;border:1px solid #444;padding:6px 12px;border-radius:4px;cursor:default;font-family:monospace;">Требуется уровень 8</button>`;
             } else if (!meetsRep) {
               btnHtml = `<button disabled style="background:#222;color:#666;border:1px solid #444;padding:6px 12px;border-radius:4px;cursor:default;font-family:monospace;">Требуется репутация: ${item.reqRep}</button>`;
             } else {
@@ -1205,6 +1333,8 @@ function renderSocialLife(content, container, state, win) {
         currentFriends.push(npcId);
         setSocialFriends(currentFriends);
         updateRelationship(npcId, 5);
+        addXP(5, 'Новый друг');
+        updateQuestStep('skill_master_communication', 'add_friends_count', null);
       }
       renderSocialLife(content, container, state, win);
     });
@@ -1351,6 +1481,7 @@ function renderSocialProfile(mainEl, container, state, win, content) {
         <div class="social-profile-info">
           <h2 class="social-profile-name">${escapeHtml(profile.name)}</h2>
           <span class="social-profile-friends">${friends.length} друзей</span>
+          <span class="social-profile-level">Уровень ${getLevel()}</span>
         </div>
       </div>
       <div class="social-profile-bio-section">
@@ -1467,6 +1598,8 @@ function renderSocialSearch(mainEl, container, state, win, content) {
           currentFriends.push(npcId);
           setSocialFriends(currentFriends);
           updateRelationship(npcId, 5);
+          addXP(5, 'Новый друг');
+          updateQuestStep('skill_master_communication', 'add_friends_count', null);
         }
         doSearch();
       });
@@ -1550,6 +1683,8 @@ function renderSocialNpcProfile(mainEl, container, state, win, content) {
         currentFriends.push(npcId);
         setSocialFriends(currentFriends);
         updateRelationship(npcId, 5);
+        addXP(5, 'Новый друг');
+        updateQuestStep('skill_master_communication', 'add_friends_count', null);
       }
       renderSocialLife(content, container, state, win);
     });

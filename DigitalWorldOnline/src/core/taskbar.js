@@ -1,6 +1,7 @@
 import { on, getWindows, minimizeWindow, restoreWindow, focusWindow, getActiveWindowId } from './windowManager.js';
 import * as storage from './storage.js';
 import { getUnreadCount } from '../apps/messenger.js';
+import { getLevel } from './levelSystem.js';
 
 let taskbarEl = null;
 let clockInterval = null;
@@ -33,6 +34,7 @@ function renderTaskbar() {
       </div>
       <div class="taskbar-tray">
         <div class="tray-icons">
+          <span class="tray-level-badge" id="tray-level-badge" title="Уровень игрока">Ур.${getLevel()}</span>
           <span class="tray-indicator" id="tray-vpn-indicator" title="VPN"></span>
           <span class="tray-indicator" id="tray-firewall-indicator" title="Файрвол"></span>
           <button class="tray-icon-btn" aria-label="Wi-Fi">
@@ -179,6 +181,9 @@ function updateTrayIndicators() {
 
   firewallEl.className = 'tray-indicator ' + (firewallActive ? 'tray-indicator-on' : 'tray-indicator-off');
   firewallEl.title = firewallActive ? 'Файрвол: Вкл' : 'Файрвол: Выкл';
+
+  const levelBadge = document.getElementById('tray-level-badge');
+  if (levelBadge) levelBadge.textContent = 'Ур.' + getLevel();
 }
 
 function updateMessengerBadge() {

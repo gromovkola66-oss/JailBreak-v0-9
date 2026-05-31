@@ -24,9 +24,11 @@ import { initTaskbar } from './core/taskbar.js';
 import { initStartMenu } from './core/startMenu.js';
 import { initWindowManager } from './core/windowManager.js';
 import { initTheme } from './apps/settings.js';
-import { initNotifications } from './core/notifications.js';
+import { initNotifications, showNotification } from './core/notifications.js';
 import { initLevelSystem } from './core/levelSystem.js';
 import { initQuestSystem } from './core/questSystem.js';
+import { hasSkillEffect } from './core/skillSystem.js';
+import { addMoney } from './core/economy.js';
 
 function init() {
   initFileSystem();
@@ -38,6 +40,21 @@ function init() {
   initStartMenu();
   initLevelSystem();
   initQuestSystem();
+
+  // Intrusion detection skill effect
+  setInterval(() => {
+    if (hasSkillEffect('intrusion_detect') && Math.random() < 0.3) {
+      showNotification({ type: 'warning', title: 'Обнаружение вторжений', description: 'Попытка сетевой атаки отражена!' });
+    }
+  }, 90000);
+
+  // Passive income skill effect
+  setInterval(() => {
+    if (hasSkillEffect('passive_income')) {
+      addMoney(50, 'Пассивный доход');
+      showNotification({ type: 'money', title: 'Пассивный доход', description: '+50 DC' });
+    }
+  }, 60000);
 }
 
 document.addEventListener('DOMContentLoaded', init);

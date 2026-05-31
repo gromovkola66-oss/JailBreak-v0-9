@@ -1,6 +1,7 @@
 import { createWindow, registerCleanup } from '../core/windowManager.js';
 import { getBalance, getTransactions } from '../core/economy.js';
 import { getReputation } from '../core/reputation.js';
+import { getLevel, getXP, getXPForNextLevel } from '../core/levelSystem.js';
 
 export function open() {
   const win = createWindow({
@@ -35,6 +36,10 @@ function render(container) {
   const sorted = [...transactions].sort((a, b) => b.timestamp - a.timestamp);
 
   container.innerHTML = `
+    <div class="wallet-level-info" style="display:flex;gap:12px;margin-bottom:16px;background:var(--surface-color, #2a2a3e);border-radius:12px;padding:12px 16px;align-items:center;">
+      <span style="font-size:14px;font-weight:600;color:var(--text-primary,#fff);">Уровень ${getLevel()}</span>
+      <span style="font-size:12px;color:#888;">XP: ${getXP()} / ${getXPForNextLevel()}</span>
+    </div>
     <div class="wallet-balance-card">
       <div class="wallet-balance-label">Баланс</div>
       <div class="wallet-balance-amount">${balance} DC</div>

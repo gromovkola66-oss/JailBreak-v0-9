@@ -100,6 +100,17 @@ export function unlockSkill(skillId) {
 
   unlockedSkills.push(skillId);
   saveState();
+
+  // Trigger quest updates via dynamic import to avoid circular dependency
+  import('./questSystem.js').then(({ updateQuestStep }) => {
+    const branch = skill.branch;
+    if (branch === 'hacking') updateQuestStep('skill_path_hacker', 'learn_hacking_skills', null);
+    if (branch === 'defense') updateQuestStep('skill_shield_sword', 'learn_defense_skills', null);
+    if (skill.id === 'entrepreneur') updateQuestStep('skill_own_business', 'learn_entrepreneur', null);
+    if (skill.id === 'scripts') updateQuestStep('skill_first_script', 'learn_scripts', null);
+    if (skill.id === 'sociability') updateQuestStep('skill_master_communication', 'learn_sociability', null);
+  });
+
   return true;
 }
 

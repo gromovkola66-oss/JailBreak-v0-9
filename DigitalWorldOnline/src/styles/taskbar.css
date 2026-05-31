@@ -192,3 +192,14 @@
   padding: 0 3px;
   pointer-events: none;
 }
+
+.tray-level-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent-color, #0078d4);
+  border-radius: 8px;
+  padding: 2px 6px;
+  margin: 0 4px;
+  white-space: nowrap;
+}

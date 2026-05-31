@@ -1,4 +1,5 @@
 import { openApp } from './desktop.js';
+import { getLevel } from './levelSystem.js';
 
 const apps = [
   { id: 'fileExplorer', name: 'Проводник', icon: '/icons/file-explorer.svg' },
@@ -49,7 +50,7 @@ function renderStartMenu() {
       <div class="start-menu-footer">
         <div class="start-menu-user">
           <div class="start-user-avatar"></div>
-          <span>User</span>
+          <span>User | Ур. ${getLevel()}</span>
         </div>
         <div class="start-menu-power">
           <button class="start-power-btn" id="start-power-btn" aria-label="Power">

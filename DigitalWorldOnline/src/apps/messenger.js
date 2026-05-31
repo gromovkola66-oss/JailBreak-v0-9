@@ -7,6 +7,7 @@ import { getNpcById } from '../core/npcSystem.js';
 import { showNotification } from '../core/notifications.js';
 import { updateQuestStep } from '../core/questSystem.js';
 import { addMoney, spendMoney } from '../core/economy.js';
+import { hasSkillEffect } from '../core/skillSystem.js';
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -453,7 +454,45 @@ function renderChoices(chatEl, container, npcId) {
 
   if (!dialogue || !dialogue.responses || dialogue.responses.length === 0) return;
 
-  dialogue.responses.forEach(response => {
+  const responses = [...dialogue.responses];
+
+  // Add extra dialogue options for 'new_dialogues' skill (persuasion)
+  if (hasSkillEffect('new_dialogues')) {
+    if (npcId === 'alexey' && dialogue.id === 'after_greeting') {
+      responses.push({
+        text: 'Расскажи о секретных проектах',
+        reply: 'Ну... есть один проект, о котором не все знают. Скажу позже.',
+        nextDialogue: null
+      });
+    }
+    if (npcId === 'ghost' && dialogue.id === 'after_forum') {
+      responses.push({
+        text: 'Мне нужен доступ к серьёзным целям',
+        reply: 'Терпение. Сначала покажи, что умеешь.',
+        nextDialogue: null
+      });
+    }
+  }
+
+  // Add extra dialogue options for 'info_extract' skill (manipulation)
+  if (hasSkillEffect('info_extract')) {
+    if (npcId === 'victor' && dialogue.id === 'initial') {
+      responses.push({
+        text: 'Расскажи, кто покупает данные',
+        reply: 'Ладно... Есть один тип из ДигиТеха. Платит хорошо, но вопросов не задаёт. Можешь выйти на него через форум.',
+        nextDialogue: null
+      });
+    }
+    if (npcId === 'maxim' && dialogue.id === 'initial') {
+      responses.push({
+        text: 'Куда именно идут инвестиции?',
+        reply: 'Между нами... это крипто-схема. Рискованно, но прибыльно. Не говори никому.',
+        nextDialogue: null
+      });
+    }
+  }
+
+  responses.forEach(response => {
     const btn = document.createElement('button');
     btn.className = 'messenger-choice-btn';
     btn.textContent = response.text;

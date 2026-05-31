@@ -7,6 +7,8 @@ import { addMoney } from '../core/economy.js';
 import { bruteforceMinigame, decryptMinigame, exploitMinigame } from './hackingMinigames.js';
 import { updateQuestStep, getActiveQuests } from '../core/questSystem.js';
 import { addMessageFromNpc } from './messenger.js';
+import { addXP } from '../core/levelSystem.js';
+import { hasSkillEffect } from '../core/skillSystem.js';
 
 export function open() {
   const win = createWindow({
@@ -188,6 +190,18 @@ function processCommand(input, output, state, container) {
     case 'vpn':
       doVpn(args, output, state, container);
       break;
+    case 'script':
+      doScript(output, state);
+      break;
+    case 'ai':
+      doAi(output, state);
+      break;
+    case 'sniff':
+      doSniff(args, output, state);
+      break;
+    case 'craft':
+      doCraft(args, output, state);
+      break;
     default:
       appendLine(output, `'${cmd}' не распознана как внутренняя или внешняя команда.`, '#f44747');
       break;
@@ -337,12 +351,13 @@ function doBruteforce(parts, output, state, container) {
   appendLine(output, 'Запуск модуля взлома...', state.textColor);
 
   const bfTools = hackingSystem.getHackingTools();
-  bruteforceMinigame({ enhanced: !!bfTools.bruteforceV2 }).then(success => {
+  bruteforceMinigame({ enhanced: !!bfTools.bruteforceV2 || hasSkillEffect('bruteforce_easier') }).then(success => {
     if (success) {
       hackingSystem.markPortHacked(ip, port);
       reputation.addBlackRep(5, `Взлом порта ${port} на ${ip}`);
       storage.set('last_hack_time', Date.now());
       appendLine(output, 'Успешно! Порт взломан.', '#00ff88');
+      addXP(30 + target.difficulty * 20, 'Взлом порта');
 
       // Check if all ports are hacked
       const updatedTarget = hackingSystem.getTargetByIp(ip);
@@ -399,7 +414,7 @@ function doExploit(parts, output, state, container) {
   const ip = parts[1];
   const vuln = parts[2];
   const tools = hackingSystem.getHackingTools();
-  if (!tools.exploitKit) {
+  if (!tools.exploitKit && !hasSkillEffect('exploit_unlock')) {
     appendLine(output, 'Требуется инструмент: exploitKit. Приобретите его в магазине.', '#f44747');
     return;
   }
@@ -412,10 +427,14 @@ function doExploit(parts, output, state, container) {
     appendLine(output, 'Цель уже полностью взломана.', '#ffff00');
     return;
   }
-  const hasVuln = target.ports.some(p => p.vulnerability === vuln);
-  if (!hasVuln) {
-    appendLine(output, `Уязвимость '${vuln}' не найдена на ${ip}.`, '#f44747');
-    return;
+
+  // zero_day_bypass allows exploit on any target regardless of vulnerability
+  if (!hasSkillEffect('zero_day_bypass')) {
+    const hasVuln = target.ports.some(p => p.vulnerability === vuln);
+    if (!hasVuln) {
+      appendLine(output, `Уязвимость '${vuln}' не найдена на ${ip}.`, '#f44747');
+      return;
+    }
   }
 
   const inputEl = container.querySelector('.terminal-input');
@@ -431,6 +450,7 @@ function doExploit(parts, output, state, container) {
       reputation.addBlackRep(target.difficulty * 10, 'Взлом: ' + target.name);
       appendLine(output, `Эксплойт применён! Все порты на ${ip} взломаны.`, '#00ff88');
       appendLine(output, `Система полностью взломана! Получено ${target.reward} DC`, '#00ff88');
+      addXP(target.difficulty * 30, 'Эксплойт');
       // Quest trigger: hack_target
       const activeQuests = getActiveQuests();
       activeQuests.forEach(q => {
@@ -453,13 +473,13 @@ function doTrace(output, state) {
   const tools = hackingSystem.getHackingTools();
   const vpnActive = storage.get('vpn_active');
   const firewallActive = storage.get('firewall_active');
-  if (tools.cryptor || vpnActive || firewallActive) {
+  if (tools.cryptor || vpnActive || firewallActive || hasSkillEffect('encryption_active')) {
     appendLine(output, 'Отслеживание: не обнаружено', '#00ff88');
     return;
   }
   const lastHack = storage.get('last_hack_time');
-  const fiveMin = 5 * 60 * 1000;
-  if (lastHack && (Date.now() - lastHack) < fiveMin) {
+  const traceWindow = hasSkillEffect('trace_faster_decay') ? 2.5 * 60 * 1000 : 5 * 60 * 1000;
+  if (lastHack && (Date.now() - lastHack) < traceWindow) {
     const target = hackingSystem.getTargets().find(t => t.hackedPorts && t.hackedPorts.length > 0);
     const danger = target ? target.difficulty : 1;
     appendLine(output, `ВНИМАНИЕ: Обнаружена активность трассировки! Уровень опасности: ${danger}`, '#f44747');
@@ -558,6 +578,12 @@ function printHelp(output, state) {
     '  trace                - Проверить статус трассировки',
     '  decrypt <файл>       - Дешифровать зашифрованный файл',
     '  vpn on|off           - Включить/выключить VPN',
+    '',
+    'Навыковые команды:',
+    '  script               - Автосканирование всех целей (навык: Скрипты)',
+    '  ai                   - Подсказки AI-помощника (навык: ИИ)',
+    '  sniff <ip>           - Перехват трафика (навык: Перехват трафика)',
+    '  craft virus <имя>    - Создать вирус (навык: Создание вирусов)',
     '',
     'Команды при подключении (connect):',
     '  ls                   - Список файлов на цели',
@@ -687,6 +713,82 @@ function doPing(address, output, state, container) {
       inputEl.focus();
     }
   }, 600);
+}
+
+// ============ Skill-based commands ============
+
+function doScript(output, state) {
+  if (!hasSkillEffect('terminal_scripts')) {
+    appendLine(output, 'Требуется навык: Скрипты', '#f44747');
+    return;
+  }
+  appendLine(output, 'Запуск автосканирования всех известных целей...', state.textColor);
+  appendLine(output, '', state.textColor);
+  const targets = hackingSystem.getTargets();
+  targets.forEach(target => {
+    appendLine(output, `[${target.ip}] ${target.name} (сложность: ${target.difficulty})`, state.textColor);
+    target.ports.forEach(p => {
+      appendLine(output, `  Порт ${p.port} (${p.service}) - открыт`, state.textColor);
+    });
+    appendLine(output, '', state.textColor);
+  });
+  appendLine(output, `Сканирование завершено. Найдено целей: ${targets.length}`, '#00ff88');
+  updateQuestStep('skill_first_script', 'use_script_command', null);
+}
+
+function doAi(output, state) {
+  if (!hasSkillEffect('ai_hints')) {
+    appendLine(output, 'Требуется навык: Искусственный интеллект', '#f44747');
+    return;
+  }
+  const hints = [
+    'Совет: Попробуйте просканировать 192.168.1.25, там слабые пароли',
+    'Совет: Используйте bruteforce на открытых портах',
+    'Совет: Подключитесь к взломанному серверу командой connect',
+    'Совет: Включите VPN перед взломом для скрытия следов',
+    'Совет: Скачивайте файлы с серверов для выполнения заказов на ХакФоруме'
+  ];
+  const hint = hints[Math.floor(Math.random() * hints.length)];
+  appendLine(output, hint, '#00ffcc');
+}
+
+function doSniff(args, output, state) {
+  if (!hasSkillEffect('traffic_sniff')) {
+    appendLine(output, 'Требуется навык: Перехват трафика', '#f44747');
+    return;
+  }
+  if (!args) {
+    appendLine(output, 'Использование: sniff <ip-адрес>', '#f44747');
+    return;
+  }
+  const ip = args.trim();
+  const target = hackingSystem.getTargetByIp(ip);
+  if (!target) {
+    appendLine(output, `Хост ${ip} не найден в сети.`, '#f44747');
+    return;
+  }
+  appendLine(output, `Перехват трафика ${ip}...`, state.textColor);
+  appendLine(output, 'Перехваченные данные: login=admin, password=qwerty123', '#00ff88');
+}
+
+function doCraft(args, output, state) {
+  const parts = args ? args.trim().split(/\s+/) : [];
+  if (parts[0] !== 'virus' || parts.length < 2) {
+    appendLine(output, 'Использование: craft virus <имя>', '#f44747');
+    return;
+  }
+  if (!hasSkillEffect('craft_virus')) {
+    appendLine(output, 'Требуется навык: Создание вирусов', '#f44747');
+    return;
+  }
+  const virusName = parts.slice(1).join('_');
+  const filename = 'virus_' + virusName + '.exe';
+  const created = fileSystem.createFile('/Downloads/' + filename, 'Вирусный код...');
+  if (created) {
+    appendLine(output, `Вирус создан: ${filename}`, '#00ff88');
+  } else {
+    appendLine(output, `Файл ${filename} уже существует.`, '#ffff00');
+  }
 }
 
 function appendLine(output, text, color) {

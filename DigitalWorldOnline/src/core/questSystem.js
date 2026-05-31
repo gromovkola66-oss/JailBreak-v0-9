@@ -7,6 +7,8 @@ import { addWhiteRep, addBlackRep } from './reputation.js';
 import { updateRelationship, addNpcPost } from './npcSystem.js';
 import { showNotification } from './notifications.js';
 import { addMessageFromNpc } from '../apps/messenger.js';
+import { addXP } from './levelSystem.js';
+import { hasSkillEffect } from './skillSystem.js';
 
 const QUEST_STATE_KEY = 'quest_state';
 
@@ -122,6 +124,69 @@ const quests = [
     ],
     rewards: { relationship: { olga: 30 } },
     requirements: {}
+  },
+  {
+    id: 'skill_path_hacker',
+    title: 'Путь хакера',
+    description: 'Изучи 3 навыка в ветке "Хакинг".',
+    giver: 'ghost',
+    type: 'side',
+    steps: [
+      { desc: 'Изучить 3 навыка в ветке Хакинг', type: 'learn_hacking_skills', current: 0, required: 3 }
+    ],
+    rewards: { dc: 400, blackRep: 20 },
+    requirements: {}
+  },
+  {
+    id: 'skill_shield_sword',
+    title: 'Щит и меч',
+    description: 'Изучи 2 навыка в ветке "Защита".',
+    giver: 'igor',
+    type: 'side',
+    steps: [
+      { desc: 'Изучить 2 навыка в ветке Защита', type: 'learn_defense_skills', current: 0, required: 2 }
+    ],
+    rewards: { dc: 300, whiteRep: 15 },
+    requirements: {}
+  },
+  {
+    id: 'skill_own_business',
+    title: 'Свой бизнес',
+    description: 'Изучи навык "Предприниматель" и создай свой магазин.',
+    giver: 'elena',
+    type: 'side',
+    steps: [
+      { desc: 'Изучить навык Предприниматель', type: 'learn_entrepreneur', current: 0, required: 1 },
+      { desc: 'Создать свой магазин', type: 'create_shop', current: 0, required: 1 }
+    ],
+    rewards: { dc: 1000 },
+    requirements: {}
+  },
+  {
+    id: 'skill_first_script',
+    title: 'Первый скрипт',
+    description: 'Изучи навык "Скрипты" и напиши скрипт в терминале.',
+    giver: 'alexey',
+    type: 'side',
+    steps: [
+      { desc: 'Изучить навык Скрипты', type: 'learn_scripts', current: 0, required: 1 },
+      { desc: 'Выполнить команду script в терминале', type: 'use_script_command', current: 0, required: 1 }
+    ],
+    rewards: { dc: 250, whiteRep: 10 },
+    requirements: {}
+  },
+  {
+    id: 'skill_master_communication',
+    title: 'Мастер общения',
+    description: 'Изучи навык "Общительность" и добавь 5 друзей.',
+    giver: 'anna',
+    type: 'side',
+    steps: [
+      { desc: 'Изучить навык Общительность', type: 'learn_sociability', current: 0, required: 1 },
+      { desc: 'Добавить 5 друзей в СетьЛайф', type: 'add_friends_count', current: 0, required: 5 }
+    ],
+    rewards: { dc: 200, relationship: { anna: 30, alexey: 30, marina: 30, elena: 30, igor: 30 } },
+    requirements: {}
   }
 ];
 
@@ -231,8 +296,12 @@ export function completeQuest(id) {
   saveState(state);
 
   // Grant rewards
-  if (quest.rewards.dc) {
-    addMoney(quest.rewards.dc, `Награда за квест: ${quest.title}`);
+  const xpReward = quest.type === 'main' ? 200 : 100;
+  addXP(xpReward, 'Квест: ' + quest.title);
+
+  const dcReward = quest.rewards.dc ? Math.floor(quest.rewards.dc * (hasSkillEffect('better_rewards') ? 1.5 : 1)) : 0;
+  if (dcReward) {
+    addMoney(dcReward, `Награда за квест: ${quest.title}`);
   }
   if (quest.rewards.whiteRep && quest.rewards.whiteRep > 0) {
     addWhiteRep(quest.rewards.whiteRep, `Квест: ${quest.title}`);
@@ -252,7 +321,7 @@ export function completeQuest(id) {
   showNotification({
     type: 'money',
     title: 'Квест выполнен!',
-    description: `${quest.title}${quest.rewards.dc ? ` (+${quest.rewards.dc} DC)` : ''}`
+    description: `${quest.title}${dcReward ? ` (+${dcReward} DC)` : ''}`
   });
 
   // NPC posts react to quest completion
@@ -315,6 +384,11 @@ export function initQuestSystem() {
     state.available.push('investment');
     state.available.push('dubious_offer');
     state.available.push('stress_test');
+    state.available.push('skill_path_hacker');
+    state.available.push('skill_shield_sword');
+    state.available.push('skill_own_business');
+    state.available.push('skill_first_script');
+    state.available.push('skill_master_communication');
     saveState(state);
 
     // Send initial messages from NPCs

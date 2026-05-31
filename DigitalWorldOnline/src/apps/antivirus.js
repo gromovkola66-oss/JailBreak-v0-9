@@ -2,6 +2,8 @@ import { createWindow } from '../core/windowManager.js';
 import * as storage from '../core/storage.js';
 import { updateQuestStep } from '../core/questSystem.js';
 import { addMessageFromNpc } from './messenger.js';
+import { hasSkillEffect } from '../core/skillSystem.js';
+import { addXP } from '../core/levelSystem.js';
 
 export function open() {
   const win = createWindow({
@@ -201,6 +203,7 @@ function runScan(container, duration, threatChance, render) {
     if (progress >= 100) {
       clearInterval(interval);
       storage.set('last_scan_time', Date.now());
+      addXP(20, 'Сканирование');
 
       // Quest trigger: antivirus_scan
       const updated = updateQuestStep('help_with_virus', 'antivirus_scan', null);
@@ -208,15 +211,20 @@ function runScan(container, duration, threatChance, render) {
         addMessageFromNpc('anna', 'Ой, спасибо огромное! Всё заработало! Ты лучший \u{1F60A}');
       }
 
-      const found = Math.random() < threatChance;
-      if (found) {
-        const threat = generateThreat();
-        const threats = storage.get('system_threats') || [];
-        threats.push(threat);
-        storage.set('system_threats', threats);
-        resultsEl.innerHTML = `<div class="av-scan-result-danger">Обнаружена угроза: ${threat.name}</div>`;
+      // virus_immune skill: always show clean
+      if (hasSkillEffect('virus_immune')) {
+        resultsEl.innerHTML = '<div class="av-scan-result-safe">Система чиста. Угрозы не обнаружены.</div>';
       } else {
-        resultsEl.innerHTML = '<div class="av-scan-result-safe">Угрозы не обнаружены</div>';
+        const found = Math.random() < threatChance;
+        if (found) {
+          const threat = generateThreat();
+          const threats = storage.get('system_threats') || [];
+          threats.push(threat);
+          storage.set('system_threats', threats);
+          resultsEl.innerHTML = `<div class="av-scan-result-danger">Обнаружена угроза: ${threat.name}</div>`;
+        } else {
+          resultsEl.innerHTML = '<div class="av-scan-result-safe">Угрозы не обнаружены</div>';
+        }
       }
 
       quickBtn.disabled = false;
