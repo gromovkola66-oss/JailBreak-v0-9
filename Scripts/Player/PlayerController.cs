@@ -1,167 +1,197 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
     public float walkSpeed = 5f;
-    public float sprintSpeed = 9f;
+    public float sprintSpeed = 8.5f;
     public float crouchSpeed = 2.5f;
-    public float jumpHeight = 1.2f;
+    public float jumpForce = 7f;
     public float gravity = -20f;
 
-    [Header("Camera")]
+    [Header("Mouse Look")]
     public float mouseSensitivity = 2f;
     public float maxLookAngle = 85f;
 
     [Header("Crouch")]
-    public float normalHeight = 2f;
+    public float standHeight = 2f;
     public float crouchHeight = 1.2f;
     public float crouchTransitionSpeed = 8f;
 
-    private CharacterController controller;
-    private Transform cameraHolder;
-    private float verticalVelocity;
-    private float cameraPitch;
-    private bool isCrouching;
-    private bool isSprinting;
+    [Header("Weapon Bob")]
+    public float bobSpeed = 10f;
+    public float bobAmount = 0.05f;
 
-    private Mouse mouse;
-    private Keyboard keyboard;
-    private InventorySystem inventory;
+    [Header("Interaction")]
+    public float interactRange = 3f;
+
+    [HideInInspector] public Team team = Team.None;
+    [HideInInspector] public bool isDead = false;
+    [HideInInspector] public string interactionPrompt = "";
+    [HideInInspector] public bool isMoving = false;
+    [HideInInspector] public bool isSprinting = false;
+
+    private CharacterController controller;
+    private Transform cameraTransform;
+    private Vector3 velocity;
+    private float xRotation = 0f;
+    private bool isCrouching = false;
+    private float bobTimer = 0f;
+    private Vector3 originalCameraLocalPos;
 
     void Start()
     {
         controller = GetComponent<CharacterController>();
-
-        cameraHolder = transform.Find("CameraHolder");
-        if (cameraHolder == null)
-        {
-            Debug.LogError("PlayerController: CameraHolder not found! Use JailBreak > Setup Scene to build the scene.");
-            return;
-        }
-
+        cameraTransform = GetComponentInChildren<Camera>().transform;
+        originalCameraLocalPos = cameraTransform.localPosition;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-
-        mouse = Mouse.current;
-        keyboard = Keyboard.current;
-        inventory = GetComponent<InventorySystem>();
     }
 
     void Update()
     {
-        if (mouse == null || keyboard == null)
-        {
-            mouse = Mouse.current;
-            keyboard = Keyboard.current;
-            if (mouse == null || keyboard == null) return;
-        }
+        if (isDead) return;
 
-        // Block all input when inventory is open
-        bool inputBlocked = inventory != null && inventory.isInventoryOpen;
+        Keyboard keyboard = Keyboard.current;
+        Mouse mouse = Mouse.current;
+        if (keyboard == null || mouse == null) return;
 
-        if (!inputBlocked)
-        {
-            HandleMouseLook();
-            HandleMovement();
-            HandleCrouch();
-        }
-        else
-        {
-            // Still apply gravity when inventory open
-            ApplyGravity();
-        }
+        HandleMouseLook(mouse);
+        HandleMovement(keyboard);
+        HandleCrouch(keyboard);
+        HandleInteraction(keyboard);
+        HandleWeaponBob();
     }
 
-    void HandleMouseLook()
+    private void HandleMouseLook(Mouse mouse)
     {
-        if (cameraHolder == null) return;
-
         Vector2 mouseDelta = mouse.delta.ReadValue();
         float mouseX = mouseDelta.x * mouseSensitivity * 0.1f;
         float mouseY = mouseDelta.y * mouseSensitivity * 0.1f;
 
-        transform.Rotate(Vector3.up * mouseX);
+        xRotation -= mouseY;
+        xRotation = Mathf.Clamp(xRotation, -maxLookAngle, maxLookAngle);
 
-        cameraPitch -= mouseY;
-        cameraPitch = Mathf.Clamp(cameraPitch, -maxLookAngle, maxLookAngle);
-        cameraHolder.localRotation = Quaternion.Euler(cameraPitch, 0f, 0f);
+        cameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        transform.Rotate(Vector3.up * mouseX);
     }
 
-    void HandleMovement()
+    private void HandleMovement(Keyboard keyboard)
     {
-        bool isGrounded = controller.isGrounded;
-
-        if (isGrounded && verticalVelocity < 0f)
+        bool grounded = controller.isGrounded;
+        if (grounded && velocity.y < 0f)
         {
-            verticalVelocity = -2f;
+            velocity.y = -2f;
         }
-
-        isSprinting = keyboard.leftShiftKey.isPressed && !isCrouching;
-
-        float currentSpeed = walkSpeed;
-        if (isSprinting) currentSpeed = sprintSpeed;
-        if (isCrouching) currentSpeed = crouchSpeed;
 
         float moveX = 0f;
         float moveZ = 0f;
 
         if (keyboard.wKey.isPressed) moveZ += 1f;
         if (keyboard.sKey.isPressed) moveZ -= 1f;
-        if (keyboard.dKey.isPressed) moveX += 1f;
         if (keyboard.aKey.isPressed) moveX -= 1f;
+        if (keyboard.dKey.isPressed) moveX += 1f;
 
-        Vector3 moveDirection = transform.right * moveX + transform.forward * moveZ;
-        if (moveDirection.magnitude > 1f) moveDirection.Normalize();
+        Vector3 move = transform.right * moveX + transform.forward * moveZ;
+        if (move.magnitude > 1f) move.Normalize();
 
-        controller.Move(moveDirection * currentSpeed * Time.deltaTime);
+        isSprinting = keyboard.leftShiftKey.isPressed && !isCrouching && moveZ > 0f;
+        float speed = isCrouching ? crouchSpeed : (isSprinting ? sprintSpeed : walkSpeed);
 
-        if (keyboard.spaceKey.wasPressedThisFrame && isGrounded && !isCrouching)
+        isMoving = move.magnitude > 0.1f;
+
+        controller.Move(move * speed * Time.deltaTime);
+
+        if (keyboard.spaceKey.wasPressedThisFrame && grounded)
         {
-            verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            velocity.y = jumpForce;
         }
 
-        verticalVelocity += gravity * Time.deltaTime;
-        controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
     }
 
-    void ApplyGravity()
+    private void HandleCrouch(Keyboard keyboard)
     {
-        if (controller.isGrounded && verticalVelocity < 0f)
-        {
-            verticalVelocity = -2f;
-        }
-        verticalVelocity += gravity * Time.deltaTime;
-        controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
-    }
-
-    void HandleCrouch()
-    {
-        if (keyboard.cKey.wasPressedThisFrame)
+        if (keyboard.cKey.wasPressedThisFrame || keyboard.leftCtrlKey.wasPressedThisFrame)
         {
             isCrouching = !isCrouching;
         }
 
-        if (keyboard.leftCtrlKey.isPressed)
-        {
-            isCrouching = true;
-        }
-        else if (keyboard.leftCtrlKey.wasReleasedThisFrame)
-        {
-            isCrouching = false;
-        }
-
-        float targetHeight = isCrouching ? crouchHeight : normalHeight;
+        float targetHeight = isCrouching ? crouchHeight : standHeight;
         controller.height = Mathf.Lerp(controller.height, targetHeight, crouchTransitionSpeed * Time.deltaTime);
 
-        if (cameraHolder != null)
+        Vector3 camPos = cameraTransform.localPosition;
+        float targetCamY = isCrouching ? crouchHeight - 0.2f : originalCameraLocalPos.y;
+        camPos.y = Mathf.Lerp(camPos.y, targetCamY, crouchTransitionSpeed * Time.deltaTime);
+        cameraTransform.localPosition = camPos;
+    }
+
+    private void HandleInteraction(Keyboard keyboard)
+    {
+        interactionPrompt = "";
+
+        Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, interactRange))
         {
-            float targetCamY = (controller.height / 2f) - 0.1f;
-            Vector3 camPos = cameraHolder.localPosition;
-            camPos.y = Mathf.Lerp(camPos.y, targetCamY, crouchTransitionSpeed * Time.deltaTime);
-            cameraHolder.localPosition = camPos;
+            IDoorInteractable interactable = hit.collider.GetComponent<IDoorInteractable>();
+            if (interactable != null)
+            {
+                interactionPrompt = interactable.GetPrompt(this);
+                if (keyboard.eKey.wasPressedThisFrame)
+                {
+                    interactable.Interact(this);
+                }
+            }
         }
     }
+
+    private void HandleWeaponBob()
+    {
+        if (isMoving && controller.isGrounded)
+        {
+            float speedMultiplier = isSprinting ? 1.5f : 1f;
+            bobTimer += Time.deltaTime * bobSpeed * speedMultiplier;
+            float bobOffsetY = Mathf.Sin(bobTimer) * bobAmount;
+            float bobOffsetX = Mathf.Cos(bobTimer * 0.5f) * bobAmount * 0.5f;
+
+            Vector3 camPos = cameraTransform.localPosition;
+            float targetCamY = isCrouching ? crouchHeight - 0.2f : originalCameraLocalPos.y;
+            camPos.y = targetCamY + bobOffsetY;
+            camPos.x = originalCameraLocalPos.x + bobOffsetX;
+            cameraTransform.localPosition = camPos;
+        }
+        else
+        {
+            bobTimer = 0f;
+        }
+    }
+
+    public void SetDead()
+    {
+        isDead = true;
+        SpectateCamera spectate = FindFirstObjectByType<SpectateCamera>();
+        if (spectate != null)
+        {
+            spectate.EnableSpectate(cameraTransform.position, cameraTransform.rotation);
+        }
+    }
+
+    public void Respawn(Vector3 position)
+    {
+        isDead = false;
+        controller.enabled = false;
+        transform.position = position;
+        controller.enabled = true;
+        velocity = Vector3.zero;
+    }
+}
+
+public interface IDoorInteractable
+{
+    string GetPrompt(PlayerController player);
+    void Interact(PlayerController player);
 }

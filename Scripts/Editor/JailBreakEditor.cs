@@ -1,493 +1,31 @@
 using UnityEngine;
 using UnityEditor;
 
-public class JailBreakEditor : EditorWindow
+public class JailBreakEditor
 {
-    // ============================================================
-    // STEP 1: Setup Player
-    // ============================================================
-    [MenuItem("JailBreak/Step 1 - Setup Player")]
-    public static void SetupPlayer()
+    [MenuItem("JailBreak/Build Full Game")]
+    public static void BuildFullGame()
     {
-        // Clean up
-        DestroyIfExists("Player");
-        DestroyIfExists("Floor");
-        DestroyIfExists("Box_Red");
-        DestroyIfExists("Box_Blue");
-        DestroyIfExists("Box_Green");
-        DestroyIfExists("Box_Yellow");
-
-        // Create Player
-        GameObject player = new GameObject("Player");
-        player.transform.position = new Vector3(0f, 1f, 0f);
-
-        CharacterController cc = player.AddComponent<CharacterController>();
-        cc.height = 2f;
-        cc.radius = 0.4f;
-        cc.center = new Vector3(0f, 1f, 0f);
-
-        player.AddComponent<PlayerController>();
-
-        // CameraHolder
-        GameObject cameraHolder = new GameObject("CameraHolder");
-        cameraHolder.transform.SetParent(player.transform);
-        cameraHolder.transform.localPosition = new Vector3(0f, 0.9f, 0f);
-        cameraHolder.transform.localRotation = Quaternion.identity;
-
-        // Move Main Camera
-        Camera mainCam = Camera.main;
-        if (mainCam != null)
-        {
-            mainCam.transform.SetParent(cameraHolder.transform);
-            mainCam.transform.localPosition = Vector3.zero;
-            mainCam.transform.localRotation = Quaternion.identity;
-        }
-        else
-        {
-            GameObject camObj = new GameObject("Main Camera");
-            camObj.tag = "MainCamera";
-            camObj.AddComponent<Camera>();
-            camObj.AddComponent<AudioListener>();
-            camObj.transform.SetParent(cameraHolder.transform);
-            camObj.transform.localPosition = Vector3.zero;
-            camObj.transform.localRotation = Quaternion.identity;
-        }
-
-        // Floor
-        GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        floor.name = "Floor";
-        floor.transform.position = Vector3.zero;
-        floor.transform.localScale = new Vector3(10f, 1f, 10f);
-        floor.GetComponent<Renderer>().material = CreateMat(new Color(0.4f, 0.4f, 0.4f));
-
-        // Reference boxes
-        CreateColoredBox("Box_Red", new Vector3(5f, 1f, 5f), Color.red);
-        CreateColoredBox("Box_Blue", new Vector3(-5f, 1f, -3f), Color.blue);
-        CreateColoredBox("Box_Green", new Vector3(-3f, 1f, 8f), Color.green);
-        CreateColoredBox("Box_Yellow", new Vector3(7f, 1f, -6f), Color.yellow);
-
-        Selection.activeGameObject = player;
-
-        EditorUtility.DisplayDialog(
-            "JailBreak - Step 1 Complete",
-            "Player created!\n\nPress PLAY to test.\n\nWASD - Move\nMouse - Look\nSpace - Jump\nShift - Sprint\nC/Ctrl - Crouch",
-            "OK"
-        );
+        DestroyAllRoots();
+        CreateLighting();
+        CreateMap();
+        CreatePlayer();
+        CreateBots();
+        CreateManagers();
+        CreateUI();
+        Debug.Log("JailBreak: Full game built successfully!");
     }
 
-    // ============================================================
-    // STEP 2: Build Prison Map
-    // ============================================================
-    [MenuItem("JailBreak/Step 2 - Build Prison Map")]
-    public static void BuildPrisonMap()
+    private static void DestroyAllRoots()
     {
-        // Clean up
-        DestroyIfExists("PrisonMap");
-        DestroyIfExists("Floor");
-        DestroyIfExists("Box_Red");
-        DestroyIfExists("Box_Blue");
-        DestroyIfExists("Box_Green");
-        DestroyIfExists("Box_Yellow");
-
-        GameObject map = new GameObject("PrisonMap");
-        map.transform.position = Vector3.zero;
-
-        // Materials
-        Material wallMat = CreateMat(new Color(0.85f, 0.82f, 0.75f));
-        Material floorMat = CreateMat(new Color(0.55f, 0.55f, 0.6f));
-        Material ceilingMat = CreateMat(new Color(0.9f, 0.9f, 0.85f));
-        Material cellWallMat = CreateMat(new Color(0.75f, 0.78f, 0.82f));
-        Material doorFrameMat = CreateMat(new Color(0.3f, 0.3f, 0.35f));
-        Material barsMat = CreateMat(new Color(0.25f, 0.25f, 0.3f));
-        Material yardFloorMat = CreateMat(new Color(0.4f, 0.6f, 0.35f));
-        Material yardWallMat = CreateMat(new Color(0.7f, 0.5f, 0.3f));
-        Material guardRoomMat = CreateMat(new Color(0.3f, 0.4f, 0.6f));
-        Material bedMat = CreateMat(new Color(0.6f, 0.4f, 0.2f));
-        Material mattressMat = CreateMat(new Color(0.4f, 0.5f, 0.7f));
-        Material toiletMat = CreateMat(new Color(0.9f, 0.9f, 0.95f));
-        Material tableMat = CreateMat(new Color(0.5f, 0.35f, 0.2f));
-        Material benchMat = CreateMat(new Color(0.6f, 0.45f, 0.25f));
-
-        // Dimensions
-        float corridorLength = 36f;
-        float corridorWidth = 4f;
-        float wallHeight = 4f;
-        float wallThickness = 0.4f;
-        float cellWidth = 5f;
-        float cellDepth = 4f;
-        int cellsPerSide = 3;
-        float cellSpacing = corridorLength / cellsPerSide;
-
-        // Corridor floor
-        CreateBox("Corridor_Floor", map, new Vector3(0, 0, 0), new Vector3(corridorWidth, 0.2f, corridorLength), floorMat);
-
-        // Corridor ceiling
-        CreateBox("Corridor_Ceiling", map, new Vector3(0, wallHeight, 0), new Vector3(corridorWidth + wallThickness * 2, 0.3f, corridorLength), ceilingMat);
-
-        // Back wall
-        CreateBox("Corridor_BackWall", map, new Vector3(0, wallHeight / 2, -corridorLength / 2), new Vector3(corridorWidth + wallThickness * 2 + cellDepth * 2 + 2f, wallHeight, wallThickness), wallMat);
-
-        // Cells - left side
-        for (int i = 0; i < cellsPerSide; i++)
+        GameObject[] allObjects = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+        foreach (GameObject obj in allObjects)
         {
-            float zPos = -corridorLength / 2 + cellSpacing * i + cellSpacing / 2;
-            BuildCell("CellL" + (i + 1), map, new Vector3(-corridorWidth / 2 - cellDepth / 2, 0, zPos), cellWidth, cellDepth, wallHeight, cellWallMat, floorMat, ceilingMat, barsMat, doorFrameMat, bedMat, mattressMat, toiletMat, true);
-        }
-
-        // Cells - right side
-        for (int i = 0; i < cellsPerSide; i++)
-        {
-            float zPos = -corridorLength / 2 + cellSpacing * i + cellSpacing / 2;
-            BuildCell("CellR" + (i + 1), map, new Vector3(corridorWidth / 2 + cellDepth / 2, 0, zPos), cellWidth, cellDepth, wallHeight, cellWallMat, floorMat, ceilingMat, barsMat, doorFrameMat, bedMat, mattressMat, toiletMat, false);
-        }
-
-        // Divider walls between cells - left
-        for (int i = 0; i <= cellsPerSide; i++)
-        {
-            float zPos = -corridorLength / 2 + cellSpacing * i;
-            CreateBox("WallL_Div" + i, map, new Vector3(-corridorWidth / 2 - cellDepth / 2, wallHeight / 2, zPos), new Vector3(cellDepth, wallHeight, wallThickness), cellWallMat);
-        }
-
-        // Divider walls between cells - right
-        for (int i = 0; i <= cellsPerSide; i++)
-        {
-            float zPos = -corridorLength / 2 + cellSpacing * i;
-            CreateBox("WallR_Div" + i, map, new Vector3(corridorWidth / 2 + cellDepth / 2, wallHeight / 2, zPos), new Vector3(cellDepth, wallHeight, wallThickness), cellWallMat);
-        }
-
-        // Outer walls
-        CreateBox("OuterWall_Left", map, new Vector3(-corridorWidth / 2 - cellDepth - wallThickness / 2, wallHeight / 2, 0), new Vector3(wallThickness, wallHeight, corridorLength), wallMat);
-        CreateBox("OuterWall_Right", map, new Vector3(corridorWidth / 2 + cellDepth + wallThickness / 2, wallHeight / 2, 0), new Vector3(wallThickness, wallHeight, corridorLength), wallMat);
-
-        // === YARD ===
-        float yardSize = 16f;
-        float yardZ = corridorLength / 2 + yardSize / 2;
-
-        CreateBox("Yard_Floor", map, new Vector3(0, 0, yardZ), new Vector3(yardSize, 0.2f, yardSize), yardFloorMat);
-        CreateBox("Yard_WallLeft", map, new Vector3(-yardSize / 2, wallHeight / 2, yardZ), new Vector3(wallThickness, wallHeight, yardSize), yardWallMat);
-        CreateBox("Yard_WallRight", map, new Vector3(yardSize / 2, wallHeight / 2, yardZ), new Vector3(wallThickness, wallHeight, yardSize), yardWallMat);
-        CreateBox("Yard_WallBack", map, new Vector3(0, wallHeight / 2, yardZ + yardSize / 2), new Vector3(yardSize, wallHeight, wallThickness), yardWallMat);
-        CreateBox("Yard_FrontL", map, new Vector3(-yardSize / 4 - 1f, wallHeight / 2, yardZ - yardSize / 2), new Vector3(yardSize / 2 - 2f, wallHeight, wallThickness), yardWallMat);
-        CreateBox("Yard_FrontR", map, new Vector3(yardSize / 4 + 1f, wallHeight / 2, yardZ - yardSize / 2), new Vector3(yardSize / 2 - 2f, wallHeight, wallThickness), yardWallMat);
-
-        // Yard furniture
-        CreateBox("Yard_Bench1", map, new Vector3(-4f, 0.4f, yardZ + 3f), new Vector3(3f, 0.3f, 0.8f), benchMat);
-        CreateBox("Yard_Bench2", map, new Vector3(4f, 0.4f, yardZ - 3f), new Vector3(3f, 0.3f, 0.8f), benchMat);
-        CreateBox("Yard_Table", map, new Vector3(0, 0.7f, yardZ + 5f), new Vector3(2f, 0.15f, 1.5f), tableMat);
-
-        // === GUARD ROOM ===
-        float guardX = -corridorWidth / 2 - cellDepth - 6f;
-        float guardZ = -corridorLength / 2 + 6f;
-        float guardW = 5f;
-        float guardD = 5f;
-
-        CreateBox("Guard_Floor", map, new Vector3(guardX, 0, guardZ), new Vector3(guardW, 0.2f, guardD), floorMat);
-        CreateBox("Guard_Ceiling", map, new Vector3(guardX, wallHeight, guardZ), new Vector3(guardW, 0.3f, guardD), ceilingMat);
-        CreateBox("Guard_WallBack", map, new Vector3(guardX, wallHeight / 2, guardZ - guardD / 2), new Vector3(guardW, wallHeight, wallThickness), guardRoomMat);
-        CreateBox("Guard_WallFront", map, new Vector3(guardX, wallHeight / 2, guardZ + guardD / 2), new Vector3(guardW, wallHeight, wallThickness), guardRoomMat);
-        CreateBox("Guard_WallLeft", map, new Vector3(guardX - guardW / 2, wallHeight / 2, guardZ), new Vector3(wallThickness, wallHeight, guardD), guardRoomMat);
-        CreateBox("Guard_Desk", map, new Vector3(guardX - 1f, 0.7f, guardZ - 1f), new Vector3(2.5f, 0.15f, 1.2f), tableMat);
-
-        // === LIGHTS ===
-        CreateLight("Light_Corridor1", map, new Vector3(0, wallHeight - 0.5f, -8f), new Color(1f, 0.95f, 0.8f), 12f);
-        CreateLight("Light_Corridor2", map, new Vector3(0, wallHeight - 0.5f, 4f), new Color(1f, 0.95f, 0.8f), 12f);
-        CreateLight("Light_Corridor3", map, new Vector3(0, wallHeight - 0.5f, -20f), new Color(1f, 0.95f, 0.8f), 12f);
-        CreateLight("Light_Yard", map, new Vector3(0, wallHeight + 2f, yardZ), new Color(1f, 1f, 0.9f), 20f);
-        CreateLight("Light_Guard", map, new Vector3(guardX, wallHeight - 0.5f, guardZ), new Color(0.8f, 0.9f, 1f), 8f);
-
-        // Move player to spawn
-        GameObject player = GameObject.Find("Player");
-        if (player != null)
-        {
-            player.transform.position = new Vector3(0f, 1f, -corridorLength / 2 + 2f);
-        }
-
-        EditorUtility.DisplayDialog(
-            "JailBreak - Step 2 Complete",
-            "Prison Map created!\n\n- 6 cells (3 per side)\n- Main corridor\n- Yard with benches\n- Guard room\n\nPress PLAY to explore!",
-            "OK"
-        );
-    }
-
-    // ============================================================
-    // STEP 3: Setup Weapons
-    // ============================================================
-    [MenuItem("JailBreak/Step 3 - Setup Weapons")]
-    public static void SetupWeapons()
-    {
-        GameObject player = GameObject.Find("Player");
-        if (player == null)
-        {
-            EditorUtility.DisplayDialog("Error", "Player not found! Run Step 1 first.", "OK");
-            return;
-        }
-
-        // Remove old weapon setup
-        Transform oldHolder = player.transform.Find("CameraHolder/Main Camera/WeaponHolder");
-        if (oldHolder != null) DestroyImmediate(oldHolder.gameObject);
-
-        // Remove old WeaponController
-        WeaponController oldWC = player.GetComponent<WeaponController>();
-        if (oldWC != null) DestroyImmediate(oldWC);
-
-        // Find camera
-        Transform cam = player.transform.Find("CameraHolder/Main Camera");
-        if (cam == null)
-        {
-            cam = player.transform.Find("CameraHolder");
-            if (cam == null)
+            if (obj != null && obj.transform.parent == null)
             {
-                EditorUtility.DisplayDialog("Error", "Camera not found! Run Step 1 first.", "OK");
-                return;
+                Object.DestroyImmediate(obj);
             }
         }
-
-        // Create WeaponHolder (attached to camera so it moves with view)
-        GameObject weaponHolder = new GameObject("WeaponHolder");
-        weaponHolder.transform.SetParent(cam);
-        weaponHolder.transform.localPosition = new Vector3(0.3f, -0.25f, 0.5f);
-        weaponHolder.transform.localRotation = Quaternion.identity;
-
-        // Materials
-        Material metalDark = CreateMat(new Color(0.2f, 0.2f, 0.22f));
-        Material metalLight = CreateMat(new Color(0.35f, 0.35f, 0.38f));
-        Material woodMat = CreateMat(new Color(0.45f, 0.3f, 0.15f));
-        Material orangeMat = CreateMat(new Color(0.9f, 0.5f, 0.1f));
-
-        // === AK-47 MODEL ===
-        GameObject ak47 = new GameObject("AK47_Model");
-        ak47.transform.SetParent(weaponHolder.transform);
-        ak47.transform.localPosition = Vector3.zero;
-        ak47.transform.localRotation = Quaternion.identity;
-
-        // Body
-        CreateBoxLocal("AK_Body", ak47, new Vector3(0, 0, 0.15f), new Vector3(0.06f, 0.08f, 0.5f), metalDark);
-        // Barrel
-        CreateBoxLocal("AK_Barrel", ak47, new Vector3(0, 0.01f, 0.55f), new Vector3(0.03f, 0.03f, 0.35f), metalDark);
-        // Stock
-        CreateBoxLocal("AK_Stock", ak47, new Vector3(0, -0.02f, -0.2f), new Vector3(0.04f, 0.06f, 0.25f), woodMat);
-        // Magazine
-        CreateBoxLocal("AK_Magazine", ak47, new Vector3(0, -0.1f, 0.1f), new Vector3(0.04f, 0.12f, 0.08f), metalDark);
-        // Grip
-        CreateBoxLocal("AK_Grip", ak47, new Vector3(0, -0.08f, -0.02f), new Vector3(0.03f, 0.08f, 0.04f), woodMat);
-        // Handguard
-        CreateBoxLocal("AK_Handguard", ak47, new Vector3(0, -0.01f, 0.35f), new Vector3(0.05f, 0.06f, 0.15f), woodMat);
-
-        // === SHOTGUN MODEL ===
-        GameObject shotgun = new GameObject("Shotgun_Model");
-        shotgun.transform.SetParent(weaponHolder.transform);
-        shotgun.transform.localPosition = Vector3.zero;
-        shotgun.transform.localRotation = Quaternion.identity;
-
-        // Body
-        CreateBoxLocal("SG_Body", shotgun, new Vector3(0, 0, 0.1f), new Vector3(0.06f, 0.07f, 0.35f), metalDark);
-        // Barrel (thicker)
-        CreateBoxLocal("SG_Barrel", shotgun, new Vector3(0, 0.01f, 0.45f), new Vector3(0.045f, 0.045f, 0.4f), metalDark);
-        // Pump
-        CreateBoxLocal("SG_Pump", shotgun, new Vector3(0, -0.02f, 0.35f), new Vector3(0.055f, 0.055f, 0.12f), metalLight);
-        // Stock
-        CreateBoxLocal("SG_Stock", shotgun, new Vector3(0, -0.02f, -0.15f), new Vector3(0.05f, 0.07f, 0.2f), woodMat);
-        // Grip
-        CreateBoxLocal("SG_Grip", shotgun, new Vector3(0, -0.08f, -0.02f), new Vector3(0.03f, 0.08f, 0.04f), woodMat);
-
-        // === PISTOL MODEL ===
-        GameObject pistol = new GameObject("Pistol_Model");
-        pistol.transform.SetParent(weaponHolder.transform);
-        pistol.transform.localPosition = Vector3.zero;
-        pistol.transform.localRotation = Quaternion.identity;
-
-        // Slide
-        CreateBoxLocal("PT_Slide", pistol, new Vector3(0, 0.01f, 0.05f), new Vector3(0.04f, 0.045f, 0.2f), metalDark);
-        // Frame
-        CreateBoxLocal("PT_Frame", pistol, new Vector3(0, -0.02f, 0.02f), new Vector3(0.035f, 0.03f, 0.15f), metalLight);
-        // Grip
-        CreateBoxLocal("PT_Grip", pistol, new Vector3(0, -0.07f, -0.02f), new Vector3(0.035f, 0.08f, 0.04f), metalDark);
-        // Magazine base
-        CreateBoxLocal("PT_MagBase", pistol, new Vector3(0, -0.11f, -0.02f), new Vector3(0.03f, 0.02f, 0.035f), metalLight);
-
-        // === MUZZLE FLASH ===
-        GameObject muzzleFlash = new GameObject("MuzzleFlash");
-        muzzleFlash.transform.SetParent(weaponHolder.transform);
-        muzzleFlash.transform.localPosition = new Vector3(0, 0.01f, 0.75f);
-
-        GameObject flashVisual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        flashVisual.name = "FlashSphere";
-        flashVisual.transform.SetParent(muzzleFlash.transform);
-        flashVisual.transform.localPosition = Vector3.zero;
-        flashVisual.transform.localScale = new Vector3(0.1f, 0.1f, 0.15f);
-        Object.DestroyImmediate(flashVisual.GetComponent<Collider>());
-        flashVisual.GetComponent<Renderer>().material = orangeMat;
-
-        // Add point light for flash
-        Light flashLight = muzzleFlash.AddComponent<Light>();
-        flashLight.type = LightType.Point;
-        flashLight.color = new Color(1f, 0.7f, 0.3f);
-        flashLight.range = 5f;
-        flashLight.intensity = 3f;
-
-        muzzleFlash.SetActive(false);
-
-        // === ADD WEAPON CONTROLLER ===
-        WeaponController wc = player.GetComponent<WeaponController>();
-        if (wc == null) wc = player.AddComponent<WeaponController>();
-        wc.cameraTransform = cam;
-
-        // === ADD UI ===
-        GameObject uiObj = GameObject.Find("WeaponUI");
-        if (uiObj == null)
-        {
-            uiObj = new GameObject("WeaponUI");
-            uiObj.AddComponent<WeaponUI>();
-        }
-
-        EditorUtility.DisplayDialog(
-            "JailBreak - Step 3 Complete",
-            "Weapons created!\n\n" +
-            "- AK-47 (key 1)\n" +
-            "- Shotgun (key 2)\n" +
-            "- Pistol (key 3)\n\n" +
-            "Controls:\n" +
-            "LMB - Shoot\n" +
-            "R - Reload\n" +
-            "1/2/3 or Scroll - Switch weapon\n\n" +
-            "Press PLAY to test!",
-            "OK"
-        );
-    }
-
-    // ============================================================
-    // STEP 4: Setup Inventory
-    // ============================================================
-    [MenuItem("JailBreak/Step 4 - Setup Inventory")]
-    public static void SetupInventory()
-    {
-        GameObject player = GameObject.Find("Player");
-        if (player == null)
-        {
-            EditorUtility.DisplayDialog("Error", "Player not found! Run Step 1 first.", "OK");
-            return;
-        }
-
-        // Add InventorySystem to player
-        InventorySystem inv = player.GetComponent<InventorySystem>();
-        if (inv == null) inv = player.AddComponent<InventorySystem>();
-
-        // Add InventoryUI (global)
-        DestroyIfExists("InventoryUI");
-        GameObject uiObj = new GameObject("InventoryUI");
-        uiObj.AddComponent<InventoryUI>();
-
-        // Add PickupNotification (global)
-        DestroyIfExists("PickupNotification");
-        GameObject notifObj = new GameObject("PickupNotification");
-        notifObj.AddComponent<PickupNotification>();
-
-        // Clean old pickups
-        GameObject oldPickups = GameObject.Find("Pickups");
-        if (oldPickups != null) DestroyImmediate(oldPickups);
-
-        // Create parent for pickups
-        GameObject pickups = new GameObject("Pickups");
-        pickups.transform.position = Vector3.zero;
-
-        // Spawn items around the map
-        // Corridor items
-        CreatePickup("Pickup_Pistol", pickups, new Vector3(0f, 0.7f, -10f), ItemData.Pistol(), new Color(0.25f, 0.25f, 0.3f));
-        CreatePickup("Pickup_Medkit1", pickups, new Vector3(1.5f, 0.7f, -4f), ItemData.Medkit(), new Color(0.9f, 0.2f, 0.2f));
-        CreatePickup("Pickup_Ammo1", pickups, new Vector3(-1f, 0.7f, 2f), ItemData.AmmoBox(), new Color(0.5f, 0.5f, 0.2f));
-
-        // Guard room items
-        float guardX = -8.5f;
-        float guardZ = -12f;
-        CreatePickup("Pickup_AK47", pickups, new Vector3(guardX - 1f, 0.9f, guardZ), ItemData.AK47(), new Color(0.3f, 0.3f, 0.3f));
-        CreatePickup("Pickup_CellKey", pickups, new Vector3(guardX + 1f, 0.9f, guardZ + 1f), ItemData.CellKey(), new Color(0.8f, 0.7f, 0.2f));
-        CreatePickup("Pickup_Taser", pickups, new Vector3(guardX, 0.9f, guardZ - 1f), ItemData.Taser(), new Color(0.9f, 0.9f, 0.2f));
-
-        // Yard items
-        float yardZ = 26f;
-        CreatePickup("Pickup_Shotgun", pickups, new Vector3(3f, 0.7f, yardZ), ItemData.Shotgun(), new Color(0.4f, 0.3f, 0.2f));
-        CreatePickup("Pickup_Money1", pickups, new Vector3(-2f, 0.7f, yardZ + 3f), ItemData.Money(100), new Color(0.2f, 0.7f, 0.3f));
-        CreatePickup("Pickup_Medkit2", pickups, new Vector3(5f, 0.7f, yardZ - 2f), ItemData.Medkit(), new Color(0.9f, 0.2f, 0.2f));
-
-        // Cell items
-        CreatePickup("Pickup_Shiv", pickups, new Vector3(-4f, 0.5f, -12f), ItemData.Shiv(), new Color(0.6f, 0.6f, 0.6f));
-        CreatePickup("Pickup_Money2", pickups, new Vector3(4f, 0.5f, 0f), ItemData.Money(50), new Color(0.2f, 0.7f, 0.3f));
-
-        EditorUtility.DisplayDialog(
-            "JailBreak - Step 4 Complete",
-            "Inventory system created!\n\n" +
-            "- 4 hotbar slots (bottom of screen)\n" +
-            "- 8 inventory slots\n" +
-            "- Pickup items placed on map\n\n" +
-            "Controls:\n" +
-            "Tab - Open/close inventory\n" +
-            "E - Pick up items (when near)\n" +
-            "Click slots to move items\n\n" +
-            "Press PLAY to test!",
-            "OK"
-        );
-    }
-
-    private static void CreatePickup(string name, GameObject parent, Vector3 position, ItemData item, Color color)
-    {
-        GameObject pickup = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        pickup.name = name;
-        pickup.transform.SetParent(parent.transform);
-        pickup.transform.position = position;
-        pickup.transform.localScale = new Vector3(0.4f, 0.4f, 0.4f);
-        pickup.GetComponent<Renderer>().material = CreateMat(color);
-
-        // Add pickup script and set serializable fields
-        PickupItem pi = pickup.AddComponent<PickupItem>();
-        pi.SetItemData(item);
-    }
-
-    // ============================================================
-    // HELPERS
-    // ============================================================
-    private static void BuildCell(string name, GameObject parent, Vector3 center, float width, float depth, float height, Material wallMat, Material floorMat, Material ceilMat, Material barsMat, Material frameMat, Material bedMat, Material mattressMat, Material toiletMat, bool isLeft)
-    {
-        GameObject cell = new GameObject(name);
-        cell.transform.SetParent(parent.transform);
-        cell.transform.localPosition = center;
-
-        // Floor & ceiling
-        CreateBoxLocal("Floor", cell, new Vector3(0, 0, 0), new Vector3(depth, 0.2f, width), floorMat);
-        CreateBoxLocal("Ceiling", cell, new Vector3(0, height, 0), new Vector3(depth, 0.2f, width), ceilMat);
-
-        // Back wall
-        float backX = isLeft ? -depth / 2 + 0.2f : depth / 2 - 0.2f;
-        CreateBoxLocal("BackWall", cell, new Vector3(backX, height / 2, 0), new Vector3(0.4f, height, width), wallMat);
-
-        // Bars
-        float frontX = isLeft ? depth / 2 : -depth / 2;
-        int barCount = 6;
-        float barSpacing = width / (barCount + 1);
-        for (int b = 0; b < barCount; b++)
-        {
-            float barZ = -width / 2 + barSpacing * (b + 1);
-            GameObject bar = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            bar.name = "Bar" + b;
-            bar.transform.SetParent(cell.transform);
-            bar.transform.localPosition = new Vector3(frontX, height / 2, barZ);
-            bar.transform.localScale = new Vector3(0.08f, height / 2, 0.08f);
-            bar.GetComponent<Renderer>().material = barsMat;
-        }
-
-        // Bar frames
-        CreateBoxLocal("TopFrame", cell, new Vector3(frontX, height - 0.1f, 0), new Vector3(0.15f, 0.2f, width), frameMat);
-        CreateBoxLocal("BottomFrame", cell, new Vector3(frontX, 0.1f, 0), new Vector3(0.15f, 0.2f, width), frameMat);
-
-        // Bed
-        float bedX = isLeft ? -depth / 4 : depth / 4;
-        float bedZ = -width / 2 + 1f;
-        CreateBoxLocal("BedFrame", cell, new Vector3(bedX, 0.3f, bedZ), new Vector3(1.8f, 0.15f, 0.9f), bedMat);
-        CreateBoxLocal("Mattress", cell, new Vector3(bedX, 0.42f, bedZ), new Vector3(1.7f, 0.1f, 0.8f), mattressMat);
-
-        // Toilet
-        float toiletX = isLeft ? -depth / 4 : depth / 4;
-        float toiletZ = width / 2 - 0.8f;
-        CreateBoxLocal("ToiletBase", cell, new Vector3(toiletX, 0.25f, toiletZ), new Vector3(0.5f, 0.5f, 0.4f), toiletMat);
     }
 
     private static Material CreateMat(Color color)
@@ -497,52 +35,494 @@ public class JailBreakEditor : EditorWindow
         return mat;
     }
 
-    private static void CreateBox(string name, GameObject parent, Vector3 position, Vector3 scale, Material mat)
+    private static GameObject CreateBox(string name, Vector3 pos, Vector3 scale, Color color, Transform parent = null)
     {
-        GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        box.name = name;
-        box.transform.SetParent(parent.transform);
-        box.transform.position = position;
-        box.transform.localScale = scale;
-        box.GetComponent<Renderer>().material = mat;
+        GameObject obj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        obj.name = name;
+        obj.transform.position = pos;
+        obj.transform.localScale = scale;
+        if (parent != null) obj.transform.SetParent(parent);
+        obj.GetComponent<Renderer>().material = CreateMat(color);
+        return obj;
     }
 
-    private static void CreateBoxLocal(string name, GameObject parent, Vector3 localPos, Vector3 scale, Material mat)
+    private static GameObject CreateCylinder(string name, Vector3 pos, Vector3 scale, Color color, Transform parent = null)
     {
-        GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        box.name = name;
-        box.transform.SetParent(parent.transform);
-        box.transform.localPosition = localPos;
-        box.transform.localScale = scale;
-        box.GetComponent<Renderer>().material = mat;
+        GameObject obj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        obj.name = name;
+        obj.transform.position = pos;
+        obj.transform.localScale = scale;
+        if (parent != null) obj.transform.SetParent(parent);
+        obj.GetComponent<Renderer>().material = CreateMat(color);
+        return obj;
     }
 
-    private static void CreateColoredBox(string name, Vector3 position, Color color)
+    private static GameObject CreateSphere(string name, Vector3 pos, Vector3 scale, Color color, Transform parent = null)
     {
-        DestroyIfExists(name);
-        GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        box.name = name;
-        box.transform.position = position;
-        box.transform.localScale = new Vector3(2f, 2f, 2f);
-        box.GetComponent<Renderer>().material = CreateMat(color);
+        GameObject obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        obj.name = name;
+        obj.transform.position = pos;
+        obj.transform.localScale = scale;
+        if (parent != null) obj.transform.SetParent(parent);
+        obj.GetComponent<Renderer>().material = CreateMat(color);
+        return obj;
     }
 
-    private static void CreateLight(string name, GameObject parent, Vector3 position, Color color, float range)
+    private static GameObject CreateLight(string name, Vector3 pos, Color color, float range, float intensity, Transform parent = null)
     {
-        GameObject lightObj = new GameObject(name);
-        lightObj.transform.SetParent(parent.transform);
-        lightObj.transform.position = position;
-        Light light = lightObj.AddComponent<Light>();
+        GameObject obj = new GameObject(name);
+        obj.transform.position = pos;
+        if (parent != null) obj.transform.SetParent(parent);
+        Light light = obj.AddComponent<Light>();
         light.type = LightType.Point;
         light.color = color;
         light.range = range;
-        light.intensity = 2f;
-        light.shadows = LightShadows.Soft;
+        light.intensity = intensity;
+        return obj;
     }
 
-    private static void DestroyIfExists(string name)
+    private static void CreateLighting()
     {
-        GameObject obj = GameObject.Find(name);
-        if (obj != null) DestroyImmediate(obj);
+        GameObject dirLight = new GameObject("DirectionalLight");
+        dirLight.transform.position = new Vector3(0f, 20f, 20f);
+        dirLight.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+        Light dl = dirLight.AddComponent<Light>();
+        dl.type = LightType.Directional;
+        dl.color = new Color(1f, 0.95f, 0.85f);
+        dl.intensity = 1.2f;
+    }
+
+    private static void CreateMap()
+    {
+        GameObject mapRoot = new GameObject("Map");
+        Transform map = mapRoot.transform;
+
+        CreateFloorAndWalls(map);
+        CreateCellBlock(map);
+        CreateMainCorridor(map);
+        CreateGuardRoom(map);
+        CreateArmory(map);
+        CreateYard(map);
+        CreateVentilationShaft(map);
+        CreateMedicRoom(map);
+        CreateCafeteria(map);
+    }
+
+    private static void CreateFloorAndWalls(Transform parent)
+    {
+        Color floorColor = new Color(0.4f, 0.4f, 0.4f);
+        Color wallColor = new Color(0.6f, 0.6f, 0.55f);
+
+        CreateBox("MainFloor", new Vector3(0f, 0f, 0f), new Vector3(60f, 0.5f, 80f), floorColor, parent);
+        CreateBox("Ceiling", new Vector3(0f, 5f, 0f), new Vector3(60f, 0.3f, 80f), wallColor, parent);
+
+        CreateBox("WallNorth", new Vector3(0f, 2.5f, 40f), new Vector3(60f, 5f, 0.5f), wallColor, parent);
+        CreateBox("WallSouth", new Vector3(0f, 2.5f, -20f), new Vector3(60f, 5f, 0.5f), wallColor, parent);
+        CreateBox("WallEast", new Vector3(30f, 2.5f, 10f), new Vector3(0.5f, 5f, 80f), wallColor, parent);
+        CreateBox("WallWest", new Vector3(-30f, 2.5f, 10f), new Vector3(0.5f, 5f, 80f), wallColor, parent);
+    }
+
+    private static void CreateCellBlock(Transform parent)
+    {
+        GameObject cellBlock = new GameObject("CellBlock");
+        cellBlock.transform.SetParent(parent);
+        Transform cb = cellBlock.transform;
+
+        Color wallColor = new Color(0.55f, 0.55f, 0.5f);
+        Color bedColor = new Color(0.3f, 0.25f, 0.2f);
+        Color mattressColor = new Color(0.4f, 0.5f, 0.6f);
+        Color toiletColor = new Color(0.9f, 0.9f, 0.9f);
+        Color barColor = new Color(0.3f, 0.3f, 0.35f);
+
+        for (int side = 0; side < 2; side++)
+        {
+            float xOffset = side == 0 ? 5f : -5f;
+            for (int i = 0; i < 3; i++)
+            {
+                float zPos = -15f + i * 10f;
+                string cellName = "Cell_" + side + "_" + i;
+                GameObject cell = new GameObject(cellName);
+                cell.transform.SetParent(cb);
+                Transform ct = cell.transform;
+
+                CreateBox(cellName + "_BackWall", new Vector3(xOffset + (side == 0 ? 2.5f : -2.5f), 2.5f, zPos), new Vector3(0.3f, 5f, 5f), wallColor, ct);
+                CreateBox(cellName + "_SideWallA", new Vector3(xOffset, 2.5f, zPos + 2.5f), new Vector3(5f, 5f, 0.3f), wallColor, ct);
+                CreateBox(cellName + "_SideWallB", new Vector3(xOffset, 2.5f, zPos - 2.5f), new Vector3(5f, 5f, 0.3f), wallColor, ct);
+
+                float bedX = xOffset + (side == 0 ? 1.5f : -1.5f);
+                CreateBox(cellName + "_BedFrame", new Vector3(bedX, 0.4f, zPos - 1f), new Vector3(1.2f, 0.4f, 2f), bedColor, ct);
+                CreateBox(cellName + "_Mattress", new Vector3(bedX, 0.65f, zPos - 1f), new Vector3(1f, 0.15f, 1.8f), mattressColor, ct);
+
+                float toiletX = xOffset + (side == 0 ? 1.8f : -1.8f);
+                CreateBox(cellName + "_ToiletBase", new Vector3(toiletX, 0.3f, zPos + 1.5f), new Vector3(0.5f, 0.6f, 0.5f), toiletColor, ct);
+                CreateBox(cellName + "_ToiletTop", new Vector3(toiletX, 0.65f, zPos + 1.5f), new Vector3(0.5f, 0.1f, 0.6f), toiletColor, ct);
+
+                float barX = xOffset + (side == 0 ? -2.5f : 2.5f);
+                GameObject doorObj = new GameObject(cellName + "_Bars");
+                doorObj.transform.position = new Vector3(barX, 0f, zPos);
+                doorObj.transform.SetParent(ct);
+
+                for (int b = 0; b < 6; b++)
+                {
+                    float bz = zPos - 2f + b * 0.8f;
+                    CreateCylinder(cellName + "_Bar_" + b, new Vector3(barX, 2.5f, bz), new Vector3(0.08f, 2.5f, 0.08f), barColor, doorObj.transform);
+                }
+                CreateBox(cellName + "_BarTop", new Vector3(barX, 4.9f, zPos), new Vector3(0.15f, 0.2f, 5f), barColor, doorObj.transform);
+                CreateBox(cellName + "_BarBottom", new Vector3(barX, 0.1f, zPos), new Vector3(0.15f, 0.2f, 5f), barColor, doorObj.transform);
+
+                BoxCollider doorCol = doorObj.AddComponent<BoxCollider>();
+                doorCol.center = new Vector3(0f, 2.5f, 0f);
+                doorCol.size = new Vector3(0.3f, 5f, 5f);
+                DoorController dc = doorObj.AddComponent<DoorController>();
+                dc.doorType = DoorType.CellDoor;
+                dc.closedPosition = doorObj.transform.localPosition;
+                dc.openPosition = doorObj.transform.localPosition + Vector3.up * 5f;
+
+                CreateLight(cellName + "_Light", new Vector3(xOffset, 4.5f, zPos), new Color(1f, 0.9f, 0.7f), 6f, 1f, ct);
+            }
+        }
+    }
+
+    private static void CreateMainCorridor(Transform parent)
+    {
+        GameObject corridor = new GameObject("MainCorridor");
+        corridor.transform.SetParent(parent);
+        Transform cr = corridor.transform;
+
+        Color floorColor = new Color(0.45f, 0.42f, 0.4f);
+        CreateBox("CorridorFloor", new Vector3(0f, 0.26f, 0f), new Vector3(4f, 0.02f, 36f), floorColor, cr);
+
+        for (int i = 0; i < 4; i++)
+        {
+            float z = -15f + i * 10f;
+            CreateLight("CorridorLight_" + i, new Vector3(0f, 4.5f, z), new Color(1f, 0.95f, 0.8f), 8f, 1.2f, cr);
+        }
+    }
+
+    private static void CreateGuardRoom(Transform parent)
+    {
+        GameObject guardRoom = new GameObject("GuardRoom");
+        guardRoom.transform.SetParent(parent);
+        Transform gr = guardRoom.transform;
+
+        Color wallColor = new Color(0.5f, 0.55f, 0.6f);
+        Color deskColor = new Color(0.4f, 0.3f, 0.2f);
+        Color monitorColor = new Color(0.1f, 0.1f, 0.15f);
+
+        CreateBox("GR_Floor", new Vector3(-12f, 0.26f, -12f), new Vector3(8f, 0.02f, 8f), new Color(0.35f, 0.35f, 0.4f), gr);
+        CreateBox("GR_WallN", new Vector3(-12f, 2.5f, -8f), new Vector3(8f, 5f, 0.3f), wallColor, gr);
+        CreateBox("GR_WallS", new Vector3(-12f, 2.5f, -16f), new Vector3(8f, 5f, 0.3f), wallColor, gr);
+        CreateBox("GR_WallW", new Vector3(-16f, 2.5f, -12f), new Vector3(0.3f, 5f, 8f), wallColor, gr);
+        CreateBox("GR_WallE", new Vector3(-8f, 2.5f, -12f), new Vector3(0.3f, 5f, 4f), wallColor, gr);
+
+        CreateBox("GR_Desk", new Vector3(-13f, 0.8f, -12f), new Vector3(2f, 0.8f, 1.2f), deskColor, gr);
+        CreateBox("GR_Monitor1", new Vector3(-13.5f, 1.4f, -12f), new Vector3(0.6f, 0.5f, 0.1f), monitorColor, gr);
+        CreateBox("GR_Monitor2", new Vector3(-12.5f, 1.4f, -12f), new Vector3(0.6f, 0.5f, 0.1f), monitorColor, gr);
+        CreateBox("GR_Chair", new Vector3(-13f, 0.5f, -11f), new Vector3(0.6f, 0.5f, 0.6f), new Color(0.2f, 0.2f, 0.3f), gr);
+
+        GameObject buttonPanel = CreateBox("DoorButtonPanel", new Vector3(-8.2f, 1.5f, -10f), new Vector3(0.1f, 0.4f, 0.4f), Color.red, gr);
+        buttonPanel.AddComponent<BoxCollider>();
+        buttonPanel.AddComponent<DoorButton>();
+
+        CreateLight("GR_Light", new Vector3(-12f, 4.5f, -12f), new Color(0.9f, 0.9f, 1f), 8f, 1.5f, gr);
+    }
+
+    private static void CreateArmory(Transform parent)
+    {
+        GameObject armory = new GameObject("Armory");
+        armory.transform.SetParent(parent);
+        Transform ar = armory.transform;
+
+        Color wallColor = new Color(0.45f, 0.45f, 0.5f);
+        Color rackColor = new Color(0.3f, 0.3f, 0.25f);
+        Color crateColor = new Color(0.35f, 0.3f, 0.15f);
+
+        CreateBox("AR_Floor", new Vector3(-12f, 0.26f, -4f), new Vector3(6f, 0.02f, 6f), new Color(0.3f, 0.3f, 0.35f), ar);
+        CreateBox("AR_WallN", new Vector3(-12f, 2.5f, -1f), new Vector3(6f, 5f, 0.3f), wallColor, ar);
+        CreateBox("AR_WallS", new Vector3(-12f, 2.5f, -7f), new Vector3(6f, 5f, 0.3f), wallColor, ar);
+        CreateBox("AR_WallW", new Vector3(-15f, 2.5f, -4f), new Vector3(0.3f, 5f, 6f), wallColor, ar);
+
+        CreateBox("AR_Rack1", new Vector3(-14f, 1.5f, -4f), new Vector3(0.3f, 2f, 3f), rackColor, ar);
+        CreateBox("AR_Rack2", new Vector3(-14f, 2.5f, -4f), new Vector3(0.3f, 0.1f, 3f), rackColor, ar);
+        CreateBox("AR_Crate1", new Vector3(-12f, 0.5f, -5.5f), new Vector3(1f, 1f, 1f), crateColor, ar);
+        CreateBox("AR_Crate2", new Vector3(-11f, 0.5f, -5.5f), new Vector3(1f, 1f, 1f), crateColor, ar);
+
+        GameObject armoryDoor = CreateBox("ArmoryDoor", new Vector3(-9f, 2.5f, -4f), new Vector3(0.3f, 5f, 2f), new Color(0.4f, 0.4f, 0.5f), ar);
+        DoorController armDC = armoryDoor.AddComponent<DoorController>();
+        armDC.doorType = DoorType.ArmoryDoor;
+        armDC.closedPosition = armoryDoor.transform.localPosition;
+        armDC.openPosition = armoryDoor.transform.localPosition + Vector3.up * 5f;
+
+        CreateLight("AR_Light", new Vector3(-12f, 4.5f, -4f), new Color(0.8f, 0.85f, 1f), 7f, 1.3f, ar);
+    }
+
+    private static void CreateYard(Transform parent)
+    {
+        GameObject yard = new GameObject("Yard");
+        yard.transform.SetParent(parent);
+        Transform yr = yard.transform;
+
+        Color grassColor = new Color(0.3f, 0.5f, 0.25f);
+        Color lineColor = new Color(0.9f, 0.9f, 0.9f);
+        Color towerColor = new Color(0.5f, 0.5f, 0.45f);
+        Color railColor = new Color(0.3f, 0.3f, 0.3f);
+
+        CreateBox("Yard_Floor", new Vector3(0f, 0.25f, 35f), new Vector3(20f, 0.01f, 18f), grassColor, yr);
+
+        CreateBox("Court_LineN", new Vector3(0f, 0.27f, 40f), new Vector3(12f, 0.02f, 0.1f), lineColor, yr);
+        CreateBox("Court_LineS", new Vector3(0f, 0.27f, 30f), new Vector3(12f, 0.02f, 0.1f), lineColor, yr);
+        CreateBox("Court_LineE", new Vector3(6f, 0.27f, 35f), new Vector3(0.1f, 0.02f, 10f), lineColor, yr);
+        CreateBox("Court_LineW", new Vector3(-6f, 0.27f, 35f), new Vector3(0.1f, 0.02f, 10f), lineColor, yr);
+        CreateBox("Court_Center", new Vector3(0f, 0.27f, 35f), new Vector3(4f, 0.02f, 0.1f), lineColor, yr);
+
+        CreateWatchTower("Tower_NE", new Vector3(9f, 0f, 43f), yr, towerColor, railColor);
+        CreateWatchTower("Tower_NW", new Vector3(-9f, 0f, 43f), yr, towerColor, railColor);
+
+        Color benchColor = new Color(0.4f, 0.3f, 0.2f);
+        CreateBox("Yard_Bench1", new Vector3(-8f, 0.5f, 28f), new Vector3(3f, 0.5f, 0.6f), benchColor, yr);
+        CreateBox("Yard_Bench2", new Vector3(8f, 0.5f, 28f), new Vector3(3f, 0.5f, 0.6f), benchColor, yr);
+        CreateBox("Yard_Bench3", new Vector3(-8f, 0.5f, 42f), new Vector3(3f, 0.5f, 0.6f), benchColor, yr);
+        CreateBox("Yard_Bench4", new Vector3(8f, 0.5f, 42f), new Vector3(3f, 0.5f, 0.6f), benchColor, yr);
+    }
+
+    private static void CreateWatchTower(string name, Vector3 basePos, Transform parent, Color towerColor, Color railColor)
+    {
+        GameObject tower = new GameObject(name);
+        tower.transform.position = basePos;
+        tower.transform.SetParent(parent);
+        Transform t = tower.transform;
+
+        float pillarHeight = 8f;
+        CreateCylinder(name + "_Leg1", basePos + new Vector3(-1f, pillarHeight / 2f, -1f), new Vector3(0.3f, pillarHeight / 2f, 0.3f), towerColor, t);
+        CreateCylinder(name + "_Leg2", basePos + new Vector3(1f, pillarHeight / 2f, -1f), new Vector3(0.3f, pillarHeight / 2f, 0.3f), towerColor, t);
+        CreateCylinder(name + "_Leg3", basePos + new Vector3(-1f, pillarHeight / 2f, 1f), new Vector3(0.3f, pillarHeight / 2f, 0.3f), towerColor, t);
+        CreateCylinder(name + "_Leg4", basePos + new Vector3(1f, pillarHeight / 2f, 1f), new Vector3(0.3f, pillarHeight / 2f, 0.3f), towerColor, t);
+
+        CreateBox(name + "_Platform", basePos + new Vector3(0f, pillarHeight, 0f), new Vector3(3f, 0.3f, 3f), towerColor, t);
+
+        CreateBox(name + "_RailN", basePos + new Vector3(0f, pillarHeight + 1f, 1.4f), new Vector3(3f, 1f, 0.1f), railColor, t);
+        CreateBox(name + "_RailS", basePos + new Vector3(0f, pillarHeight + 1f, -1.4f), new Vector3(3f, 1f, 0.1f), railColor, t);
+        CreateBox(name + "_RailE", basePos + new Vector3(1.4f, pillarHeight + 1f, 0f), new Vector3(0.1f, 1f, 3f), railColor, t);
+        CreateBox(name + "_RailW", basePos + new Vector3(-1.4f, pillarHeight + 1f, 0f), new Vector3(0.1f, 1f, 3f), railColor, t);
+    }
+
+    private static void CreateVentilationShaft(Transform parent)
+    {
+        GameObject vents = new GameObject("VentilationShaft");
+        vents.transform.SetParent(parent);
+        Transform vt = vents.transform;
+
+        Color ventColor = new Color(0.35f, 0.35f, 0.4f);
+
+        CreateBox("Vent_Entry", new Vector3(5f, 4.5f, -10f), new Vector3(1.2f, 1.2f, 1.2f), ventColor, vt);
+        CreateBox("Vent_Shaft1", new Vector3(5f, 5.2f, -7f), new Vector3(1.2f, 1.2f, 5f), ventColor, vt);
+        CreateBox("Vent_Shaft2", new Vector3(5f, 5.2f, 0f), new Vector3(1.2f, 1.2f, 8f), ventColor, vt);
+        CreateBox("Vent_Shaft3", new Vector3(5f, 5.2f, 10f), new Vector3(1.2f, 1.2f, 12f), ventColor, vt);
+        CreateBox("Vent_Exit", new Vector3(5f, 4.0f, 26f), new Vector3(1.2f, 1.2f, 1.2f), ventColor, vt);
+
+        CreateBox("Vent_Floor1", new Vector3(5f, 4.0f, -7f), new Vector3(1.1f, 0.1f, 5f), new Color(0.3f, 0.3f, 0.3f), vt);
+        CreateBox("Vent_Floor2", new Vector3(5f, 4.0f, 0f), new Vector3(1.1f, 0.1f, 8f), new Color(0.3f, 0.3f, 0.3f), vt);
+        CreateBox("Vent_Floor3", new Vector3(5f, 4.0f, 10f), new Vector3(1.1f, 0.1f, 12f), new Color(0.3f, 0.3f, 0.3f), vt);
+    }
+
+    private static void CreateMedicRoom(Transform parent)
+    {
+        GameObject medic = new GameObject("MedicRoom");
+        medic.transform.SetParent(parent);
+        Transform mr = medic.transform;
+
+        Color wallColor = new Color(0.8f, 0.85f, 0.8f);
+        Color tableColor = new Color(0.7f, 0.75f, 0.8f);
+        Color cabinetColor = new Color(0.6f, 0.65f, 0.7f);
+
+        CreateBox("MR_Floor", new Vector3(10f, 0.26f, 0f), new Vector3(5f, 0.02f, 5f), new Color(0.75f, 0.8f, 0.75f), mr);
+        CreateBox("MR_WallN", new Vector3(10f, 2.5f, 2.5f), new Vector3(5f, 5f, 0.3f), wallColor, mr);
+        CreateBox("MR_WallS", new Vector3(10f, 2.5f, -2.5f), new Vector3(5f, 5f, 0.3f), wallColor, mr);
+        CreateBox("MR_WallE", new Vector3(12.5f, 2.5f, 0f), new Vector3(0.3f, 5f, 5f), wallColor, mr);
+
+        CreateBox("MR_Table", new Vector3(10f, 0.9f, 0f), new Vector3(2f, 0.9f, 1f), tableColor, mr);
+        CreateBox("MR_Cabinet", new Vector3(12f, 1.5f, 0f), new Vector3(0.5f, 2f, 1.5f), cabinetColor, mr);
+        CreateBox("MR_Medkit", new Vector3(10f, 1.2f, 0f), new Vector3(0.4f, 0.3f, 0.3f), Color.red, mr);
+
+        CreateLight("MR_Light", new Vector3(10f, 4.5f, 0f), new Color(1f, 1f, 1f), 6f, 1.5f, mr);
+    }
+
+    private static void CreateCafeteria(Transform parent)
+    {
+        GameObject cafeteria = new GameObject("Cafeteria");
+        cafeteria.transform.SetParent(parent);
+        Transform cf = cafeteria.transform;
+
+        Color wallColor = new Color(0.6f, 0.58f, 0.5f);
+        Color tableColor = new Color(0.5f, 0.4f, 0.3f);
+        Color benchColor = new Color(0.45f, 0.35f, 0.25f);
+        Color counterColor = new Color(0.55f, 0.5f, 0.45f);
+
+        CreateBox("CF_Floor", new Vector3(10f, 0.26f, 10f), new Vector3(10f, 0.02f, 8f), new Color(0.5f, 0.45f, 0.4f), cf);
+        CreateBox("CF_WallN", new Vector3(10f, 2.5f, 14f), new Vector3(10f, 5f, 0.3f), wallColor, cf);
+        CreateBox("CF_WallS", new Vector3(10f, 2.5f, 6f), new Vector3(10f, 5f, 0.3f), wallColor, cf);
+        CreateBox("CF_WallE", new Vector3(15f, 2.5f, 10f), new Vector3(0.3f, 5f, 8f), wallColor, cf);
+
+        for (int i = 0; i < 4; i++)
+        {
+            float z = 7.5f + i * 2f;
+            CreateBox("CF_Table_" + i, new Vector3(10f, 0.8f, z), new Vector3(4f, 0.1f, 1f), tableColor, cf);
+            CreateBox("CF_BenchA_" + i, new Vector3(10f, 0.45f, z - 0.6f), new Vector3(4f, 0.4f, 0.3f), benchColor, cf);
+            CreateBox("CF_BenchB_" + i, new Vector3(10f, 0.45f, z + 0.6f), new Vector3(4f, 0.4f, 0.3f), benchColor, cf);
+        }
+
+        CreateBox("CF_Counter", new Vector3(14f, 1f, 10f), new Vector3(1.5f, 1f, 6f), counterColor, cf);
+
+        CreateLight("CF_Light1", new Vector3(9f, 4.5f, 9f), new Color(1f, 0.9f, 0.7f), 7f, 1.2f, cf);
+        CreateLight("CF_Light2", new Vector3(9f, 4.5f, 12f), new Color(1f, 0.9f, 0.7f), 7f, 1.2f, cf);
+    }
+
+    private static void CreatePlayer()
+    {
+        GameObject player = new GameObject("Player");
+        player.tag = "Player";
+        player.transform.position = new Vector3(0f, 1f, -18f);
+
+        CharacterController cc = player.AddComponent<CharacterController>();
+        cc.height = 2f;
+        cc.radius = 0.4f;
+        cc.center = new Vector3(0f, 1f, 0f);
+
+        PlayerController pc = player.AddComponent<PlayerController>();
+        HealthSystem hs = player.AddComponent<HealthSystem>();
+        DamageReceiver dr = player.AddComponent<DamageReceiver>();
+        WeaponController wc = player.AddComponent<WeaponController>();
+
+        GameObject cameraObj = new GameObject("PlayerCamera");
+        cameraObj.transform.SetParent(player.transform);
+        cameraObj.transform.localPosition = new Vector3(0f, 1.7f, 0f);
+        Camera cam = cameraObj.AddComponent<Camera>();
+        cameraObj.AddComponent<AudioListener>();
+
+        GameObject weaponHolder = new GameObject("WeaponHolder");
+        weaponHolder.transform.SetParent(cameraObj.transform);
+        weaponHolder.transform.localPosition = new Vector3(0.3f, -0.2f, 0.5f);
+        wc.weaponHolder = weaponHolder.transform;
+        wc.cameraTransform = cameraObj.transform;
+
+        Color gunMetal = new Color(0.25f, 0.25f, 0.28f);
+        Color knifeColor = new Color(0.6f, 0.6f, 0.65f);
+        Color skinColor = new Color(0.8f, 0.65f, 0.5f);
+
+        GameObject[] models = new GameObject[6];
+
+        GameObject fists = CreateBox("WM_Fists", Vector3.zero, new Vector3(0.15f, 0.15f, 0.2f), skinColor, weaponHolder.transform);
+        fists.transform.localPosition = new Vector3(0f, 0f, 0.2f);
+        models[0] = fists;
+
+        GameObject knife = CreateBox("WM_Knife", Vector3.zero, new Vector3(0.04f, 0.04f, 0.35f), knifeColor, weaponHolder.transform);
+        knife.transform.localPosition = new Vector3(0f, 0f, 0.2f);
+        models[1] = knife;
+
+        GameObject pistol = CreateBox("WM_Pistol", Vector3.zero, new Vector3(0.06f, 0.12f, 0.22f), gunMetal, weaponHolder.transform);
+        pistol.transform.localPosition = new Vector3(0f, 0f, 0.3f);
+        models[2] = pistol;
+
+        GameObject ak47 = CreateBox("WM_AK47", Vector3.zero, new Vector3(0.06f, 0.12f, 0.6f), new Color(0.35f, 0.25f, 0.15f), weaponHolder.transform);
+        ak47.transform.localPosition = new Vector3(0f, 0f, 0.4f);
+        models[3] = ak47;
+
+        GameObject m4 = CreateBox("WM_M4A1", Vector3.zero, new Vector3(0.06f, 0.11f, 0.55f), gunMetal, weaponHolder.transform);
+        m4.transform.localPosition = new Vector3(0f, 0f, 0.4f);
+        models[4] = m4;
+
+        GameObject shotgun = CreateBox("WM_Shotgun", Vector3.zero, new Vector3(0.07f, 0.1f, 0.65f), new Color(0.4f, 0.3f, 0.2f), weaponHolder.transform);
+        shotgun.transform.localPosition = new Vector3(0f, 0f, 0.4f);
+        models[5] = shotgun;
+
+        wc.weaponModels = models;
+
+        GameObject muzzleFlash = CreateSphere("MuzzleFlash", Vector3.zero, new Vector3(0.1f, 0.1f, 0.1f), Color.yellow, weaponHolder.transform);
+        muzzleFlash.transform.localPosition = new Vector3(0f, 0f, 0.7f);
+        muzzleFlash.GetComponent<Collider>().enabled = false;
+        muzzleFlash.SetActive(false);
+        wc.muzzleFlash = muzzleFlash;
+    }
+
+    private static void CreateBots()
+    {
+        GameObject botsRoot = new GameObject("Bots");
+
+        Vector3[] guardWaypoints = new Vector3[]
+        {
+            new Vector3(0f, 1f, -15f),
+            new Vector3(0f, 1f, -5f),
+            new Vector3(0f, 1f, 5f),
+            new Vector3(0f, 1f, 15f),
+            new Vector3(0f, 1f, 5f),
+            new Vector3(0f, 1f, -5f)
+        };
+
+        Vector3[] yardWaypoints = new Vector3[]
+        {
+            new Vector3(-5f, 1f, 30f),
+            new Vector3(5f, 1f, 30f),
+            new Vector3(5f, 1f, 40f),
+            new Vector3(-5f, 1f, 40f)
+        };
+
+        Vector3[] prisonerWaypoints = new Vector3[]
+        {
+            new Vector3(4f, 1f, -15f),
+            new Vector3(4f, 1f, -10f),
+            new Vector3(4f, 1f, -5f),
+            new Vector3(4f, 1f, 0f),
+            new Vector3(4f, 1f, -5f),
+            new Vector3(4f, 1f, -10f)
+        };
+
+        BotSpawner.SpawnBot(new Vector3(-10f, 1f, -12f), Team.Guard, guardWaypoints).transform.SetParent(botsRoot.transform);
+        BotSpawner.SpawnBot(new Vector3(-10f, 1f, -10f), Team.Guard, guardWaypoints).transform.SetParent(botsRoot.transform);
+        BotSpawner.SpawnBot(new Vector3(0f, 1f, 30f), Team.Guard, yardWaypoints).transform.SetParent(botsRoot.transform);
+        BotSpawner.SpawnBot(new Vector3(2f, 1f, 32f), Team.Guard, yardWaypoints).transform.SetParent(botsRoot.transform);
+
+        BotSpawner.SpawnBot(new Vector3(4f, 1f, -15f), Team.Prisoner, prisonerWaypoints).transform.SetParent(botsRoot.transform);
+        BotSpawner.SpawnBot(new Vector3(4f, 1f, -10f), Team.Prisoner, prisonerWaypoints).transform.SetParent(botsRoot.transform);
+        BotSpawner.SpawnBot(new Vector3(4f, 1f, -5f), Team.Prisoner, prisonerWaypoints).transform.SetParent(botsRoot.transform);
+        BotSpawner.SpawnBot(new Vector3(4f, 1f, 5f), Team.Prisoner, prisonerWaypoints).transform.SetParent(botsRoot.transform);
+        BotSpawner.SpawnBot(new Vector3(4f, 1f, 10f), Team.Prisoner, prisonerWaypoints).transform.SetParent(botsRoot.transform);
+    }
+
+    private static void CreateManagers()
+    {
+        GameObject managers = new GameObject("Managers");
+
+        GameObject gmObj = new GameObject("GameManager");
+        gmObj.transform.SetParent(managers.transform);
+        gmObj.AddComponent<GameManager>();
+
+        GameObject tmObj = new GameObject("TeamManager");
+        tmObj.transform.SetParent(managers.transform);
+        tmObj.AddComponent<TeamManager>();
+
+        GameObject rmObj = new GameObject("RoundManager");
+        rmObj.transform.SetParent(managers.transform);
+        rmObj.AddComponent<RoundManager>();
+
+        GameObject specObj = new GameObject("SpectateCamera");
+        specObj.transform.SetParent(managers.transform);
+        specObj.AddComponent<SpectateCamera>();
+    }
+
+    private static void CreateUI()
+    {
+        GameObject uiRoot = new GameObject("UI");
+
+        GameObject gameUI = new GameObject("GameUI");
+        gameUI.transform.SetParent(uiRoot.transform);
+        gameUI.AddComponent<GameUI>();
+
+        GameObject teamUI = new GameObject("TeamSelectUI");
+        teamUI.transform.SetParent(uiRoot.transform);
+        teamUI.AddComponent<TeamSelectUI>();
+
+        GameObject killFeed = new GameObject("KillFeed");
+        killFeed.transform.SetParent(uiRoot.transform);
+        killFeed.AddComponent<KillFeed>();
     }
 }
