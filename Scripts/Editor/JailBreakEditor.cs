@@ -1,44 +1,114 @@
 using UnityEngine;
 using UnityEditor;
 
-public class JailBreakMapBuilder : EditorWindow
+public class JailBreakEditor : EditorWindow
 {
-    [MenuItem("JailBreak/Build Prison Map (Step 2)")]
-    public static void BuildPrisonMap()
+    // ============================================================
+    // STEP 1: Setup Player
+    // ============================================================
+    [MenuItem("JailBreak/Step 1 - Setup Player")]
+    public static void SetupPlayer()
     {
-        // Clean up existing map
-        GameObject existingMap = GameObject.Find("PrisonMap");
-        if (existingMap != null) DestroyImmediate(existingMap);
-
-        // Remove old floor and boxes from Step 1
+        // Clean up
+        DestroyIfExists("Player");
         DestroyIfExists("Floor");
         DestroyIfExists("Box_Red");
         DestroyIfExists("Box_Blue");
         DestroyIfExists("Box_Green");
         DestroyIfExists("Box_Yellow");
 
-        // Parent object for entire map
+        // Create Player
+        GameObject player = new GameObject("Player");
+        player.transform.position = new Vector3(0f, 1f, 0f);
+
+        CharacterController cc = player.AddComponent<CharacterController>();
+        cc.height = 2f;
+        cc.radius = 0.4f;
+        cc.center = new Vector3(0f, 1f, 0f);
+
+        player.AddComponent<PlayerController>();
+
+        // CameraHolder
+        GameObject cameraHolder = new GameObject("CameraHolder");
+        cameraHolder.transform.SetParent(player.transform);
+        cameraHolder.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+        cameraHolder.transform.localRotation = Quaternion.identity;
+
+        // Move Main Camera
+        Camera mainCam = Camera.main;
+        if (mainCam != null)
+        {
+            mainCam.transform.SetParent(cameraHolder.transform);
+            mainCam.transform.localPosition = Vector3.zero;
+            mainCam.transform.localRotation = Quaternion.identity;
+        }
+        else
+        {
+            GameObject camObj = new GameObject("Main Camera");
+            camObj.tag = "MainCamera";
+            camObj.AddComponent<Camera>();
+            camObj.AddComponent<AudioListener>();
+            camObj.transform.SetParent(cameraHolder.transform);
+            camObj.transform.localPosition = Vector3.zero;
+            camObj.transform.localRotation = Quaternion.identity;
+        }
+
+        // Floor
+        GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        floor.name = "Floor";
+        floor.transform.position = Vector3.zero;
+        floor.transform.localScale = new Vector3(10f, 1f, 10f);
+        floor.GetComponent<Renderer>().material = CreateMat(new Color(0.4f, 0.4f, 0.4f));
+
+        // Reference boxes
+        CreateColoredBox("Box_Red", new Vector3(5f, 1f, 5f), Color.red);
+        CreateColoredBox("Box_Blue", new Vector3(-5f, 1f, -3f), Color.blue);
+        CreateColoredBox("Box_Green", new Vector3(-3f, 1f, 8f), Color.green);
+        CreateColoredBox("Box_Yellow", new Vector3(7f, 1f, -6f), Color.yellow);
+
+        Selection.activeGameObject = player;
+
+        EditorUtility.DisplayDialog(
+            "JailBreak - Step 1 Complete",
+            "Player created!\n\nPress PLAY to test.\n\nWASD - Move\nMouse - Look\nSpace - Jump\nShift - Sprint\nC/Ctrl - Crouch",
+            "OK"
+        );
+    }
+
+    // ============================================================
+    // STEP 2: Build Prison Map
+    // ============================================================
+    [MenuItem("JailBreak/Step 2 - Build Prison Map")]
+    public static void BuildPrisonMap()
+    {
+        // Clean up
+        DestroyIfExists("PrisonMap");
+        DestroyIfExists("Floor");
+        DestroyIfExists("Box_Red");
+        DestroyIfExists("Box_Blue");
+        DestroyIfExists("Box_Green");
+        DestroyIfExists("Box_Yellow");
+
         GameObject map = new GameObject("PrisonMap");
         map.transform.position = Vector3.zero;
 
-        // === MATERIALS ===
-        Material wallMat = CreateMat(new Color(0.85f, 0.82f, 0.75f));       // Warm beige walls
-        Material floorMat = CreateMat(new Color(0.55f, 0.55f, 0.6f));       // Gray floor
-        Material ceilingMat = CreateMat(new Color(0.9f, 0.9f, 0.85f));      // Light ceiling
-        Material cellWallMat = CreateMat(new Color(0.75f, 0.78f, 0.82f));   // Bluish cell walls
-        Material doorFrameMat = CreateMat(new Color(0.3f, 0.3f, 0.35f));    // Dark metal frames
-        Material barsMat = CreateMat(new Color(0.25f, 0.25f, 0.3f));        // Dark bars
-        Material yardFloorMat = CreateMat(new Color(0.4f, 0.6f, 0.35f));    // Green yard
-        Material yardWallMat = CreateMat(new Color(0.7f, 0.5f, 0.3f));      // Orange/brown yard walls
-        Material guardRoomMat = CreateMat(new Color(0.3f, 0.4f, 0.6f));     // Blue guard room
-        Material bedMat = CreateMat(new Color(0.6f, 0.4f, 0.2f));           // Brown bed
-        Material mattressMat = CreateMat(new Color(0.4f, 0.5f, 0.7f));      // Blue mattress
-        Material toiletMat = CreateMat(new Color(0.9f, 0.9f, 0.95f));       // White toilet
-        Material tableMat = CreateMat(new Color(0.5f, 0.35f, 0.2f));        // Brown table
-        Material benchMat = CreateMat(new Color(0.6f, 0.45f, 0.25f));       // Light brown bench
-        Material roofMat = CreateMat(new Color(0.4f, 0.35f, 0.3f));         // Dark roof
+        // Materials
+        Material wallMat = CreateMat(new Color(0.85f, 0.82f, 0.75f));
+        Material floorMat = CreateMat(new Color(0.55f, 0.55f, 0.6f));
+        Material ceilingMat = CreateMat(new Color(0.9f, 0.9f, 0.85f));
+        Material cellWallMat = CreateMat(new Color(0.75f, 0.78f, 0.82f));
+        Material doorFrameMat = CreateMat(new Color(0.3f, 0.3f, 0.35f));
+        Material barsMat = CreateMat(new Color(0.25f, 0.25f, 0.3f));
+        Material yardFloorMat = CreateMat(new Color(0.4f, 0.6f, 0.35f));
+        Material yardWallMat = CreateMat(new Color(0.7f, 0.5f, 0.3f));
+        Material guardRoomMat = CreateMat(new Color(0.3f, 0.4f, 0.6f));
+        Material bedMat = CreateMat(new Color(0.6f, 0.4f, 0.2f));
+        Material mattressMat = CreateMat(new Color(0.4f, 0.5f, 0.7f));
+        Material toiletMat = CreateMat(new Color(0.9f, 0.9f, 0.95f));
+        Material tableMat = CreateMat(new Color(0.5f, 0.35f, 0.2f));
+        Material benchMat = CreateMat(new Color(0.6f, 0.45f, 0.25f));
 
-        // === DIMENSIONS ===
+        // Dimensions
         float corridorLength = 36f;
         float corridorWidth = 4f;
         float wallHeight = 4f;
@@ -46,81 +116,66 @@ public class JailBreakMapBuilder : EditorWindow
         float cellWidth = 5f;
         float cellDepth = 4f;
         int cellsPerSide = 3;
+        float cellSpacing = corridorLength / cellsPerSide;
 
-        // === MAIN CORRIDOR ===
-        // Floor
+        // Corridor floor
         CreateBox("Corridor_Floor", map, new Vector3(0, 0, 0), new Vector3(corridorWidth, 0.2f, corridorLength), floorMat);
 
-        // Ceiling
+        // Corridor ceiling
         CreateBox("Corridor_Ceiling", map, new Vector3(0, wallHeight, 0), new Vector3(corridorWidth + wallThickness * 2, 0.3f, corridorLength), ceilingMat);
-
-        // Left wall (solid parts between cell openings)
-        // Right wall (solid parts between cell openings)
-        float cellSpacing = corridorLength / cellsPerSide;
 
         // Back wall
         CreateBox("Corridor_BackWall", map, new Vector3(0, wallHeight / 2, -corridorLength / 2), new Vector3(corridorWidth + wallThickness * 2 + cellDepth * 2 + 2f, wallHeight, wallThickness), wallMat);
 
-        // === CELLS - LEFT SIDE ===
+        // Cells - left side
         for (int i = 0; i < cellsPerSide; i++)
         {
             float zPos = -corridorLength / 2 + cellSpacing * i + cellSpacing / 2;
-            BuildCell("CellL" + (i + 1), map, new Vector3(-corridorWidth / 2 - cellDepth / 2, 0, zPos), cellWidth, cellDepth, wallHeight, wallThickness, cellWallMat, floorMat, ceilingMat, barsMat, doorFrameMat, bedMat, mattressMat, toiletMat, true);
+            BuildCell("CellL" + (i + 1), map, new Vector3(-corridorWidth / 2 - cellDepth / 2, 0, zPos), cellWidth, cellDepth, wallHeight, cellWallMat, floorMat, ceilingMat, barsMat, doorFrameMat, bedMat, mattressMat, toiletMat, true);
         }
 
-        // === CELLS - RIGHT SIDE ===
+        // Cells - right side
         for (int i = 0; i < cellsPerSide; i++)
         {
             float zPos = -corridorLength / 2 + cellSpacing * i + cellSpacing / 2;
-            BuildCell("CellR" + (i + 1), map, new Vector3(corridorWidth / 2 + cellDepth / 2, 0, zPos), cellWidth, cellDepth, wallHeight, wallThickness, cellWallMat, floorMat, ceilingMat, barsMat, doorFrameMat, bedMat, mattressMat, toiletMat, false);
+            BuildCell("CellR" + (i + 1), map, new Vector3(corridorWidth / 2 + cellDepth / 2, 0, zPos), cellWidth, cellDepth, wallHeight, cellWallMat, floorMat, ceilingMat, barsMat, doorFrameMat, bedMat, mattressMat, toiletMat, false);
         }
 
-        // Corridor walls between cells (left side)
+        // Divider walls between cells - left
         for (int i = 0; i <= cellsPerSide; i++)
         {
             float zPos = -corridorLength / 2 + cellSpacing * i;
             CreateBox("WallL_Div" + i, map, new Vector3(-corridorWidth / 2 - cellDepth / 2, wallHeight / 2, zPos), new Vector3(cellDepth, wallHeight, wallThickness), cellWallMat);
         }
 
-        // Corridor walls between cells (right side)
+        // Divider walls between cells - right
         for (int i = 0; i <= cellsPerSide; i++)
         {
             float zPos = -corridorLength / 2 + cellSpacing * i;
             CreateBox("WallR_Div" + i, map, new Vector3(corridorWidth / 2 + cellDepth / 2, wallHeight / 2, zPos), new Vector3(cellDepth, wallHeight, wallThickness), cellWallMat);
         }
 
-        // Outer walls of cells
+        // Outer walls
         CreateBox("OuterWall_Left", map, new Vector3(-corridorWidth / 2 - cellDepth - wallThickness / 2, wallHeight / 2, 0), new Vector3(wallThickness, wallHeight, corridorLength), wallMat);
         CreateBox("OuterWall_Right", map, new Vector3(corridorWidth / 2 + cellDepth + wallThickness / 2, wallHeight / 2, 0), new Vector3(wallThickness, wallHeight, corridorLength), wallMat);
 
-        // === YARD (at the end of corridor) ===
+        // === YARD ===
         float yardSize = 16f;
         float yardZ = corridorLength / 2 + yardSize / 2;
 
-        // Yard floor
         CreateBox("Yard_Floor", map, new Vector3(0, 0, yardZ), new Vector3(yardSize, 0.2f, yardSize), yardFloorMat);
-
-        // Yard walls
         CreateBox("Yard_WallLeft", map, new Vector3(-yardSize / 2, wallHeight / 2, yardZ), new Vector3(wallThickness, wallHeight, yardSize), yardWallMat);
         CreateBox("Yard_WallRight", map, new Vector3(yardSize / 2, wallHeight / 2, yardZ), new Vector3(wallThickness, wallHeight, yardSize), yardWallMat);
         CreateBox("Yard_WallBack", map, new Vector3(0, wallHeight / 2, yardZ + yardSize / 2), new Vector3(yardSize, wallHeight, wallThickness), yardWallMat);
-
-        // Yard front wall with opening
         CreateBox("Yard_FrontL", map, new Vector3(-yardSize / 4 - 1f, wallHeight / 2, yardZ - yardSize / 2), new Vector3(yardSize / 2 - 2f, wallHeight, wallThickness), yardWallMat);
         CreateBox("Yard_FrontR", map, new Vector3(yardSize / 4 + 1f, wallHeight / 2, yardZ - yardSize / 2), new Vector3(yardSize / 2 - 2f, wallHeight, wallThickness), yardWallMat);
 
-        // Yard benches
+        // Yard furniture
         CreateBox("Yard_Bench1", map, new Vector3(-4f, 0.4f, yardZ + 3f), new Vector3(3f, 0.3f, 0.8f), benchMat);
         CreateBox("Yard_Bench2", map, new Vector3(4f, 0.4f, yardZ - 3f), new Vector3(3f, 0.3f, 0.8f), benchMat);
-
-        // Yard table
         CreateBox("Yard_Table", map, new Vector3(0, 0.7f, yardZ + 5f), new Vector3(2f, 0.15f, 1.5f), tableMat);
-        CreateBox("Yard_TableLeg1", map, new Vector3(-0.7f, 0.35f, yardZ + 5.5f), new Vector3(0.15f, 0.7f, 0.15f), tableMat);
-        CreateBox("Yard_TableLeg2", map, new Vector3(0.7f, 0.35f, yardZ + 5.5f), new Vector3(0.15f, 0.7f, 0.15f), tableMat);
-        CreateBox("Yard_TableLeg3", map, new Vector3(-0.7f, 0.35f, yardZ + 4.5f), new Vector3(0.15f, 0.7f, 0.15f), tableMat);
-        CreateBox("Yard_TableLeg4", map, new Vector3(0.7f, 0.35f, yardZ + 4.5f), new Vector3(0.15f, 0.7f, 0.15f), tableMat);
 
-        // === GUARD ROOM (side room near entrance) ===
+        // === GUARD ROOM ===
         float guardX = -corridorWidth / 2 - cellDepth - 6f;
         float guardZ = -corridorLength / 2 + 6f;
         float guardW = 5f;
@@ -131,61 +186,47 @@ public class JailBreakMapBuilder : EditorWindow
         CreateBox("Guard_WallBack", map, new Vector3(guardX, wallHeight / 2, guardZ - guardD / 2), new Vector3(guardW, wallHeight, wallThickness), guardRoomMat);
         CreateBox("Guard_WallFront", map, new Vector3(guardX, wallHeight / 2, guardZ + guardD / 2), new Vector3(guardW, wallHeight, wallThickness), guardRoomMat);
         CreateBox("Guard_WallLeft", map, new Vector3(guardX - guardW / 2, wallHeight / 2, guardZ), new Vector3(wallThickness, wallHeight, guardD), guardRoomMat);
-        // Right wall has doorway (partial wall)
-        CreateBox("Guard_WallRightTop", map, new Vector3(guardX + guardW / 2, wallHeight * 0.75f + 0.5f, guardZ), new Vector3(wallThickness, wallHeight * 0.5f, guardD), guardRoomMat);
-
-        // Guard room desk
         CreateBox("Guard_Desk", map, new Vector3(guardX - 1f, 0.7f, guardZ - 1f), new Vector3(2.5f, 0.15f, 1.2f), tableMat);
 
-        // === LIGHTING ===
-        // Add some point lights for atmosphere
+        // === LIGHTS ===
         CreateLight("Light_Corridor1", map, new Vector3(0, wallHeight - 0.5f, -8f), new Color(1f, 0.95f, 0.8f), 12f);
         CreateLight("Light_Corridor2", map, new Vector3(0, wallHeight - 0.5f, 4f), new Color(1f, 0.95f, 0.8f), 12f);
         CreateLight("Light_Corridor3", map, new Vector3(0, wallHeight - 0.5f, -20f), new Color(1f, 0.95f, 0.8f), 12f);
         CreateLight("Light_Yard", map, new Vector3(0, wallHeight + 2f, yardZ), new Color(1f, 1f, 0.9f), 20f);
         CreateLight("Light_Guard", map, new Vector3(guardX, wallHeight - 0.5f, guardZ), new Color(0.8f, 0.9f, 1f), 8f);
 
-        // === MOVE PLAYER TO SPAWN ===
+        // Move player to spawn
         GameObject player = GameObject.Find("Player");
         if (player != null)
         {
             player.transform.position = new Vector3(0f, 1f, -corridorLength / 2 + 2f);
         }
 
-        // Done
-        Debug.Log("[JailBreak] Step 2 complete! Prison map built. Press Play to explore.");
-
         EditorUtility.DisplayDialog(
             "JailBreak - Step 2 Complete",
-            "Prison Map created!\n\n" +
-            "Includes:\n" +
-            "- 6 cells (3 per side)\n" +
-            "- Main corridor\n" +
-            "- Yard with benches\n" +
-            "- Guard room\n\n" +
-            "Press PLAY to explore!",
+            "Prison Map created!\n\n- 6 cells (3 per side)\n- Main corridor\n- Yard with benches\n- Guard room\n\nPress PLAY to explore!",
             "OK"
         );
     }
 
-    // ===== CELL BUILDER =====
-    private static void BuildCell(string name, GameObject parent, Vector3 center, float width, float depth, float height, float thickness, Material wallMat, Material floorMat, Material ceilMat, Material barsMat, Material frameMat, Material bedMat, Material mattressMat, Material toiletMat, bool isLeft)
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    private static void BuildCell(string name, GameObject parent, Vector3 center, float width, float depth, float height, Material wallMat, Material floorMat, Material ceilMat, Material barsMat, Material frameMat, Material bedMat, Material mattressMat, Material toiletMat, bool isLeft)
     {
         GameObject cell = new GameObject(name);
         cell.transform.SetParent(parent.transform);
         cell.transform.localPosition = center;
 
-        // Floor
+        // Floor & ceiling
         CreateBoxLocal("Floor", cell, new Vector3(0, 0, 0), new Vector3(depth, 0.2f, width), floorMat);
-
-        // Ceiling
         CreateBoxLocal("Ceiling", cell, new Vector3(0, height, 0), new Vector3(depth, 0.2f, width), ceilMat);
 
         // Back wall
-        float backX = isLeft ? -depth / 2 + thickness / 2 : depth / 2 - thickness / 2;
-        CreateBoxLocal("BackWall", cell, new Vector3(backX, height / 2, 0), new Vector3(thickness, height, width), wallMat);
+        float backX = isLeft ? -depth / 2 + 0.2f : depth / 2 - 0.2f;
+        CreateBoxLocal("BackWall", cell, new Vector3(backX, height / 2, 0), new Vector3(0.4f, height, width), wallMat);
 
-        // Bars (door side - facing corridor)
+        // Bars
         float frontX = isLeft ? depth / 2 : -depth / 2;
         int barCount = 6;
         float barSpacing = width / (barCount + 1);
@@ -200,31 +241,22 @@ public class JailBreakMapBuilder : EditorWindow
             bar.GetComponent<Renderer>().material = barsMat;
         }
 
-        // Top bar frame
+        // Bar frames
         CreateBoxLocal("TopFrame", cell, new Vector3(frontX, height - 0.1f, 0), new Vector3(0.15f, 0.2f, width), frameMat);
-        // Bottom bar frame
         CreateBoxLocal("BottomFrame", cell, new Vector3(frontX, 0.1f, 0), new Vector3(0.15f, 0.2f, width), frameMat);
 
-        // === FURNITURE ===
         // Bed
         float bedX = isLeft ? -depth / 4 : depth / 4;
         float bedZ = -width / 2 + 1f;
         CreateBoxLocal("BedFrame", cell, new Vector3(bedX, 0.3f, bedZ), new Vector3(1.8f, 0.15f, 0.9f), bedMat);
         CreateBoxLocal("Mattress", cell, new Vector3(bedX, 0.42f, bedZ), new Vector3(1.7f, 0.1f, 0.8f), mattressMat);
-        // Bed legs
-        CreateBoxLocal("BedLeg1", cell, new Vector3(bedX - 0.7f, 0.15f, bedZ - 0.35f), new Vector3(0.1f, 0.3f, 0.1f), bedMat);
-        CreateBoxLocal("BedLeg2", cell, new Vector3(bedX + 0.7f, 0.15f, bedZ - 0.35f), new Vector3(0.1f, 0.3f, 0.1f), bedMat);
-        CreateBoxLocal("BedLeg3", cell, new Vector3(bedX - 0.7f, 0.15f, bedZ + 0.35f), new Vector3(0.1f, 0.3f, 0.1f), bedMat);
-        CreateBoxLocal("BedLeg4", cell, new Vector3(bedX + 0.7f, 0.15f, bedZ + 0.35f), new Vector3(0.1f, 0.3f, 0.1f), bedMat);
 
         // Toilet
         float toiletX = isLeft ? -depth / 4 : depth / 4;
         float toiletZ = width / 2 - 0.8f;
         CreateBoxLocal("ToiletBase", cell, new Vector3(toiletX, 0.25f, toiletZ), new Vector3(0.5f, 0.5f, 0.4f), toiletMat);
-        CreateBoxLocal("ToiletTank", cell, new Vector3(toiletX + (isLeft ? -0.2f : 0.2f), 0.45f, toiletZ), new Vector3(0.2f, 0.4f, 0.35f), toiletMat);
     }
 
-    // ===== HELPERS =====
     private static Material CreateMat(Color color)
     {
         Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
@@ -250,6 +282,16 @@ public class JailBreakMapBuilder : EditorWindow
         box.transform.localPosition = localPos;
         box.transform.localScale = scale;
         box.GetComponent<Renderer>().material = mat;
+    }
+
+    private static void CreateColoredBox(string name, Vector3 position, Color color)
+    {
+        DestroyIfExists(name);
+        GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        box.name = name;
+        box.transform.position = position;
+        box.transform.localScale = new Vector3(2f, 2f, 2f);
+        box.GetComponent<Renderer>().material = CreateMat(color);
     }
 
     private static void CreateLight(string name, GameObject parent, Vector3 position, Color color, float range)
