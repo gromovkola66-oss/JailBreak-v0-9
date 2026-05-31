@@ -210,6 +210,152 @@ public class JailBreakEditor : EditorWindow
     }
 
     // ============================================================
+    // STEP 3: Setup Weapons
+    // ============================================================
+    [MenuItem("JailBreak/Step 3 - Setup Weapons")]
+    public static void SetupWeapons()
+    {
+        GameObject player = GameObject.Find("Player");
+        if (player == null)
+        {
+            EditorUtility.DisplayDialog("Error", "Player not found! Run Step 1 first.", "OK");
+            return;
+        }
+
+        // Remove old weapon setup
+        Transform oldHolder = player.transform.Find("CameraHolder/Main Camera/WeaponHolder");
+        if (oldHolder != null) DestroyImmediate(oldHolder.gameObject);
+
+        // Remove old WeaponController
+        WeaponController oldWC = player.GetComponent<WeaponController>();
+        if (oldWC != null) DestroyImmediate(oldWC);
+
+        // Find camera
+        Transform cam = player.transform.Find("CameraHolder/Main Camera");
+        if (cam == null)
+        {
+            cam = player.transform.Find("CameraHolder");
+            if (cam == null)
+            {
+                EditorUtility.DisplayDialog("Error", "Camera not found! Run Step 1 first.", "OK");
+                return;
+            }
+        }
+
+        // Create WeaponHolder (attached to camera so it moves with view)
+        GameObject weaponHolder = new GameObject("WeaponHolder");
+        weaponHolder.transform.SetParent(cam);
+        weaponHolder.transform.localPosition = new Vector3(0.3f, -0.25f, 0.5f);
+        weaponHolder.transform.localRotation = Quaternion.identity;
+
+        // Materials
+        Material metalDark = CreateMat(new Color(0.2f, 0.2f, 0.22f));
+        Material metalLight = CreateMat(new Color(0.35f, 0.35f, 0.38f));
+        Material woodMat = CreateMat(new Color(0.45f, 0.3f, 0.15f));
+        Material orangeMat = CreateMat(new Color(0.9f, 0.5f, 0.1f));
+
+        // === AK-47 MODEL ===
+        GameObject ak47 = new GameObject("AK47_Model");
+        ak47.transform.SetParent(weaponHolder.transform);
+        ak47.transform.localPosition = Vector3.zero;
+        ak47.transform.localRotation = Quaternion.identity;
+
+        // Body
+        CreateBoxLocal("AK_Body", ak47, new Vector3(0, 0, 0.15f), new Vector3(0.06f, 0.08f, 0.5f), metalDark);
+        // Barrel
+        CreateBoxLocal("AK_Barrel", ak47, new Vector3(0, 0.01f, 0.55f), new Vector3(0.03f, 0.03f, 0.35f), metalDark);
+        // Stock
+        CreateBoxLocal("AK_Stock", ak47, new Vector3(0, -0.02f, -0.2f), new Vector3(0.04f, 0.06f, 0.25f), woodMat);
+        // Magazine
+        CreateBoxLocal("AK_Magazine", ak47, new Vector3(0, -0.1f, 0.1f), new Vector3(0.04f, 0.12f, 0.08f), metalDark);
+        // Grip
+        CreateBoxLocal("AK_Grip", ak47, new Vector3(0, -0.08f, -0.02f), new Vector3(0.03f, 0.08f, 0.04f), woodMat);
+        // Handguard
+        CreateBoxLocal("AK_Handguard", ak47, new Vector3(0, -0.01f, 0.35f), new Vector3(0.05f, 0.06f, 0.15f), woodMat);
+
+        // === SHOTGUN MODEL ===
+        GameObject shotgun = new GameObject("Shotgun_Model");
+        shotgun.transform.SetParent(weaponHolder.transform);
+        shotgun.transform.localPosition = Vector3.zero;
+        shotgun.transform.localRotation = Quaternion.identity;
+
+        // Body
+        CreateBoxLocal("SG_Body", shotgun, new Vector3(0, 0, 0.1f), new Vector3(0.06f, 0.07f, 0.35f), metalDark);
+        // Barrel (thicker)
+        CreateBoxLocal("SG_Barrel", shotgun, new Vector3(0, 0.01f, 0.45f), new Vector3(0.045f, 0.045f, 0.4f), metalDark);
+        // Pump
+        CreateBoxLocal("SG_Pump", shotgun, new Vector3(0, -0.02f, 0.35f), new Vector3(0.055f, 0.055f, 0.12f), metalLight);
+        // Stock
+        CreateBoxLocal("SG_Stock", shotgun, new Vector3(0, -0.02f, -0.15f), new Vector3(0.05f, 0.07f, 0.2f), woodMat);
+        // Grip
+        CreateBoxLocal("SG_Grip", shotgun, new Vector3(0, -0.08f, -0.02f), new Vector3(0.03f, 0.08f, 0.04f), woodMat);
+
+        // === PISTOL MODEL ===
+        GameObject pistol = new GameObject("Pistol_Model");
+        pistol.transform.SetParent(weaponHolder.transform);
+        pistol.transform.localPosition = Vector3.zero;
+        pistol.transform.localRotation = Quaternion.identity;
+
+        // Slide
+        CreateBoxLocal("PT_Slide", pistol, new Vector3(0, 0.01f, 0.05f), new Vector3(0.04f, 0.045f, 0.2f), metalDark);
+        // Frame
+        CreateBoxLocal("PT_Frame", pistol, new Vector3(0, -0.02f, 0.02f), new Vector3(0.035f, 0.03f, 0.15f), metalLight);
+        // Grip
+        CreateBoxLocal("PT_Grip", pistol, new Vector3(0, -0.07f, -0.02f), new Vector3(0.035f, 0.08f, 0.04f), metalDark);
+        // Magazine base
+        CreateBoxLocal("PT_MagBase", pistol, new Vector3(0, -0.11f, -0.02f), new Vector3(0.03f, 0.02f, 0.035f), metalLight);
+
+        // === MUZZLE FLASH ===
+        GameObject muzzleFlash = new GameObject("MuzzleFlash");
+        muzzleFlash.transform.SetParent(weaponHolder.transform);
+        muzzleFlash.transform.localPosition = new Vector3(0, 0.01f, 0.75f);
+
+        GameObject flashVisual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        flashVisual.name = "FlashSphere";
+        flashVisual.transform.SetParent(muzzleFlash.transform);
+        flashVisual.transform.localPosition = Vector3.zero;
+        flashVisual.transform.localScale = new Vector3(0.1f, 0.1f, 0.15f);
+        Object.DestroyImmediate(flashVisual.GetComponent<Collider>());
+        flashVisual.GetComponent<Renderer>().material = orangeMat;
+
+        // Add point light for flash
+        Light flashLight = muzzleFlash.AddComponent<Light>();
+        flashLight.type = LightType.Point;
+        flashLight.color = new Color(1f, 0.7f, 0.3f);
+        flashLight.range = 5f;
+        flashLight.intensity = 3f;
+
+        muzzleFlash.SetActive(false);
+
+        // === ADD WEAPON CONTROLLER ===
+        WeaponController wc = player.GetComponent<WeaponController>();
+        if (wc == null) wc = player.AddComponent<WeaponController>();
+        wc.cameraTransform = cam;
+
+        // === ADD UI ===
+        GameObject uiObj = GameObject.Find("WeaponUI");
+        if (uiObj == null)
+        {
+            uiObj = new GameObject("WeaponUI");
+            uiObj.AddComponent<WeaponUI>();
+        }
+
+        EditorUtility.DisplayDialog(
+            "JailBreak - Step 3 Complete",
+            "Weapons created!\n\n" +
+            "- AK-47 (key 1)\n" +
+            "- Shotgun (key 2)\n" +
+            "- Pistol (key 3)\n\n" +
+            "Controls:\n" +
+            "LMB - Shoot\n" +
+            "R - Reload\n" +
+            "1/2/3 or Scroll - Switch weapon\n\n" +
+            "Press PLAY to test!",
+            "OK"
+        );
+    }
+
+    // ============================================================
     // HELPERS
     // ============================================================
     private static void BuildCell(string name, GameObject parent, Vector3 center, float width, float depth, float height, Material wallMat, Material floorMat, Material ceilMat, Material barsMat, Material frameMat, Material bedMat, Material mattressMat, Material toiletMat, bool isLeft)
