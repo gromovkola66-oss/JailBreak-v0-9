@@ -67,11 +67,11 @@ public class DoorController : MonoBehaviour, IDoorInteractable
                 return "";
             case DoorType.ArmoryDoor:
                 if (player.team == Team.Guard)
-                    return isOpen ? "[E] Close Armory" : "[E] Open Armory";
+                    return isOpen ? "[E] \u0417\u0430\u043A\u0440\u044B\u0442\u044C \u0430\u0440\u0441\u0435\u043D\u0430\u043B" : "[E] \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u0430\u0440\u0441\u0435\u043D\u0430\u043B";
                 else
-                    return "ACCESS DENIED - Guards Only";
+                    return "\u0414\u041E\u0421\u0422\u0423\u041F \u0417\u0410\u041F\u0420\u0415\u0429\u0401\u041D - \u0422\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u043E\u0445\u0440\u0430\u043D\u044B";
             case DoorType.RegularDoor:
-                return isOpen ? "[E] Close Door" : "[E] Open Door";
+                return isOpen ? "[E] \u0417\u0430\u043A\u0440\u044B\u0442\u044C \u0434\u0432\u0435\u0440\u044C" : "[E] \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u0434\u0432\u0435\u0440\u044C";
             default:
                 return "";
         }

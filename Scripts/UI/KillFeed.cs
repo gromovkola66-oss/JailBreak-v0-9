@@ -55,7 +55,7 @@ public class KillFeed : MonoBehaviour
             float alpha = 1f - (age / displayDuration);
             killStyle.normal.textColor = new Color(1f, 1f, 1f, alpha);
 
-            string text = entry.attacker + " [" + entry.weapon + "] " + entry.victim;
+            string text = entry.attacker + " \u0443\u0431\u0438\u043B " + entry.victim + " [" + entry.weapon + "]";
             GUI.Label(new Rect(x, y + displayed * 22f, 300f, 20f), text, killStyle);
             displayed++;
         }

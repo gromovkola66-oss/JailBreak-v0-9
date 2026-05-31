@@ -20,6 +20,7 @@ public enum TeamRestriction
 public class WeaponData
 {
     public string weaponName;
+    public string displayName;
     public float damage;
     public float fireRate;
     public float range;
@@ -38,6 +39,7 @@ public class WeaponData
         return new WeaponData
         {
             weaponName = "AK-47",
+            displayName = "\u0410\u041A-47",
             damage = 25f,
             fireRate = 10f,
             range = 100f,
@@ -58,6 +60,7 @@ public class WeaponData
         return new WeaponData
         {
             weaponName = "M4A1",
+            displayName = "M4A1",
             damage = 22f,
             fireRate = 12f,
             range = 100f,
@@ -78,6 +81,7 @@ public class WeaponData
         return new WeaponData
         {
             weaponName = "Shotgun",
+            displayName = "\u0414\u0440\u043E\u0431\u043E\u0432\u0438\u043A",
             damage = 15f,
             fireRate = 1.2f,
             range = 30f,
@@ -98,6 +102,7 @@ public class WeaponData
         return new WeaponData
         {
             weaponName = "Pistol",
+            displayName = "\u041F\u0438\u0441\u0442\u043E\u043B\u0435\u0442",
             damage = 18f,
             fireRate = 5f,
             range = 50f,
@@ -118,6 +123,7 @@ public class WeaponData
         return new WeaponData
         {
             weaponName = "Knife",
+            displayName = "\u041D\u043E\u0436",
             damage = 40f,
             fireRate = 2f,
             range = 2f,
@@ -138,6 +144,7 @@ public class WeaponData
         return new WeaponData
         {
             weaponName = "Fists",
+            displayName = "\u041A\u0443\u043B\u0430\u043A\u0438",
             damage = 15f,
             fireRate = 3f,
             range = 1.5f,

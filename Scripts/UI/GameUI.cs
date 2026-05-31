@@ -127,7 +127,7 @@ public class GameUI : MonoBehaviour
         GUI.DrawTexture(new Rect(x, y, barWidth * hpPercent, barHeight), whiteTex);
 
         GUI.color = Color.white;
-        GUI.Label(new Rect(x + 5f, y, barWidth, barHeight), "HP: " + (int)playerHealth.currentHP + "/" + (int)playerHealth.maxHP, hpTextStyle);
+        GUI.Label(new Rect(x + 5f, y, barWidth, barHeight), "\u0425\u041F: " + (int)playerHealth.currentHP + "/" + (int)playerHealth.maxHP, hpTextStyle);
     }
 
     private void DrawAmmo()
@@ -143,18 +143,18 @@ public class GameUI : MonoBehaviour
         GUI.color = Color.white;
         if (wd.isMelee)
         {
-            GUI.Label(new Rect(x, y, 200f, 25f), wd.weaponName, ammoTextStyle);
+            GUI.Label(new Rect(x, y, 200f, 25f), wd.displayName, ammoTextStyle);
         }
         else if (weaponController.IsReloading())
         {
-            GUI.Label(new Rect(x, y, 200f, 25f), "RELOADING...", ammoTextStyle);
-            GUI.Label(new Rect(x, y + 25f, 200f, 20f), wd.weaponName, ammoTextStyle);
+            GUI.Label(new Rect(x, y, 200f, 25f), "\u041F\u0415\u0420\u0415\u0417\u0410\u0420\u042F\u0414\u041A\u0410...", ammoTextStyle);
+            GUI.Label(new Rect(x, y + 25f, 200f, 20f), wd.displayName, ammoTextStyle);
         }
         else
         {
             string ammoText = weaponController.GetCurrentAmmo() + " / " + wd.magazineSize;
             GUI.Label(new Rect(x, y, 200f, 25f), ammoText, ammoTextStyle);
-            GUI.Label(new Rect(x, y + 25f, 200f, 20f), wd.weaponName, ammoTextStyle);
+            GUI.Label(new Rect(x, y + 25f, 200f, 20f), wd.displayName, ammoTextStyle);
         }
     }
 
@@ -180,7 +180,7 @@ public class GameUI : MonoBehaviour
     {
         if (playerController == null) return;
 
-        string teamText = playerController.team == Team.Guard ? "GUARD" : "PRISONER";
+        string teamText = playerController.team == Team.Guard ? "\u041E\u0425\u0420\u0410\u041D\u0410" : "\u0417\u0410\u041A\u041B\u042E\u0427\u0401\u041D\u041D\u042B\u0419";
         teamStyle.normal.textColor = playerController.team == Team.Guard ? new Color(0.3f, 0.5f, 1f) : new Color(1f, 0.6f, 0.2f);
 
         GUI.Label(new Rect(Screen.width - 170f, 15f, 150f, 30f), teamText, teamStyle);
@@ -222,10 +222,10 @@ public class GameUI : MonoBehaviour
         GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), whiteTex);
         GUI.color = Color.white;
 
-        GUI.Label(new Rect(0, Screen.height / 2f - 50f, Screen.width, 60f), "YOU DIED", deathStyle);
+        GUI.Label(new Rect(0, Screen.height / 2f - 50f, Screen.width, 60f), "\u0412\u042B \u0423\u0411\u0418\u0422\u042B", deathStyle);
 
         promptStyle.normal.textColor = Color.gray;
-        GUI.Label(new Rect(0, Screen.height / 2f + 20f, Screen.width, 30f), "Spectating...", promptStyle);
+        GUI.Label(new Rect(0, Screen.height / 2f + 20f, Screen.width, 30f), "\u041D\u0430\u0431\u043B\u044E\u0434\u0435\u043D\u0438\u0435...", promptStyle);
         promptStyle.normal.textColor = Color.white;
     }
 
@@ -240,7 +240,7 @@ public class GameUI : MonoBehaviour
         if (roundManager == null) return;
         if (roundManager.roundState == RoundState.PreRound)
         {
-            GUI.Label(new Rect(Screen.width / 2f - 100f, Screen.height / 2f - 20f, 200f, 40f), "Round starting...", promptStyle);
+            GUI.Label(new Rect(Screen.width / 2f - 100f, Screen.height / 2f - 20f, 200f, 40f), "\u0420\u0430\u0443\u043D\u0434 \u043D\u0430\u0447\u0438\u043D\u0430\u0435\u0442\u0441\u044F...", promptStyle);
         }
     }
 }

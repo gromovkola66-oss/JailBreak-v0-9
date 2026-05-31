@@ -67,7 +67,7 @@ public class TeamSelectUI : MonoBehaviour
         float centerX = Screen.width / 2f;
         float centerY = Screen.height / 2f;
 
-        GUI.Label(new Rect(0, centerY - 180f, Screen.width, 60f), "JAILBREAK", titleStyle);
+        GUI.Label(new Rect(0, centerY - 180f, Screen.width, 60f), "\u041F\u041E\u0411\u0415\u0413 \u0418\u0417 \u0422\u042E\u0420\u042C\u041C\u042B", titleStyle);
 
         float btnWidth = 250f;
         float btnHeight = 70f;
@@ -77,18 +77,18 @@ public class TeamSelectUI : MonoBehaviour
         Rect prisonerBtn = new Rect(centerX + spacing / 2f, centerY - 40f, btnWidth, btnHeight);
 
         GUI.DrawTexture(guardBtn, blueButtonTex);
-        if (GUI.Button(guardBtn, "JOIN GUARDS", buttonStyle))
+        if (GUI.Button(guardBtn, "\u041E\u0425\u0420\u0410\u041D\u0410", buttonStyle))
         {
             SelectTeam(Team.Guard);
         }
-        GUI.Label(new Rect(guardBtn.x, guardBtn.y + btnHeight + 5f, btnWidth, 25f), "Maintain order. Control the prison.", descStyle);
+        GUI.Label(new Rect(guardBtn.x, guardBtn.y + btnHeight + 5f, btnWidth, 25f), "\u041F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0439 \u043F\u043E\u0440\u044F\u0434\u043E\u043A. \u041A\u043E\u043D\u0442\u0440\u043E\u043B\u0438\u0440\u0443\u0439 \u0442\u044E\u0440\u044C\u043C\u0443.", descStyle);
 
         GUI.DrawTexture(prisonerBtn, orangeButtonTex);
-        if (GUI.Button(prisonerBtn, "JOIN PRISONERS", buttonStyle))
+        if (GUI.Button(prisonerBtn, "\u0417\u0410\u041A\u041B\u042E\u0427\u0401\u041D\u041D\u042B\u0415", buttonStyle))
         {
             SelectTeam(Team.Prisoner);
         }
-        GUI.Label(new Rect(prisonerBtn.x, prisonerBtn.y + btnHeight + 5f, btnWidth, 25f), "Survive. Escape. Rebel.", descStyle);
+        GUI.Label(new Rect(prisonerBtn.x, prisonerBtn.y + btnHeight + 5f, btnWidth, 25f), "\u0412\u044B\u0436\u0438\u0432\u0430\u0439. \u0421\u0431\u0435\u0433\u0438. \u0411\u0443\u043D\u0442\u0443\u0439.", descStyle);
     }
 
     private void SelectTeam(Team team)

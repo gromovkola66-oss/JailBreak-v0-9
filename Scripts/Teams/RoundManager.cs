@@ -56,7 +56,7 @@ public class RoundManager : MonoBehaviour
                 if (roundTimer <= 0f)
                 {
                     roundTimer = 0f;
-                    EndRound(Team.Guard, "Time expired - Guards win!");
+                    EndRound(Team.Guard, "\u0412\u0440\u0435\u043C\u044F \u0432\u044B\u0448\u043B\u043E - \u041E\u0445\u0440\u0430\u043D\u0430 \u043F\u043E\u0431\u0435\u0434\u0438\u043B\u0430!");
                 }
                 CheckWinConditions();
                 break;
@@ -103,11 +103,11 @@ public class RoundManager : MonoBehaviour
 
         if (alivePrisoners <= 0 && prisoners.Count > 0)
         {
-            EndRound(Team.Guard, "All prisoners eliminated - Guards win!");
+            EndRound(Team.Guard, "\u0412\u0441\u0435 \u0437\u0430\u043A\u043B\u044E\u0447\u0451\u043D\u043D\u044B\u0435 \u0443\u043D\u0438\u0447\u0442\u043E\u0436\u0435\u043D\u044B - \u041E\u0445\u0440\u0430\u043D\u0430 \u043F\u043E\u0431\u0435\u0434\u0438\u043B\u0430!");
         }
         else if (aliveGuards <= 0 && guards.Count > 0)
         {
-            EndRound(Team.Prisoner, "All guards eliminated - Prisoners win!");
+            EndRound(Team.Prisoner, "\u0412\u0441\u0435 \u043E\u0445\u0440\u0430\u043D\u043D\u0438\u043A\u0438 \u0443\u043D\u0438\u0447\u0442\u043E\u0436\u0435\u043D\u044B - \u0417\u0430\u043A\u043B\u044E\u0447\u0451\u043D\u043D\u044B\u0435 \u043F\u043E\u0431\u0435\u0434\u0438\u043B\u0438!");
         }
     }
 

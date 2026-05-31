@@ -6,9 +6,9 @@ public class DoorButton : MonoBehaviour, IDoorInteractable
 
     public string GetPrompt(PlayerController player)
     {
-        if (isActivated) return "Cells already open";
+        if (isActivated) return "\u041A\u0430\u043C\u0435\u0440\u044B \u0443\u0436\u0435 \u043E\u0442\u043A\u0440\u044B\u0442\u044B";
         if (player.team == Team.Guard)
-            return "[E] Open Cell Doors";
+            return "[E] \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043A\u0430\u043C\u0435\u0440\u044B";
         else
             return "";
     }
