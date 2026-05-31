@@ -231,6 +231,8 @@ public class WeaponController : MonoBehaviour
         {
             muzzleFlash.SetActive(true);
             muzzleFlashTimer = 0.05f;
+            MuzzleFlashEffect flashEffect = muzzleFlash.GetComponent<MuzzleFlashEffect>();
+            if (flashEffect != null) flashEffect.Flash();
         }
     }
 

@@ -175,9 +175,10 @@ public class JailBreakEditor
             for (int z = -4; z <= 9; z++)
             {
                 Color tileColor = ((x + z) % 2 == 0) ? tileLight : tileDark;
-                CreateBox("FloorTile_" + (x + 7) + "_" + (z + 4),
+                GameObject tile = CreateBox("FloorTile_" + (x + 7) + "_" + (z + 4),
                     new Vector3(x * 4f, 0.26f, z * 4f),
                     new Vector3(4f, 0.05f, 4f), tileColor, parent);
+                Object.DestroyImmediate(tile.GetComponent<Collider>());
             }
         }
 
