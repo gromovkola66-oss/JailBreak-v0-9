@@ -1,7 +1,0 @@
-{
-  "task_id": "task-jailbreak-full-prototype",
-  "task_description": "Create a complete JailBreak (CS 1.6 mod style) singleplayer prototype for Unity 6.4 URP with all game mechanics: detailed prison map, FPS controller, 6 weapons, health system, teams/rounds, door system, AI bots, full UI, and game flow. All built via a single Editor menu button.",
-  "status": "in_progress",
-  "feature_order": ["FEAT-001"],
-  "blocked_reason": null
-}
