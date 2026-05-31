@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
@@ -26,6 +27,10 @@ public class PlayerController : MonoBehaviour
     private bool isCrouching;
     private bool isSprinting;
 
+    // New Input System references
+    private Mouse mouse;
+    private Keyboard keyboard;
+
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -41,10 +46,21 @@ public class PlayerController : MonoBehaviour
         // Lock and hide the cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        // Get input devices
+        mouse = Mouse.current;
+        keyboard = Keyboard.current;
     }
 
     void Update()
     {
+        if (mouse == null || keyboard == null)
+        {
+            mouse = Mouse.current;
+            keyboard = Keyboard.current;
+            if (mouse == null || keyboard == null) return;
+        }
+
         HandleMouseLook();
         HandleMovement();
         HandleCrouch();
@@ -54,8 +70,9 @@ public class PlayerController : MonoBehaviour
     {
         if (cameraHolder == null) return;
 
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+        Vector2 mouseDelta = mouse.delta.ReadValue();
+        float mouseX = mouseDelta.x * mouseSensitivity * 0.1f;
+        float mouseY = mouseDelta.y * mouseSensitivity * 0.1f;
 
         // Rotate player body left/right
         transform.Rotate(Vector3.up * mouseX);
@@ -76,7 +93,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // Sprint
-        isSprinting = Input.GetKey(KeyCode.LeftShift) && !isCrouching;
+        isSprinting = keyboard.leftShiftKey.isPressed && !isCrouching;
 
         // Current speed
         float currentSpeed = walkSpeed;
@@ -84,14 +101,21 @@ public class PlayerController : MonoBehaviour
         if (isCrouching) currentSpeed = crouchSpeed;
 
         // WASD input
-        float moveX = Input.GetAxis("Horizontal"); // A/D
-        float moveZ = Input.GetAxis("Vertical");   // W/S
+        float moveX = 0f;
+        float moveZ = 0f;
+
+        if (keyboard.wKey.isPressed) moveZ += 1f;
+        if (keyboard.sKey.isPressed) moveZ -= 1f;
+        if (keyboard.dKey.isPressed) moveX += 1f;
+        if (keyboard.aKey.isPressed) moveX -= 1f;
 
         Vector3 moveDirection = transform.right * moveX + transform.forward * moveZ;
+        if (moveDirection.magnitude > 1f) moveDirection.Normalize();
+
         controller.Move(moveDirection * currentSpeed * Time.deltaTime);
 
         // Jump
-        if (Input.GetButtonDown("Jump") && isGrounded && !isCrouching)
+        if (keyboard.spaceKey.wasPressedThisFrame && isGrounded && !isCrouching)
         {
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
@@ -104,17 +128,17 @@ public class PlayerController : MonoBehaviour
     void HandleCrouch()
     {
         // Toggle crouch with C
-        if (Input.GetKeyDown(KeyCode.C))
+        if (keyboard.cKey.wasPressedThisFrame)
         {
             isCrouching = !isCrouching;
         }
 
         // Hold crouch with Left Ctrl
-        if (Input.GetKey(KeyCode.LeftControl))
+        if (keyboard.leftCtrlKey.isPressed)
         {
             isCrouching = true;
         }
-        else if (Input.GetKeyUp(KeyCode.LeftControl))
+        else if (keyboard.leftCtrlKey.wasReleasedThisFrame)
         {
             isCrouching = false;
         }
