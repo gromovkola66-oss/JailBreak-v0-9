@@ -1,90 +1,98 @@
 using UnityEngine;
 
-// Простой контроллер игрока: движение WASD, обзор мышью, прыжок, гравитация
+// Простой контроллер персонажа от первого лица
+// Инструкция: создай Capsule, повесь этот скрипт, сделай камеру дочерней
 [RequireComponent(typeof(CharacterController))]
 public class SimplePlayerController : MonoBehaviour
 {
-    // Скорость передвижения
-    [SerializeField] private float moveSpeed = 6f;
+    // Скорость ходьбы
+    public float speed = 6f;
 
     // Высота прыжка
-    [SerializeField] private float jumpHeight = 1.5f;
+    public float jumpForce = 8f;
 
-    // Сила гравитации
-    [SerializeField] private float gravity = -20f;
+    // Гравитация
+    public float gravityValue = 20f;
 
     // Чувствительность мыши
-    [SerializeField] private float mouseSensitivity = 2f;
+    public float lookSpeed = 2f;
 
-    // Ссылка на камеру (если не задана, берётся главная камера)
-    [SerializeField] private Transform cameraTransform;
+    // Ограничение вертикального обзора
+    public float lookXLimit = 80f;
 
-    private CharacterController _controller;
-    private Vector3 _velocity;
-    private float _xRotation;
+    private CharacterController controller;
+    private Vector3 moveDirection = Vector3.zero;
+    private float rotationX = 0f;
+    private Camera playerCamera;
 
-    private void Start()
+    void Start()
     {
-        _controller = GetComponent<CharacterController>();
+        // Получаем компоненты
+        controller = GetComponent<CharacterController>();
 
-        // Если камера не назначена вручную, используем основную камеру
-        if (cameraTransform == null)
+        // Ищем камеру среди дочерних объектов, если нет - берём главную
+        playerCamera = GetComponentInChildren<Camera>();
+        if (playerCamera == null)
         {
-            cameraTransform = Camera.main.transform;
+            playerCamera = Camera.main;
         }
 
-        // Блокируем и скрываем курсор
+        // Прячем курсор
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
-    private void Update()
+    void Update()
     {
-        HandleMouseLook();
-        HandleMovement();
-    }
+        // === ДВИЖЕНИЕ ===
 
-    // Обработка поворота камеры мышью
-    private void HandleMouseLook()
-    {
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
+        // Запоминаем вертикальную скорость
+        float verticalSpeed = moveDirection.y;
 
-        // Вертикальный поворот камеры (ограничен, чтобы не переворачивалась)
-        _xRotation -= mouseY;
-        _xRotation = Mathf.Clamp(_xRotation, -90f, 90f);
+        // Берём направление от игрока
+        Vector3 forward = transform.forward;
+        Vector3 right = transform.right;
 
-        cameraTransform.localRotation = Quaternion.Euler(_xRotation, 0f, 0f);
+        // Читаем клавиши WASD
+        float inputVertical = Input.GetAxis("Vertical");
+        float inputHorizontal = Input.GetAxis("Horizontal");
 
-        // Горизонтальный поворот всего персонажа
-        transform.Rotate(Vector3.up * mouseX);
-    }
+        // Считаем направление движения
+        moveDirection = (forward * inputVertical + right * inputHorizontal) * speed;
 
-    // Обработка передвижения и прыжка
-    private void HandleMovement()
-    {
-        // Если стоим на земле, сбрасываем вертикальную скорость
-        if (_controller.isGrounded && _velocity.y < 0f)
+        // Прыжок
+        if (controller.isGrounded)
         {
-            _velocity.y = -2f;
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                moveDirection.y = jumpForce;
+            }
+            else
+            {
+                moveDirection.y = -1f; // Прижимаем к земле
+            }
+        }
+        else
+        {
+            // В воздухе - применяем гравитацию
+            moveDirection.y = verticalSpeed - (gravityValue * Time.deltaTime);
         }
 
-        // Получаем ввод WASD
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
+        // Двигаем персонажа
+        controller.Move(moveDirection * Time.deltaTime);
 
-        // Направление движения относительно поворота персонажа
-        Vector3 moveDirection = transform.right * horizontal + transform.forward * vertical;
-        _controller.Move(moveDirection * moveSpeed * Time.deltaTime);
+        // === ОБЗОР МЫШЬЮ ===
 
-        // Прыжок по нажатию пробела (только на земле)
-        if (Input.GetButtonDown("Jump") && _controller.isGrounded)
+        // Горизонтальный поворот - вращаем весь объект
+        float mouseX = Input.GetAxis("Mouse X") * lookSpeed;
+        transform.Rotate(0f, mouseX, 0f);
+
+        // Вертикальный поворот - только камера
+        if (playerCamera != null)
         {
-            _velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            rotationX -= Input.GetAxis("Mouse Y") * lookSpeed;
+            rotationX = Mathf.Clamp(rotationX, -lookXLimit, lookXLimit);
+            playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0f, 0f);
         }
-
-        // Применяем гравитацию
-        _velocity.y += gravity * Time.deltaTime;
-        _controller.Move(_velocity * Time.deltaTime);
     }
 }
