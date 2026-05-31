@@ -11,15 +11,24 @@ public class WeaponUI : MonoBehaviour
     // Crosshair texture
     private Texture2D crosshairTex;
 
+    // Reference to check inventory state
+    private InventorySystem inventory;
+
     void Start()
     {
-        // Create crosshair texture (simple dot)
+        // Create crosshair texture
         crosshairTex = new Texture2D(2, 2);
         crosshairTex.SetPixel(0, 0, Color.white);
         crosshairTex.SetPixel(1, 0, Color.white);
         crosshairTex.SetPixel(0, 1, Color.white);
         crosshairTex.SetPixel(1, 1, Color.white);
         crosshairTex.Apply();
+
+        GameObject player = GameObject.Find("Player");
+        if (player != null)
+        {
+            inventory = player.GetComponent<InventorySystem>();
+        }
     }
 
     public void UpdateWeaponInfo(string name, int ammo, int max, bool reloading)
@@ -32,11 +41,23 @@ public class WeaponUI : MonoBehaviour
 
     void OnGUI()
     {
-        // === CROSSHAIR ===
+        // Hide crosshair when inventory is open
+        bool inventoryOpen = inventory != null && inventory.isInventoryOpen;
+
+        if (!inventoryOpen)
+        {
+            DrawCrosshair();
+        }
+
+        DrawAmmoDisplay();
+        DrawControlsHint();
+    }
+
+    void DrawCrosshair()
+    {
         float centerX = Screen.width / 2f;
         float centerY = Screen.height / 2f;
 
-        // Draw crosshair lines
         GUI.color = Color.white;
 
         // Horizontal lines
@@ -49,31 +70,27 @@ public class WeaponUI : MonoBehaviour
 
         // Center dot
         GUI.DrawTexture(new Rect(centerX - 1, centerY - 1, 2, 2), crosshairTex);
+    }
 
-        // === AMMO DISPLAY ===
-        GUIStyle ammoStyle = new GUIStyle(GUI.skin.label);
-        ammoStyle.fontSize = 24;
-        ammoStyle.fontStyle = FontStyle.Bold;
-        ammoStyle.normal.textColor = Color.white;
-        ammoStyle.alignment = TextAnchor.LowerRight;
+    void DrawAmmoDisplay()
+    {
+        float padding = 20f;
 
+        // Weapon name (top right of ammo area)
         GUIStyle weaponStyle = new GUIStyle(GUI.skin.label);
         weaponStyle.fontSize = 16;
         weaponStyle.normal.textColor = new Color(0.8f, 0.8f, 0.8f);
         weaponStyle.alignment = TextAnchor.LowerRight;
 
-        // Shadow for readability
-        GUIStyle shadowStyle = new GUIStyle(ammoStyle);
-        shadowStyle.normal.textColor = Color.black;
-
-        float padding = 20f;
-        Rect ammoRect = new Rect(Screen.width - 200 - padding, Screen.height - 60 - padding, 200, 40);
-        Rect weaponRect = new Rect(Screen.width - 200 - padding, Screen.height - 90 - padding, 200, 30);
-
-        // Weapon name
+        Rect weaponRect = new Rect(Screen.width - 200 - padding, Screen.height - 105 - padding, 200, 30);
         GUI.Label(weaponRect, weaponName, weaponStyle);
 
         // Ammo count
+        GUIStyle ammoStyle = new GUIStyle(GUI.skin.label);
+        ammoStyle.fontSize = 24;
+        ammoStyle.fontStyle = FontStyle.Bold;
+        ammoStyle.alignment = TextAnchor.LowerRight;
+
         string ammoText;
         if (isReloading)
         {
@@ -90,57 +107,20 @@ public class WeaponUI : MonoBehaviour
         }
 
         // Shadow
+        GUIStyle shadowStyle = new GUIStyle(ammoStyle);
+        shadowStyle.normal.textColor = Color.black;
+
+        Rect ammoRect = new Rect(Screen.width - 200 - padding, Screen.height - 75 - padding, 200, 40);
         Rect shadowRect = new Rect(ammoRect.x + 2, ammoRect.y + 2, ammoRect.width, ammoRect.height);
         GUI.Label(shadowRect, ammoText, shadowStyle);
         GUI.Label(ammoRect, ammoText, ammoStyle);
+    }
 
-        // === WEAPON SLOTS (bottom center) ===
-        float slotSize = 50f;
-        float slotSpacing = 5f;
-        float totalWidth = 3 * slotSize + 2 * slotSpacing;
-        float startX = (Screen.width - totalWidth) / 2f;
-        float slotY = Screen.height - slotSize - padding;
-
-        string[] slotNames = { "1:AK", "2:SG", "3:PT" };
-
-        WeaponController wc = FindFirstObjectByType<WeaponController>();
-        int activeSlot = wc != null ? wc.currentWeaponIndex : 0;
-
-        for (int i = 0; i < 3; i++)
-        {
-            Rect slotRect = new Rect(startX + i * (slotSize + slotSpacing), slotY, slotSize, slotSize);
-
-            // Background
-            Color bgColor = (i == activeSlot) ? new Color(1f, 1f, 1f, 0.3f) : new Color(0f, 0f, 0f, 0.4f);
-            Texture2D bgTex = new Texture2D(1, 1);
-            bgTex.SetPixel(0, 0, bgColor);
-            bgTex.Apply();
-            GUI.DrawTexture(slotRect, bgTex);
-
-            // Border for active
-            if (i == activeSlot)
-            {
-                Texture2D borderTex = new Texture2D(1, 1);
-                borderTex.SetPixel(0, 0, Color.white);
-                borderTex.Apply();
-                GUI.DrawTexture(new Rect(slotRect.x, slotRect.y, slotRect.width, 2), borderTex);
-                GUI.DrawTexture(new Rect(slotRect.x, slotRect.y + slotRect.height - 2, slotRect.width, 2), borderTex);
-                GUI.DrawTexture(new Rect(slotRect.x, slotRect.y, 2, slotRect.height), borderTex);
-                GUI.DrawTexture(new Rect(slotRect.x + slotRect.width - 2, slotRect.y, 2, slotRect.height), borderTex);
-            }
-
-            // Label
-            GUIStyle slotStyle = new GUIStyle(GUI.skin.label);
-            slotStyle.alignment = TextAnchor.MiddleCenter;
-            slotStyle.fontSize = 12;
-            slotStyle.normal.textColor = (i == activeSlot) ? Color.white : Color.gray;
-            GUI.Label(slotRect, slotNames[i], slotStyle);
-        }
-
-        // === CONTROLS HINT (top left) ===
+    void DrawControlsHint()
+    {
         GUIStyle hintStyle = new GUIStyle(GUI.skin.label);
         hintStyle.fontSize = 12;
         hintStyle.normal.textColor = new Color(1f, 1f, 1f, 0.5f);
-        GUI.Label(new Rect(10, 10, 300, 20), "LMB - Shoot | R - Reload | 1/2/3 - Switch weapon", hintStyle);
+        GUI.Label(new Rect(10, 10, 400, 20), "LMB - Shoot | R - Reload | 1/2/3 - Switch | Tab - Inventory | E - Pickup", hintStyle);
     }
 }
