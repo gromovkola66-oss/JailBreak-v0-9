@@ -432,9 +432,9 @@ public class JailBreakEditor : EditorWindow
         pickup.transform.localScale = new Vector3(0.4f, 0.4f, 0.4f);
         pickup.GetComponent<Renderer>().material = CreateMat(color);
 
-        // Add pickup script
+        // Add pickup script and set serializable fields
         PickupItem pi = pickup.AddComponent<PickupItem>();
-        pi.itemData = item;
+        pi.SetItemData(item);
     }
 
     // ============================================================

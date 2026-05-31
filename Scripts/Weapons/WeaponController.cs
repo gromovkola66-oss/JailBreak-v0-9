@@ -29,6 +29,9 @@ public class WeaponController : MonoBehaviour
     // UI reference
     private WeaponUI weaponUI;
 
+    // Inventory reference (to block input when open)
+    private InventorySystem inventory;
+
     void Start()
     {
         mouse = Mouse.current;
@@ -42,8 +45,25 @@ public class WeaponController : MonoBehaviour
             WeaponData.Pistol()
         };
 
-        // Find weapon holder
-        weaponHolder = transform.Find("WeaponHolder");
+        // Find inventory
+        inventory = GetComponent<InventorySystem>();
+
+        // Find weapon holder (in camera hierarchy)
+        Transform cam = null;
+        Camera mainCam = Camera.main;
+        if (mainCam != null) cam = mainCam.transform;
+
+        if (cam != null)
+        {
+            weaponHolder = cam.Find("WeaponHolder");
+        }
+
+        if (weaponHolder == null)
+        {
+            // Try old path
+            weaponHolder = transform.Find("WeaponHolder");
+        }
+
         if (weaponHolder == null)
         {
             Debug.LogError("WeaponController: WeaponHolder not found!");
@@ -53,8 +73,7 @@ public class WeaponController : MonoBehaviour
         // Find camera
         if (cameraTransform == null)
         {
-            Camera cam = Camera.main;
-            if (cam != null) cameraTransform = cam.transform;
+            if (mainCam != null) cameraTransform = mainCam.transform;
         }
 
         // Find muzzle flash
@@ -85,6 +104,9 @@ public class WeaponController : MonoBehaviour
             keyboard = Keyboard.current;
             if (mouse == null || keyboard == null) return;
         }
+
+        // Block weapon input when inventory is open
+        if (inventory != null && inventory.isInventoryOpen) return;
 
         HandleWeaponSwitch();
         HandleReload();
@@ -178,7 +200,6 @@ public class WeaponController : MonoBehaviour
         {
             if (weapon.weaponName == "Shotgun")
             {
-                // Shotgun fires 8 pellets with spread
                 for (int i = 0; i < 8; i++)
                 {
                     Vector3 spread = cameraTransform.forward +
@@ -189,7 +210,6 @@ public class WeaponController : MonoBehaviour
             }
             else
             {
-                // Single bullet with slight spread
                 Vector3 spread = cameraTransform.forward +
                     cameraTransform.right * Random.Range(-0.01f, 0.01f) +
                     cameraTransform.up * Random.Range(-0.01f, 0.01f);
@@ -206,33 +226,24 @@ public class WeaponController : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(cameraTransform.position, direction, out hit, weapon.range))
         {
-            // Create impact marker
             CreateImpactEffect(hit.point, hit.normal);
-
-            // Check if we hit something with health (for future use)
-            // Health targetHealth = hit.collider.GetComponent<Health>();
-            // if (targetHealth != null) targetHealth.TakeDamage(weapon.damage);
         }
     }
 
     void CreateImpactEffect(Vector3 position, Vector3 normal)
     {
-        // Small sphere at impact point
         GameObject impact = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         impact.name = "BulletHole";
         impact.transform.position = position + normal * 0.01f;
         impact.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
 
-        // Remove collider so it doesn't interfere
         Object.Destroy(impact.GetComponent<Collider>());
 
-        // Dark material
         Renderer rend = impact.GetComponent<Renderer>();
         Material mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
         mat.color = new Color(0.1f, 0.1f, 0.1f);
         rend.material = mat;
 
-        // Destroy after 5 seconds
         Object.Destroy(impact, 5f);
     }
 
@@ -240,26 +251,23 @@ public class WeaponController : MonoBehaviour
     {
         recoilRecovery += amount * 0.3f;
 
-        // Kick weapon holder up slightly
         if (weaponHolder != null)
         {
             Vector3 pos = weaponHolder.localPosition;
-            pos.z -= 0.02f; // kick back
-            pos.y += 0.01f; // kick up
+            pos.z -= 0.02f;
+            pos.y += 0.01f;
             weaponHolder.localPosition = pos;
         }
     }
 
     void HandleRecoilRecovery()
     {
-        // Smoothly return weapon to original position
         if (weaponHolder != null)
         {
-            Vector3 targetPos = new Vector3(0.3f, -0.25f, 0.5f); // Default weapon position
+            Vector3 targetPos = new Vector3(0.3f, -0.25f, 0.5f);
             weaponHolder.localPosition = Vector3.Lerp(weaponHolder.localPosition, targetPos, 10f * Time.deltaTime);
         }
 
-        // Camera recoil recovery
         if (recoilRecovery > 0f)
         {
             recoilRecovery = Mathf.Lerp(recoilRecovery, 0f, 5f * Time.deltaTime);
@@ -268,13 +276,11 @@ public class WeaponController : MonoBehaviour
 
     void HandleReload()
     {
-        // Manual reload with R
         if (keyboard.rKey.wasPressedThisFrame && !isReloading && currentAmmo < weapons[currentWeaponIndex].magazineSize)
         {
             StartReload();
         }
 
-        // Check if reload is complete
         if (isReloading && Time.time >= reloadEndTime)
         {
             currentAmmo = weapons[currentWeaponIndex].magazineSize;
@@ -306,7 +312,6 @@ public class WeaponController : MonoBehaviour
         }
     }
 
-    // Public getters for UI
     public string GetCurrentWeaponName() { return weapons[currentWeaponIndex].weaponName; }
     public int GetCurrentAmmo() { return currentAmmo; }
     public int GetMaxAmmo() { return weapons[currentWeaponIndex].magazineSize; }

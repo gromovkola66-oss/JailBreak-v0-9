@@ -29,6 +29,7 @@ public class PlayerController : MonoBehaviour
 
     private Mouse mouse;
     private Keyboard keyboard;
+    private InventorySystem inventory;
 
     void Start()
     {
@@ -46,6 +47,7 @@ public class PlayerController : MonoBehaviour
 
         mouse = Mouse.current;
         keyboard = Keyboard.current;
+        inventory = GetComponent<InventorySystem>();
     }
 
     void Update()
@@ -57,9 +59,20 @@ public class PlayerController : MonoBehaviour
             if (mouse == null || keyboard == null) return;
         }
 
-        HandleMouseLook();
-        HandleMovement();
-        HandleCrouch();
+        // Block all input when inventory is open
+        bool inputBlocked = inventory != null && inventory.isInventoryOpen;
+
+        if (!inputBlocked)
+        {
+            HandleMouseLook();
+            HandleMovement();
+            HandleCrouch();
+        }
+        else
+        {
+            // Still apply gravity when inventory open
+            ApplyGravity();
+        }
     }
 
     void HandleMouseLook()
@@ -110,6 +123,16 @@ public class PlayerController : MonoBehaviour
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
 
+        verticalVelocity += gravity * Time.deltaTime;
+        controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
+    }
+
+    void ApplyGravity()
+    {
+        if (controller.isGrounded && verticalVelocity < 0f)
+        {
+            verticalVelocity = -2f;
+        }
         verticalVelocity += gravity * Time.deltaTime;
         controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
     }
