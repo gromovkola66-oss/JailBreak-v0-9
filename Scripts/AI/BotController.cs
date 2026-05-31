@@ -182,9 +182,9 @@ public class BotController : MonoBehaviour
             if (dr == null)
                 dr = hit.collider.GetComponentInParent<DamageReceiver>();
 
-            if (dr != null)
+            if (dr != null && dr.gameObject == currentTarget.gameObject)
             {
-                dr.TakeDamage(damage, gameObject.name, team);
+                dr.TakeDamage(damage, gameObject.name, team, "Bot Weapon");
             }
         }
     }

@@ -20,6 +20,11 @@ public class BotHealth : MonoBehaviour
 
     public void TakeDamage(float amount, string attackerName)
     {
+        TakeDamage(amount, attackerName, "Unknown");
+    }
+
+    public void TakeDamage(float amount, string attackerName, string weaponName)
+    {
         if (isDead) return;
 
         currentHP -= amount;
@@ -27,11 +32,11 @@ public class BotHealth : MonoBehaviour
 
         if (currentHP <= 0f)
         {
-            Die(attackerName);
+            Die(attackerName, weaponName);
         }
     }
 
-    private void Die(string attackerName)
+    private void Die(string attackerName, string weaponName)
     {
         isDead = true;
 
@@ -46,7 +51,6 @@ public class BotHealth : MonoBehaviour
         KillFeed killFeed = FindFirstObjectByType<KillFeed>();
         if (killFeed != null)
         {
-            string weaponName = "Weapon";
             killFeed.AddKill(attackerName, gameObject.name, weaponName);
         }
 

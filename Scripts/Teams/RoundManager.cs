@@ -146,6 +146,10 @@ public class RoundManager : MonoBehaviour
         winnerText = "";
         roundTimer = roundDuration;
 
+        TeamSelectUI teamSelectUI = FindFirstObjectByType<TeamSelectUI>();
+        if (teamSelectUI != null)
+            teamSelectUI.Show();
+
         HealthSystem playerHealth = FindFirstObjectByType<HealthSystem>();
         if (playerHealth != null)
         {

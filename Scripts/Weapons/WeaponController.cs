@@ -27,6 +27,7 @@ public class WeaponController : MonoBehaviour
     private float reloadTimer = 0f;
     private float muzzleFlashTimer = 0f;
     private float bobTimer = 0f;
+    private Vector3 bobOffset = Vector3.zero;
     private Vector3 recoilOffset = Vector3.zero;
     private Vector3 weaponHolderOriginalPos;
     private PlayerController playerController;
@@ -189,7 +190,7 @@ public class WeaponController : MonoBehaviour
             if (dr != null)
             {
                 string attackerName = gameObject.name;
-                dr.TakeDamage(wd.damage, attackerName, playerTeam);
+                dr.TakeDamage(wd.damage, attackerName, playerTeam, wd.weaponName);
             }
         }
     }
@@ -205,7 +206,7 @@ public class WeaponController : MonoBehaviour
                 dr = col.GetComponentInParent<DamageReceiver>();
             if (dr != null)
             {
-                dr.TakeDamage(wd.damage, gameObject.name, playerTeam);
+                dr.TakeDamage(wd.damage, gameObject.name, playerTeam, wd.weaponName);
             }
         }
         ApplyRecoil(wd);
@@ -220,7 +221,7 @@ public class WeaponController : MonoBehaviour
     {
         if (weaponHolder == null) return;
         recoilOffset = Vector3.Lerp(recoilOffset, Vector3.zero, recoilRecoverSpeed * Time.deltaTime);
-        weaponHolder.localPosition = weaponHolderOriginalPos + recoilOffset;
+        weaponHolder.localPosition = weaponHolderOriginalPos + recoilOffset + bobOffset;
     }
 
     private void ShowMuzzleFlash()
@@ -253,13 +254,18 @@ public class WeaponController : MonoBehaviour
             bobTimer += Time.deltaTime * weaponBobSpeed * speedMul;
             float bobY = Mathf.Sin(bobTimer) * weaponBobAmount;
             float bobX = Mathf.Cos(bobTimer * 0.5f) * weaponBobAmount * 0.5f;
-            Vector3 bobOffset = new Vector3(bobX, bobY, 0f);
-            weaponHolder.localPosition = weaponHolderOriginalPos + recoilOffset + bobOffset;
+            bobOffset = new Vector3(bobX, bobY, 0f);
         }
         else
         {
-            bobTimer = 0f;
+            bobOffset = Vector3.Lerp(bobOffset, Vector3.zero, 10f * Time.deltaTime);
+            if (bobOffset.sqrMagnitude < 0.000001f)
+            {
+                bobOffset = Vector3.zero;
+                bobTimer = 0f;
+            }
         }
+        weaponHolder.localPosition = weaponHolderOriginalPos + recoilOffset + bobOffset;
     }
 
     private void HandleReload(Keyboard keyboard)

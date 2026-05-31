@@ -21,6 +21,11 @@ public class HealthSystem : MonoBehaviour
 
     public void TakeDamage(float amount, string attackerName)
     {
+        TakeDamage(amount, attackerName, "Unknown");
+    }
+
+    public void TakeDamage(float amount, string attackerName, string weaponName)
+    {
         if (isDead) return;
 
         currentHP -= amount;
@@ -31,7 +36,7 @@ public class HealthSystem : MonoBehaviour
 
         if (currentHP <= 0f)
         {
-            Die(attackerName);
+            Die(attackerName, weaponName);
         }
     }
 
@@ -43,7 +48,7 @@ public class HealthSystem : MonoBehaviour
             OnDamaged.Invoke(currentHP, maxHP);
     }
 
-    private void Die(string attackerName)
+    private void Die(string attackerName, string weaponName)
     {
         isDead = true;
 
@@ -54,8 +59,6 @@ public class HealthSystem : MonoBehaviour
         KillFeed killFeed = FindFirstObjectByType<KillFeed>();
         if (killFeed != null)
         {
-            WeaponController wc = FindFirstObjectByType<WeaponController>();
-            string weaponName = wc != null && wc.GetCurrentWeapon() != null ? wc.GetCurrentWeapon().weaponName : "Unknown";
             killFeed.AddKill(attackerName, victimName, weaponName);
         }
 

@@ -16,12 +16,10 @@ public class SpectateCamera : MonoBehaviour
         if (spectateCamera == null)
             spectateCamera = gameObject.AddComponent<Camera>();
         spectateCamera.enabled = false;
-        gameObject.SetActive(false);
     }
 
     public void EnableSpectate(Vector3 position, Quaternion rotation)
     {
-        gameObject.SetActive(true);
         isActive = true;
         transform.position = position;
         transform.rotation = rotation;
@@ -37,7 +35,6 @@ public class SpectateCamera : MonoBehaviour
         isActive = false;
         if (spectateCamera != null)
             spectateCamera.enabled = false;
-        gameObject.SetActive(false);
     }
 
     void Update()

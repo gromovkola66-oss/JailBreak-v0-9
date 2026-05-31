@@ -20,7 +20,8 @@ public class DoorController : MonoBehaviour, IDoorInteractable
 
     void Start()
     {
-        closedPosition = transform.localPosition;
+        if (closedPosition == Vector3.zero)
+            closedPosition = transform.localPosition;
         if (openPosition == Vector3.zero)
             openPosition = closedPosition + Vector3.up * 3f;
         targetPosition = closedPosition;
