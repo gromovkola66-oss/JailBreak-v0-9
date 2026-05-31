@@ -1,0 +1,11 @@
+Material:
+  shader: Custom/TeleportCircle
+  properties:
+    _Color: {r: 0.2, g: 0.6, b: 1.0, a: 0.5}
+    _InnerRadius: 0.85
+    _OuterRadius: 1.0
+    _PulseSpeed: 2.0
+    _PulseAmplitude: 0.05
+    _RingCount: 3.0
+    _RingSpeed: 1.0
+    _EdgeSoftness: 0.02

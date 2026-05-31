@@ -1,0 +1,6 @@
+Material:
+  shader: Standard
+  properties:
+    _Color: {r: 0.3, g: 0.4, b: 0.3, a: 1.0}
+    _Metallic: 0.0
+    _Glossiness: 0.2

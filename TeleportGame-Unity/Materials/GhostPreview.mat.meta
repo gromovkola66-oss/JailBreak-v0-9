@@ -1,0 +1,11 @@
+Material:
+  shader: Standard
+  renderMode: Transparent
+  properties:
+    _Color: {r: 0.2, g: 0.5, b: 1.0, a: 0.4}
+    _Mode: 3
+    _SrcBlend: 5
+    _DstBlend: 10
+    _ZWrite: 0
+  keywords:
+    - _ALPHABLEND_ON
