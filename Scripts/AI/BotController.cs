@@ -84,9 +84,10 @@ public class BotController : MonoBehaviour
             float dist = Vector3.Distance(transform.position, dr.transform.position);
             if (dist > detectionRange) continue;
 
-            Vector3 dir = (dr.transform.position - transform.position).normalized;
-            dir.y += 0.5f;
-            Ray ray = new Ray(transform.position + Vector3.up * 1.5f, dir);
+            Vector3 origin = transform.position + Vector3.up * 1.5f;
+            Vector3 targetPos = dr.transform.position + Vector3.up * 0.5f;
+            Vector3 dir = (targetPos - origin).normalized;
+            Ray ray = new Ray(origin, dir);
             RaycastHit hit;
 
             if (Physics.Raycast(ray, out hit, detectionRange))
@@ -213,6 +214,8 @@ public class BotController : MonoBehaviour
         state = BotState.Patrol;
         currentWaypointIndex = 0;
         currentTarget = null;
+        fireTimer = 0f;
+        detectionTimer = 0f;
 
         if (TeamManager.Instance != null)
         {

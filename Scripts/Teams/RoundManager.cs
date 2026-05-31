@@ -163,10 +163,30 @@ public class RoundManager : MonoBehaviour
             }
         }
 
+        PlayerController playerCtrl = FindFirstObjectByType<PlayerController>();
+        if (playerCtrl != null)
+        {
+            playerCtrl.DisableInput();
+        }
+
         SpectateCamera spec = FindFirstObjectByType<SpectateCamera>();
         if (spec != null)
         {
             spec.DisableSpectate();
+        }
+
+        // Reset doors
+        DoorController[] doors = FindObjectsByType<DoorController>(FindObjectsSortMode.None);
+        foreach (DoorController door in doors)
+        {
+            door.Close();
+        }
+
+        // Reset door buttons
+        DoorButton[] buttons = FindObjectsByType<DoorButton>(FindObjectsSortMode.None);
+        foreach (DoorButton btn in buttons)
+        {
+            btn.ResetButton();
         }
 
         BotController[] bots = FindObjectsByType<BotController>(FindObjectsSortMode.None);

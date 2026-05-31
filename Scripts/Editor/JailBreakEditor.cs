@@ -413,26 +413,32 @@ public class JailBreakEditor
 
         GameObject fists = CreateBox("WM_Fists", Vector3.zero, new Vector3(0.15f, 0.15f, 0.2f), skinColor, weaponHolder.transform);
         fists.transform.localPosition = new Vector3(0f, 0f, 0.2f);
+        Object.DestroyImmediate(fists.GetComponent<Collider>());
         models[0] = fists;
 
         GameObject knife = CreateBox("WM_Knife", Vector3.zero, new Vector3(0.04f, 0.04f, 0.35f), knifeColor, weaponHolder.transform);
         knife.transform.localPosition = new Vector3(0f, 0f, 0.2f);
+        Object.DestroyImmediate(knife.GetComponent<Collider>());
         models[1] = knife;
 
         GameObject pistol = CreateBox("WM_Pistol", Vector3.zero, new Vector3(0.06f, 0.12f, 0.22f), gunMetal, weaponHolder.transform);
         pistol.transform.localPosition = new Vector3(0f, 0f, 0.3f);
+        Object.DestroyImmediate(pistol.GetComponent<Collider>());
         models[2] = pistol;
 
         GameObject ak47 = CreateBox("WM_AK47", Vector3.zero, new Vector3(0.06f, 0.12f, 0.6f), new Color(0.35f, 0.25f, 0.15f), weaponHolder.transform);
         ak47.transform.localPosition = new Vector3(0f, 0f, 0.4f);
+        Object.DestroyImmediate(ak47.GetComponent<Collider>());
         models[3] = ak47;
 
         GameObject m4 = CreateBox("WM_M4A1", Vector3.zero, new Vector3(0.06f, 0.11f, 0.55f), gunMetal, weaponHolder.transform);
         m4.transform.localPosition = new Vector3(0f, 0f, 0.4f);
+        Object.DestroyImmediate(m4.GetComponent<Collider>());
         models[4] = m4;
 
         GameObject shotgun = CreateBox("WM_Shotgun", Vector3.zero, new Vector3(0.07f, 0.1f, 0.65f), new Color(0.4f, 0.3f, 0.2f), weaponHolder.transform);
         shotgun.transform.localPosition = new Vector3(0f, 0f, 0.4f);
+        Object.DestroyImmediate(shotgun.GetComponent<Collider>());
         models[5] = shotgun;
 
         wc.weaponModels = models;

@@ -40,6 +40,7 @@ public class SpectateCamera : MonoBehaviour
     void Update()
     {
         if (!isActive) return;
+        if (Cursor.lockState != CursorLockMode.Locked) return;
 
         Keyboard keyboard = Keyboard.current;
         Mouse mouse = Mouse.current;

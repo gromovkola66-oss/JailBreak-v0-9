@@ -1,0 +1,42 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix all bugs across all 18 scripts so the game works flawlessly out of the box. The primary issue is cursor lock on game start preventing team selection, but there are many other timing, logic, null-reference, and usability bugs.",
+  "status": "in_progress",
+  "steps": [
+    "Fix Scripts/Player/PlayerController.cs: (1) Remove Cursor.lockState and Cursor.visible from Start() - cursor must stay free for team select. (2) Add a public bool 'inputEnabled' field (default false) that gates ALL of Update() so the player cannot move/look during team select and death. (3) Add public methods LockCursor() and UnlockCursor() for other scripts to call. (4) In SetDead(), also disable the player's Camera component so SpectateCamera can render. (5) In Respawn(), re-enable the Camera, reset isDead, and re-enable input.",
+    "Fix Scripts/UI/TeamSelectUI.cs: (1) In SelectTeam(), after assigning the team, call playerController's input enable method and cursor lock so gameplay begins. (2) In Show(), disable player input and unlock cursor. (3) The GUI.Button call uses a custom style that has no background - IMGUI buttons with no normal.background texture are invisible to click events in some Unity versions. Set buttonStyle.normal.background to a texture (use the blueButtonTex/orangeButtonTex already created) and use separate GUIStyle instances for each button or just use the default GUI.skin.button as the base style to ensure click detection works.",
+    "Fix Scripts/GameFlow/GameManager.cs: (1) In Start(), also disable player input (inputEnabled=false) so the player is frozen during team select. (2) Sync GameState transitions properly.",
+    "Fix Scripts/Teams/RoundManager.cs: (1) In RestartRound(), also unlock cursor and disable player input before showing TeamSelectUI. (2) Reset DoorButton (find all DoorButton instances and call ResetButton). (3) Reset all DoorControllers (close them). (4) Fix potential null reference - TeamManager.Instance check before calling GetSpawnPoint.",
+    "Fix Scripts/Weapons/WeaponController.cs: (1) Guard Update() with a check for player input enabled state so weapons don't fire during team select or death. (2) Fix team restriction check - playerTeam is captured in Start() when it is still Team.None. Move the team read to Update() (it's already there, but CanUseWeapon is called per-frame which is correct). The issue is SelectWeapon(0) in Start() resets ammo to Fists magazine (0) which means first switch to a gun shows 0 ammo; fix by only setting ammo if magazineSize > 0, or just let it be fine since Fists is melee.",
+    "Fix Scripts/GameFlow/SpectateCamera.cs: (1) In Start(), ensure spectateCamera starts disabled (it does). (2) Spectate should only process input when cursor is locked (during gameplay), not during post-round when cursor might be free. Add a check for RoundManager state.",
+    "Fix Scripts/Health/HealthSystem.cs: (1) In ResetHealth(), also reset the associated PlayerController (isDead=false is already done via Respawn but make sure no double-reset issues). Already looks correct but verify Die() disables input.",
+    "Fix Scripts/AI/BotController.cs: (1) In DetectEnemies(), the direction calculation adds 0.5f to y after normalizing which changes magnitude - fix by computing the ray direction to the target's upper body (add offset to target position, not to normalized direction). (2) Ensure ResetBot also resets fireTimer and detectionTimer.",
+    "Fix Scripts/UI/GameUI.cs: (1) Gate the entire OnGUI behind a check that the game is in Playing state (not TeamSelect) so HP/ammo/crosshair do not render during team select screen. (2) Handle null playerHealth/weaponController gracefully during first frames.",
+    "Fix Scripts/Editor/JailBreakEditor.cs: (1) The weapon models created via CreateBox have BoxColliders which will interfere with the player's own raycasts (shooting, interaction). Disable or remove colliders on weapon model objects. (2) The muzzleFlash collider is already disabled - good. (3) Ensure weapon models have their Renderer set to a specific layer or just disable colliders."
+  ],
+  "acceptance_criteria": [
+    "PlayerController does NOT lock cursor in Start()",
+    "TeamSelectUI shows on game start with cursor visible and clickable",
+    "Clicking Guard or Prisoner button assigns team, locks cursor, enables player input, and starts round",
+    "Player cannot move or look during team select",
+    "Weapons do not fire during team select or when player is dead",
+    "GameUI (HP, ammo, crosshair, timer) only shows during gameplay, not during team select",
+    "Death disables player camera so spectate camera renders",
+    "Round restart shows team select again with cursor unlocked",
+    "DoorButton and doors reset on round restart",
+    "Bot detection raycast uses correct direction calculation",
+    "Weapon model colliders do not block player raycasts",
+    "All scripts compile without errors (valid C# syntax)"
+  ],
+  "verification": [
+    "Review all modified files to confirm cursor is only locked after team selection",
+    "Review PlayerController to confirm inputEnabled gates Update logic",
+    "Review TeamSelectUI to confirm button styles allow click detection",
+    "Review RoundManager to confirm full state reset on round restart",
+    "Review BotController to confirm raycast direction fix",
+    "Review JailBreakEditor to confirm weapon model colliders are disabled"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -64,6 +64,7 @@ public class WeaponController : MonoBehaviour
     void Update()
     {
         if (playerController != null && playerController.isDead) return;
+        if (playerController != null && !playerController.inputEnabled) return;
 
         Keyboard keyboard = Keyboard.current;
         Mouse mouse = Mouse.current;

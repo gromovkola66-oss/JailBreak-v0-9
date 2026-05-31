@@ -40,11 +40,13 @@ public class TeamSelectUI : MonoBehaviour
         titleStyle.alignment = TextAnchor.MiddleCenter;
         titleStyle.normal.textColor = Color.white;
 
-        buttonStyle = new GUIStyle();
+        buttonStyle = new GUIStyle(GUI.skin.button);
         buttonStyle.fontSize = 28;
         buttonStyle.fontStyle = FontStyle.Bold;
         buttonStyle.alignment = TextAnchor.MiddleCenter;
         buttonStyle.normal.textColor = Color.white;
+        buttonStyle.hover.textColor = Color.white;
+        buttonStyle.active.textColor = Color.white;
 
         descStyle = new GUIStyle();
         descStyle.fontSize = 14;
@@ -109,6 +111,8 @@ public class TeamSelectUI : MonoBehaviour
                 Vector3 spawn = TeamManager.Instance.GetSpawnPoint(team);
                 player.Respawn(spawn);
             }
+
+            player.EnableInput();
         }
 
         RoundManager rm = FindFirstObjectByType<RoundManager>();
@@ -123,5 +127,11 @@ public class TeamSelectUI : MonoBehaviour
         isVisible = true;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+
+        PlayerController player = FindFirstObjectByType<PlayerController>();
+        if (player != null)
+        {
+            player.DisableInput();
+        }
     }
 }

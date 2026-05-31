@@ -31,6 +31,7 @@ public class PlayerController : MonoBehaviour
     [HideInInspector] public string interactionPrompt = "";
     [HideInInspector] public bool isMoving = false;
     [HideInInspector] public bool isSprinting = false;
+    public bool inputEnabled = false;
 
     private CharacterController controller;
     private Transform cameraTransform;
@@ -45,12 +46,11 @@ public class PlayerController : MonoBehaviour
         controller = GetComponent<CharacterController>();
         cameraTransform = GetComponentInChildren<Camera>().transform;
         originalCameraLocalPos = cameraTransform.localPosition;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
     }
 
     void Update()
     {
+        if (!inputEnabled) return;
         if (isDead) return;
 
         Keyboard keyboard = Keyboard.current;
@@ -173,6 +173,7 @@ public class PlayerController : MonoBehaviour
     public void SetDead()
     {
         isDead = true;
+        GetComponentInChildren<Camera>().enabled = false;
         SpectateCamera spectate = FindFirstObjectByType<SpectateCamera>();
         if (spectate != null)
         {
@@ -187,6 +188,22 @@ public class PlayerController : MonoBehaviour
         transform.position = position;
         controller.enabled = true;
         velocity = Vector3.zero;
+        GetComponentInChildren<Camera>().enabled = true;
+        EnableInput();
+    }
+
+    public void EnableInput()
+    {
+        inputEnabled = true;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    public void DisableInput()
+    {
+        inputEnabled = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 }
 

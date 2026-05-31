@@ -92,6 +92,9 @@ public class GameUI : MonoBehaviour
             return;
         }
 
+        if (roundManager == null || roundManager.roundState == RoundState.WaitingForTeamSelect)
+            return;
+
         if (roundManager != null && roundManager.roundState == RoundState.PostRound)
         {
             DrawWinnerOverlay();
