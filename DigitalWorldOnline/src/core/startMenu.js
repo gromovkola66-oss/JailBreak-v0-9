@@ -12,7 +12,8 @@ const apps = [
   { id: 'antivirus', name: 'Антивирус', icon: '/icons/antivirus.svg' },
   { id: 'vpn', name: 'VPN', icon: '/icons/vpn.svg' },
   { id: 'messenger', name: 'Мессенджер', icon: '/icons/messenger.svg' },
-  { id: 'journal', name: '\u0416\u0443\u0440\u043d\u0430\u043b', icon: '/icons/journal.svg' }
+  { id: 'journal', name: '\u0416\u0443\u0440\u043d\u0430\u043b', icon: '/icons/journal.svg' },
+  { id: 'skills', name: '\u041d\u0430\u0432\u044b\u043a\u0438', icon: '/icons/skills.svg' }
 ];
 
 let startMenuEl = null;

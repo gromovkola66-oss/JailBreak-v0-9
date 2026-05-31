@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Create the Level System (src/core/levelSystem.js) and Skill System (src/core/skillSystem.js) core modules. These provide XP tracking, leveling, skill point allocation, skill tree data, and skill effect queries. Also create the Skills app (src/apps/skills.js) with full UI, the skill app CSS (src/styles/apps/skills.css), the SVG icon (public/icons/skills.svg), and register the app in desktop.js, startMenu.js, and main.js.",
+  "status": "in_progress",
+  "steps": [
+    "Create src/core/levelSystem.js with: getLevel(), getXP(), getXPForNextLevel(), addXP(amount, source), getSkillPoints(), spendSkillPoint(), getTotalSkillPoints(). XP formula: level*100 for next level. Max level 30. On level-up: call showNotification with Russian text 'Поздравляем! Вы достигли уровня X!'. Persist state in localStorage via storage.js key 'player_level'. Export a function hasSkillPoints() for checking availability. Export getLevelUnlocks() that returns what is unlocked at current level (level 3: harder freelance, level 5: new hacking targets, level 8: advanced darknet, level 10: new NPC contacts, level 15: elite tier).",
+    "Create src/core/skillSystem.js with: the full skill tree data (5 branches, 5 skills each, 25 total as specified in the task). Each skill has id, branch, name, description, levelReq, cost, effects (object describing what it does). Export functions: getSkills(), getSkillsByBranch(branch), isSkillUnlocked(skillId), canUnlockSkill(skillId), unlockSkill(skillId), getUnlockedSkills(), hasSkillEffect(effectName). Persist unlocked skills in localStorage via storage.js key 'unlocked_skills'. Skill branches: 'hacking', 'defense', 'business', 'programming', 'social'. Effect names should be descriptive strings like 'bruteforce_easier', 'discount_10', 'freelance_faster', etc.",
+    "Create public/icons/skills.svg - a star/sparkle shaped SVG icon that fits the existing icon style (simple, monochrome with currentColor).",
+    "Create src/apps/skills.js with open() function that creates a window (title: 'Навыки', icon: '/icons/skills.svg', appId: 'skills', width: 800, height: 600). UI should show: top bar with player level, XP progress bar, available skill points count. 5 tabs for branches (Хакинг, Защита, Бизнес, Программирование, Социальные навыки) with emoji icons. Each tab shows skills as a vertical list with visual connections (lines). Each skill shows: emoji icon, name, description, cost, status (locked/available/purchased), and 'Изучить' button when available. Dark themed panel with glowing effects on available skills, green checkmarks on purchased ones, grey on locked with level requirement shown.",
+    "Create src/styles/apps/skills.css with styles for: .app-skills container, .skills-header (level bar, XP bar, skill points), .skills-tabs (branch tabs), .skills-tree (vertical skill list with connecting lines), .skill-card (individual skill), .skill-card.locked/.available/.purchased states, glow animation for available skills, purchase animation.",
+    "Register the skills app in src/core/desktop.js: add import for skills.js open function, add to appOpeners object, add to desktopIcons array with id:'skills', name:'Навыки', icon:'/icons/skills.svg', appId:'skills'.",
+    "Register in src/core/startMenu.js: add skills to the apps array with id:'skills', name:'Навыки', icon:'/icons/skills.svg'.",
+    "Import skills.css in src/main.js: add import './styles/apps/skills.css';",
+    "Add initLevelSystem() call in src/main.js init() function and import it from levelSystem.js. The initLevelSystem should initialize default state if not present."
+  ],
+  "acceptance_criteria": [
+    "npm run build succeeds with no errors",
+    "src/core/levelSystem.js exports all required functions (getLevel, getXP, addXP, getSkillPoints, spendSkillPoint, etc.)",
+    "src/core/skillSystem.js contains all 25 skills across 5 branches with correct Russian names and effect descriptions",
+    "src/apps/skills.js creates a working window with skill tree UI",
+    "Skills app appears on desktop and in start menu",
+    "The skills.svg icon exists in public/icons/",
+    "All text in the new files is in Russian"
+  ],
+  "verification": [
+    "Run npm run build in /projects/sandbox/JailBreak-v0-9/DigitalWorldOnline and confirm it succeeds with no errors"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

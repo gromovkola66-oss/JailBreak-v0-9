@@ -16,6 +16,7 @@ import './styles/apps/hacking-minigames.css';
 import './styles/notifications.css';
 import './styles/apps/messenger.css';
 import './styles/apps/journal.css';
+import './styles/apps/skills.css';
 
 import { initFileSystem } from './core/fileSystem.js';
 import { initDesktop } from './core/desktop.js';
@@ -24,6 +25,7 @@ import { initStartMenu } from './core/startMenu.js';
 import { initWindowManager } from './core/windowManager.js';
 import { initTheme } from './apps/settings.js';
 import { initNotifications } from './core/notifications.js';
+import { initLevelSystem } from './core/levelSystem.js';
 import { initQuestSystem } from './core/questSystem.js';
 
 function init() {
@@ -34,6 +36,7 @@ function init() {
   initDesktop();
   initTaskbar();
   initStartMenu();
+  initLevelSystem();
   initQuestSystem();
 }
 

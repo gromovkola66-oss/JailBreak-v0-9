@@ -12,6 +12,7 @@ import { open as openAntivirus } from '../apps/antivirus.js';
 import { open as openVpn } from '../apps/vpn.js';
 import { open as openMessenger } from '../apps/messenger.js';
 import { open as openJournal } from '../apps/journal.js';
+import { open as openSkills } from '../apps/skills.js';
 
 const appOpeners = {
   fileExplorer: openFileExplorer,
@@ -25,7 +26,8 @@ const appOpeners = {
   antivirus: openAntivirus,
   vpn: openVpn,
   messenger: openMessenger,
-  journal: openJournal
+  journal: openJournal,
+  skills: openSkills
 };
 
 const desktopIcons = [
@@ -40,7 +42,8 @@ const desktopIcons = [
   { id: 'antivirus', name: 'Антивирус', icon: '/icons/antivirus.svg', appId: 'antivirus' },
   { id: 'vpn', name: 'VPN', icon: '/icons/vpn.svg', appId: 'vpn' },
   { id: 'messenger', name: 'Мессенджер', icon: '/icons/messenger.svg', appId: 'messenger' },
-  { id: 'journal', name: '\u0416\u0443\u0440\u043d\u0430\u043b', icon: '/icons/journal.svg', appId: 'journal' }
+  { id: 'journal', name: '\u0416\u0443\u0440\u043d\u0430\u043b', icon: '/icons/journal.svg', appId: 'journal' },
+  { id: 'skills', name: '\u041d\u0430\u0432\u044b\u043a\u0438', icon: '/icons/skills.svg', appId: 'skills' }
 ];
 
 let desktopEl = null;
