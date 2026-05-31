@@ -377,6 +377,11 @@ public class JailBreakEditor : EditorWindow
         GameObject uiObj = new GameObject("InventoryUI");
         uiObj.AddComponent<InventoryUI>();
 
+        // Add PickupNotification (global)
+        DestroyIfExists("PickupNotification");
+        GameObject notifObj = new GameObject("PickupNotification");
+        notifObj.AddComponent<PickupNotification>();
+
         // Clean old pickups
         GameObject oldPickups = GameObject.Find("Pickups");
         if (oldPickups != null) DestroyImmediate(oldPickups);

@@ -89,6 +89,14 @@ public class PickupItem : MonoBehaviour
         if (success)
         {
             Debug.Log("[JailBreak] Picked up: " + itemName);
+
+            // Show notification
+            PickupNotification notif = FindFirstObjectByType<PickupNotification>();
+            if (notif != null)
+            {
+                notif.Show("+ " + itemName);
+            }
+
             Destroy(gameObject);
         }
         else
