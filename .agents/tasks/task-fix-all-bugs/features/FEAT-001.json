@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Fix all bugs across all 18 scripts so the game works flawlessly out of the box. The primary issue is cursor lock on game start preventing team selection, but there are many other timing, logic, null-reference, and usability bugs.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Fix Scripts/Player/PlayerController.cs: (1) Remove Cursor.lockState and Cursor.visible from Start() - cursor must stay free for team select. (2) Add a public bool 'inputEnabled' field (default false) that gates ALL of Update() so the player cannot move/look during team select and death. (3) Add public methods LockCursor() and UnlockCursor() for other scripts to call. (4) In SetDead(), also disable the player's Camera component so SpectateCamera can render. (5) In Respawn(), re-enable the Camera, reset isDead, and re-enable input.",
     "Fix Scripts/UI/TeamSelectUI.cs: (1) In SelectTeam(), after assigning the team, call playerController's input enable method and cursor lock so gameplay begins. (2) In Show(), disable player input and unlock cursor. (3) The GUI.Button call uses a custom style that has no background - IMGUI buttons with no normal.background texture are invisible to click events in some Unity versions. Set buttonStyle.normal.background to a texture (use the blueButtonTex/orangeButtonTex already created) and use separate GUIStyle instances for each button or just use the default GUI.skin.button as the base style to ensure click detection works.",
@@ -38,5 +38,5 @@
     "Review JailBreakEditor to confirm weapon model colliders are disabled"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 8 files modified successfully. No automated tests available - validation was code review only per context. DoorController.Close() and DoorButton.ResetButton() methods confirmed to exist before calling them from RoundManager. The Respawn() method calls EnableInput() which will re-lock cursor and enable input after team select on round restart - this is correct because TeamSelectUI.Show() also calls DisableInput() which runs after Respawn(). Order in RestartRound: teamSelectUI.Show() -> player.Respawn() -> playerCtrl.DisableInput(). The DisableInput at end ensures input stays disabled during team select."
 }
