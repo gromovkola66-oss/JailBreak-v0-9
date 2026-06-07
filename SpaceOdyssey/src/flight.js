@@ -1,5 +1,16 @@
 /**
  * Flight Scene - Real-time rocket flight with physics
+ *
+ * Coordinate system:
+ *   state.x = horizontal position (meters, 0 = launch site)
+ *   state.y = altitude above surface (meters, positive = up)
+ *   state.vx = horizontal velocity (positive = right)
+ *   state.vy = vertical velocity (positive = up)
+ *
+ * Screen mapping (Phaser y-axis points down):
+ *   screenX = state.x / metersPerPixel
+ *   screenY = -(state.y / metersPerPixel)
+ *   Ground is at screenY = 0
  */
 import { calculateGravity, calculateDrag, calculateThrust, integrateMotion, calculateOrbitalParams } from './physics.js';
 import { PLANET } from './main.js';
@@ -14,13 +25,13 @@ export default class FlightScene extends Phaser.Scene {
   }
 
   create() {
-    // Flight state
+    // Flight state: rocket starts on surface
     this.state = {
       x: 0,
-      y: -PLANET.surfaceY,  // Start on surface (y is negative = up)
+      y: 0,        // altitude = 0 (on ground)
       vx: 0,
-      vy: 0,
-      angle: 0,
+      vy: 0,       // positive = upward
+      angle: 0,    // 0 = pointing up
       angularVel: 0
     };
 
@@ -32,6 +43,7 @@ export default class FlightScene extends Phaser.Scene {
     this.gameOver = false;
     this.gameWon = false;
     this.maxSpeed = 0;
+    this.altitude = 0;
 
     // Scale factor: 1 pixel = PLANET.metersPerPixel meters
     this.metersPerPixel = PLANET.metersPerPixel;
@@ -65,21 +77,21 @@ export default class FlightScene extends Phaser.Scene {
   }
 
   createBackground() {
-    // Starfield (far background)
+    // Starfield (far background) - drawn above ground (negative screen Y)
     this.stars = this.add.graphics();
     for (let i = 0; i < 300; i++) {
       const sx = Phaser.Math.Between(-2000, 2000);
-      const sy = Phaser.Math.Between(-5000, -500);
+      const sy = Phaser.Math.Between(-5000, -100);
       const brightness = Phaser.Math.Between(100, 255);
       const size = Math.random() > 0.9 ? 2 : 1;
       this.stars.fillStyle(Phaser.Display.Color.GetColor(brightness, brightness, brightness));
       this.stars.fillRect(sx, sy, size, size);
     }
 
-    // Atmosphere gradient (created as a series of rectangles)
+    // Atmosphere gradient (from surface upward)
+    // Surface is at screen y=0, atmosphere extends upward to negative screen y
     this.atmosphereGraphics = this.add.graphics();
-    const atmosHeight = PLANET.atmosphereHeight / this.metersPerPixel;
-    const surfaceY = PLANET.surfaceY;
+    const atmosHeightPx = PLANET.atmosphereHeight / this.metersPerPixel;
     const steps = 20;
     for (let i = 0; i < steps; i++) {
       const t = i / steps;
@@ -87,29 +99,31 @@ export default class FlightScene extends Phaser.Scene {
       const r = Math.floor(50 + t * 20);
       const g = Math.floor(100 + t * 50);
       const b = Math.floor(200 + t * 55);
-      const y = -surfaceY - (t * atmosHeight);
-      const h = atmosHeight / steps;
+      // Each strip: from altitude t*atmosHeight to (t+1)*atmosHeight
+      // Screen y: -t*atmosHeightPx to -(t+1)*atmosHeightPx (going up)
+      const stripTop = -(t + 1) * (atmosHeightPx / steps) * steps / steps;
+      const stripH = atmosHeightPx / steps;
       this.atmosphereGraphics.fillStyle(Phaser.Display.Color.GetColor(r, g, b), alpha);
-      this.atmosphereGraphics.fillRect(-3000, y, 6000, h);
+      this.atmosphereGraphics.fillRect(-3000, -(t + 1) * stripH, 6000, stripH);
     }
 
-    // Ground
+    // Ground - drawn BELOW screen y=0 (surface)
     this.groundGraphics = this.add.graphics();
-    // Surface layer
+    // Surface layer (green grass at y=0)
     this.groundGraphics.fillStyle(0x2d5a27);
-    this.groundGraphics.fillRect(-3000, -PLANET.surfaceY, 6000, 20);
-    // Earth/soil
+    this.groundGraphics.fillRect(-3000, 0, 6000, 20);
+    // Earth/soil below
     this.groundGraphics.fillStyle(0x5c3a1e);
-    this.groundGraphics.fillRect(-3000, -PLANET.surfaceY + 20, 6000, 200);
+    this.groundGraphics.fillRect(-3000, 20, 6000, 200);
     // Deep ground
     this.groundGraphics.fillStyle(0x3d2815);
-    this.groundGraphics.fillRect(-3000, -PLANET.surfaceY + 220, 6000, 500);
+    this.groundGraphics.fillRect(-3000, 220, 6000, 500);
 
-    // Surface details
+    // Surface details (small plants above ground line)
     for (let i = -3000; i < 3000; i += 50) {
       const h = Phaser.Math.Between(3, 10);
       this.groundGraphics.fillStyle(0x3a7a33);
-      this.groundGraphics.fillRect(i, -PLANET.surfaceY - h, 4, h);
+      this.groundGraphics.fillRect(i, -h, 4, h);
     }
   }
 
@@ -132,11 +146,9 @@ export default class FlightScene extends Phaser.Scene {
 
       // Add details based on type
       if (mod.type === 'capsule') {
-        // Window
         const window = this.add.circle(0, currentY + h / 2, 5, 0x88ccff);
         this.rocketContainer.add(window);
       } else if (mod.type === 'engine') {
-        // Nozzle shape
         const nozzle = this.add.triangle(0, currentY + h, -8, 0, 8, 0, 0, 10, 0x888888);
         this.rocketContainer.add(nozzle);
       }
@@ -145,14 +157,11 @@ export default class FlightScene extends Phaser.Scene {
     }
 
     this.rocketHeight = currentY;
-    this.rocketContainer.setPosition(
-      this.state.x / this.metersPerPixel,
-      this.state.y / this.metersPerPixel - this.rocketHeight
-    );
+    // Position rocket on ground initially
+    this.updateRocketVisual();
   }
 
   createExhaust() {
-    // Create particle emitter for exhaust
     this.exhaustGraphics = this.add.graphics();
     this.exhaustParticles = [];
   }
@@ -163,23 +172,24 @@ export default class FlightScene extends Phaser.Scene {
       p.life -= 1;
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.2;
+      p.vy += 0.2; // particles fall in screen coords (positive = down)
       p.size *= 0.95;
       return p.life > 0;
     });
 
     // Add new particles if thrusting
     if (this.throttle > 0 && this.fuel > 0) {
-      const rocketScreenX = this.state.x / this.metersPerPixel;
-      const rocketScreenY = this.state.y / this.metersPerPixel;
-      const exhaustX = rocketScreenX + Math.sin(this.state.angle) * this.rocketHeight * 0.5;
-      const exhaustY = rocketScreenY + Math.cos(this.state.angle) * this.rocketHeight * 0.5;
+      const screenX = this.state.x / this.metersPerPixel;
+      const screenY = -(this.altitude / this.metersPerPixel);
+      // Exhaust comes from the bottom of the rocket
+      const exhaustX = screenX - Math.sin(this.state.angle) * (this.rocketHeight * 0.5);
+      const exhaustY = screenY + Math.cos(this.state.angle) * (this.rocketHeight * 0.5);
 
       for (let i = 0; i < 3; i++) {
         this.exhaustParticles.push({
           x: exhaustX + (Math.random() - 0.5) * 6,
           y: exhaustY + (Math.random() - 0.5) * 6,
-          vx: Math.sin(this.state.angle) * (2 + Math.random() * 3) + (Math.random() - 0.5) * 2,
+          vx: -Math.sin(this.state.angle) * (2 + Math.random() * 3) + (Math.random() - 0.5) * 2,
           vy: Math.cos(this.state.angle) * (2 + Math.random() * 3) + (Math.random() - 0.5) * 2,
           size: 3 + Math.random() * 4,
           life: 20 + Math.random() * 15,
@@ -246,33 +256,25 @@ export default class FlightScene extends Phaser.Scene {
   }
 
   physicsStep(dt) {
-    // Calculate altitude (distance from planet center minus radius)
-    const posFromCenter = {
-      x: this.state.x,
-      y: this.state.y + PLANET.radius
-    };
-    const distFromCenter = Math.sqrt(posFromCenter.x * posFromCenter.x + posFromCenter.y * posFromCenter.y);
-    this.altitude = distFromCenter - PLANET.radius;
+    this.altitude = this.state.y;
 
-    // Gravity (acceleration) - use full Newtonian vector from calculateGravity
-    const gravity = calculateGravity(
-      { x: this.state.x, y: -this.altitude },
+    // Gravity acceleration (points downward = negative ay)
+    const grav = calculateGravity(
+      this.altitude,
+      this.state.x,
       PLANET.mass,
       PLANET.radius
     );
 
-    const gravAccelX = -gravity.fx;
-    const gravAccelY = -gravity.fy;
-
-    // Drag (acceleration)
+    // Drag acceleration (opposes velocity)
     const drag = calculateDrag(
       { vx: this.state.vx, vy: this.state.vy },
       this.altitude,
       PLANET.atmosphereHeight
     );
 
-    // Thrust (acceleration)
-    let thrustAccel = { fx: 0, fy: 0 };
+    // Thrust acceleration
+    let thrustAccel = { ax: 0, ay: 0 };
     if (this.throttle > 0 && this.fuel > 0) {
       thrustAccel = calculateThrust(
         this.thrust,
@@ -281,48 +283,62 @@ export default class FlightScene extends Phaser.Scene {
         this.totalMass
       );
       const fuelConsumed = this.consumption * this.throttle * dt;
-      this.fuel -= fuelConsumed;
-      if (this.fuel < 0) {
-        this.totalMass -= (fuelConsumed + this.fuel); // Only subtract what was actually consumed
+      if (fuelConsumed >= this.fuel) {
+        // Only consume remaining fuel
+        this.totalMass -= this.fuel;
         this.fuel = 0;
       } else {
+        this.fuel -= fuelConsumed;
         this.totalMass -= fuelConsumed;
       }
     }
 
     // Total acceleration
-    const totalForce = {
-      fx: gravAccelX + drag.fx + thrustAccel.fx,
-      fy: gravAccelY + drag.fy + thrustAccel.fy
+    const totalAccel = {
+      ax: grav.ax + drag.ax + thrustAccel.ax,
+      ay: grav.ay + drag.ay + thrustAccel.ay
     };
 
-    // Integrate
-    const newState = integrateMotion(this.state, totalForce, dt);
+    // Integrate state
+    const newState = integrateMotion(this.state, totalAccel, dt);
     this.state = newState;
 
-    // Ground collision
-    if (this.altitude <= 0) {
+    // Ground collision: altitude cannot go below 0
+    if (this.state.y <= 0) {
       this.state.y = 0;
+      this.altitude = 0;
       const impactSpeed = Math.sqrt(this.state.vx * this.state.vx + this.state.vy * this.state.vy);
       if (impactSpeed > 50) {
         this.crash();
       } else {
-        // Landed safely
-        this.state.vy = 0;
+        // Landed safely - stop downward movement
+        if (this.state.vy < 0) {
+          this.state.vy = 0;
+        }
         this.state.vx *= 0.9;
-        if (this.altitude < 0) this.altitude = 0;
       }
     }
+
+    this.altitude = this.state.y;
 
     // Track max speed
     const speed = Math.sqrt(this.state.vx * this.state.vx + this.state.vy * this.state.vy);
     if (speed > this.maxSpeed) this.maxSpeed = speed;
 
-    // Calculate orbital params
+    // Calculate orbital params when above surface
     if (this.altitude > 1000) {
+      // Position relative to planet center:
+      // planet center is at (0, -(radius)) in our coordinate system
+      // rocket is at (state.x, state.y) above surface
+      // so relative to planet center: (state.x, state.y + radius)
+      const posFromCenter = {
+        x: this.state.x,
+        y: this.altitude + PLANET.radius
+      };
+      // Velocity in the same frame (vy positive = away from center)
       this.orbitalParams = calculateOrbitalParams(
         posFromCenter,
-        { vx: this.state.vx, vy: -this.state.vy },
+        { vx: this.state.vx, vy: this.state.vy },
         PLANET.mass,
         PLANET.radius
       );
@@ -332,47 +348,47 @@ export default class FlightScene extends Phaser.Scene {
   }
 
   updateRocketVisual() {
+    // Convert world coords to screen coords
+    // Screen: x = state.x / metersPerPixel, y = -(altitude / metersPerPixel)
+    // Rocket container origin is at its top, so offset by rocketHeight
     const screenX = this.state.x / this.metersPerPixel;
-    const screenY = -this.altitude / this.metersPerPixel - PLANET.surfaceY;
+    const screenY = -(this.altitude / this.metersPerPixel) - this.rocketHeight;
     this.rocketContainer.setPosition(screenX, screenY);
     this.rocketContainer.setRotation(this.state.angle);
   }
 
   updateCamera() {
     const screenX = this.state.x / this.metersPerPixel;
-    const screenY = -this.altitude / this.metersPerPixel - PLANET.surfaceY;
-    this.cameras.main.centerOn(screenX, screenY - 50);
+    const screenY = -(this.altitude / this.metersPerPixel);
+    this.cameras.main.centerOn(screenX, screenY - 100);
   }
 
   checkConditions() {
+    // Win: stable orbit with periapsis above 50km (lowered from 100km for playability)
+    const orbitThreshold = 50000; // 50 km
     if (this.orbitalParams && this.orbitalParams.isBound) {
-      if (this.orbitalParams.periapsisAlt > PLANET.atmosphereHeight && this.orbitalParams.eccentricity < 1) {
-        // Periapsis is above atmosphere - start or continue dwell timer
+      if (this.orbitalParams.periapsisAlt > orbitThreshold && this.orbitalParams.eccentricity < 1) {
         if (!this.orbitDwellStart) {
           this.orbitDwellStart = this.time.now;
         } else if (this.time.now - this.orbitDwellStart > 2000) {
-          // Stable orbit achieved after 2+ seconds of dwell!
           this.gameWon = true;
           this.gameOver = true;
         }
       } else {
-        // Conditions not met, reset dwell timer
         this.orbitDwellStart = null;
       }
     } else {
       this.orbitDwellStart = null;
     }
 
-    // Fuel depleted on suborbital trajectory
+    // Lose: fuel depleted on suborbital trajectory and falling back down
     if (this.fuel <= 0 && this.altitude > 100 && !this.gameWon) {
       if (!this.orbitalParams || this.orbitalParams.periapsisAlt <= 0) {
-        // Still suborbital and out of fuel - will crash eventually
-        // Only trigger after a few seconds
         if (!this.outOfFuelTime) {
           this.outOfFuelTime = this.time.now;
         } else if (this.time.now - this.outOfFuelTime > 3000) {
-          if (this.state.vy > 0) {
-            // Falling back down
+          // vy < 0 means falling back down in our coordinate system
+          if (this.state.vy < 0) {
             this.gameOver = true;
           }
         }
@@ -384,9 +400,9 @@ export default class FlightScene extends Phaser.Scene {
     this.gameOver = true;
     this.gameWon = false;
 
-    // Explosion effect
+    // Explosion effect at ground level
     const screenX = this.state.x / this.metersPerPixel;
-    const screenY = -PLANET.surfaceY;
+    const screenY = 0; // ground level
     for (let i = 0; i < 20; i++) {
       this.exhaustParticles.push({
         x: screenX + (Math.random() - 0.5) * 20,

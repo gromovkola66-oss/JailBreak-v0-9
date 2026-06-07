@@ -70,12 +70,9 @@ export default class OrbitScene extends Phaser.Scene {
 
     if (!state) return;
 
-    // Scale: map planet radius (35px) = real planet radius
-    // So scale factor = 35 / PLANET.radius
-    // PLANET is imported directly from main.js
-
-    // Use a dynamic scale based on orbit size
     const altitude = data.altitude || 0;
+
+    // Dynamic scale based on orbit size
     let maxAlt = altitude * 2;
     if (data.orbitalParams && data.orbitalParams.apoapsisAlt > 0 && isFinite(data.orbitalParams.apoapsisAlt)) {
       maxAlt = Math.max(maxAlt, data.orbitalParams.apoapsisAlt * 1.2);
@@ -84,38 +81,40 @@ export default class OrbitScene extends Phaser.Scene {
 
     const scale = (this.mapRadius - this.planetRadius) / maxAlt;
 
-    // Update rocket position on map
+    // Rocket position on the mini-map
+    // In our coordinate system: state.x = horizontal, state.y = altitude
+    // On the map, angle from vertical based on x offset and distance from center
+    const distFromCenter = altitude + PLANET.radius;
+    const angle = Math.atan2(state.x, distFromCenter);
     const rocketMapDist = this.planetRadius + altitude * scale;
-    const angle = Math.atan2(state.x, -(state.y)); // Angle from center
     const rocketMapX = this.mapX + Math.sin(angle) * rocketMapDist;
     const rocketMapY = this.mapY - Math.cos(angle) * rocketMapDist;
 
     this.rocketDot.setPosition(rocketMapX, rocketMapY);
 
-    // Draw trajectory if we have orbital params
+    // Draw trajectory
     this.trajectoryGraphics.clear();
 
     if (data.orbitalParams && data.orbitalParams.isBound && data.orbitalParams.eccentricity < 1) {
       const params = data.orbitalParams;
 
-      // Draw elliptical orbit
-      const a = params.semiMajorAxis * scale; // semi-major in map pixels
+      const a = params.semiMajorAxis;
       const e = params.eccentricity;
-      const b = a * Math.sqrt(1 - e * e); // semi-minor
 
-      if (a > 0 && b > 0 && isFinite(a) && isFinite(b)) {
+      if (a > 0 && isFinite(a)) {
         this.trajectoryGraphics.lineStyle(1, 0x44aaff, 0.6);
 
-        // Draw orbit as series of points
+        // Draw orbit as series of points using the orbit equation r = a(1-e^2)/(1+e*cos(theta))
         const points = [];
         const steps = 64;
         for (let i = 0; i <= steps; i++) {
           const theta = (i / steps) * Math.PI * 2;
-          const r = (params.semiMajorAxis * (1 - e * e)) / (1 + e * Math.cos(theta));
-          const orbitDist = this.planetRadius + (r - PLANET.radius) * scale;
+          const r = (a * (1 - e * e)) / (1 + e * Math.cos(theta));
+          const orbitAlt = r - PLANET.radius;
+          const orbitDist = this.planetRadius + orbitAlt * scale;
 
           // Clamp to map bounds
-          const clampedDist = Math.min(orbitDist, this.mapRadius);
+          const clampedDist = Math.min(Math.max(orbitDist, 0), this.mapRadius);
           const px = this.mapX + Math.sin(theta + angle) * clampedDist;
           const py = this.mapY - Math.cos(theta + angle) * clampedDist;
           points.push({ x: px, y: py });
@@ -130,7 +129,7 @@ export default class OrbitScene extends Phaser.Scene {
         }
         this.trajectoryGraphics.strokePath();
 
-        // Apoapsis marker
+        // Apoapsis marker (top of orbit on map)
         const apoMapDist = this.planetRadius + params.apoapsisAlt * scale;
         if (apoMapDist < this.mapRadius && apoMapDist > 0) {
           this.apoMarker.setPosition(this.mapX, this.mapY - apoMapDist).setVisible(true);
@@ -140,7 +139,7 @@ export default class OrbitScene extends Phaser.Scene {
           this.apoLabel.setVisible(false);
         }
 
-        // Periapsis marker
+        // Periapsis marker (bottom of orbit on map)
         const periMapDist = this.planetRadius + Math.max(0, params.periapsisAlt) * scale;
         if (periMapDist < this.mapRadius && periMapDist > 0) {
           this.periMarker.setPosition(this.mapX, this.mapY + periMapDist).setVisible(true);
@@ -149,6 +148,11 @@ export default class OrbitScene extends Phaser.Scene {
           this.periMarker.setVisible(false);
           this.periLabel.setVisible(false);
         }
+      } else {
+        this.apoMarker.setVisible(false);
+        this.apoLabel.setVisible(false);
+        this.periMarker.setVisible(false);
+        this.periLabel.setVisible(false);
       }
     } else {
       this.apoMarker.setVisible(false);
@@ -162,23 +166,24 @@ export default class OrbitScene extends Phaser.Scene {
         this.trajectoryGraphics.beginPath();
         this.trajectoryGraphics.moveTo(rocketMapX, rocketMapY);
 
-        // Simple trajectory prediction
+        // Simple trajectory prediction using gravity
         let predX = state.x;
-        let predY = state.y;
+        let predAlt = altitude;
         let predVx = state.vx;
         let predVy = state.vy;
         const predDt = 2;
 
         for (let step = 0; step < 50; step++) {
-          predVy += 9.81 * predDt;
+          // Gravity pulls down (negative vy)
+          predVy -= 9.81 * predDt;
           predX += predVx * predDt;
-          predY += predVy * predDt;
+          predAlt += predVy * predDt;
 
-          const predAlt = -predY;
           if (predAlt < 0) break;
 
+          const pDistFromCenter = predAlt + PLANET.radius;
+          const pAngle = Math.atan2(predX, pDistFromCenter);
           const pDist = this.planetRadius + predAlt * scale;
-          const pAngle = Math.atan2(predX, -predY);
           const px = this.mapX + Math.sin(pAngle) * Math.min(pDist, this.mapRadius);
           const py = this.mapY - Math.cos(pAngle) * Math.min(pDist, this.mapRadius);
           this.trajectoryGraphics.lineTo(px, py);

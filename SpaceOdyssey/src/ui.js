@@ -39,8 +39,8 @@ export default class UIScene extends Phaser.Scene {
 
     // Fuel bar
     this.add.text(leftX, 175, 'FUEL', { fontSize: '11px', color: '#ffffff', fontFamily: 'monospace' });
-    this.fuelBarBg = this.add.rectangle(120, 190, 180, 14, 0x333333).setStrokeStyle(1, 0x666666);
-    this.fuelBar = this.add.rectangle(31, 184, 180, 12, 0x44cc44).setOrigin(0, 0);
+    this.fuelBarBg = this.add.rectangle(120, 192, 180, 14, 0x333333).setStrokeStyle(1, 0x666666);
+    this.fuelBar = this.add.rectangle(31, 186, 180, 10, 0x44cc44).setOrigin(0, 0);
 
     // Game over text (hidden initially)
     this.gameOverText = this.add.text(512, 350, '', {
@@ -68,7 +68,7 @@ export default class UIScene extends Phaser.Scene {
     this.altitudeText.setText(`ALT: ${this.formatDistance(data.altitude)}`);
     this.speedText.setText(`SPD: ${data.speed.toFixed(1)} m/s`);
     this.vxText.setText(`Vx: ${data.vx.toFixed(1)} m/s`);
-    this.vyText.setText(`Vy: ${(-data.vy).toFixed(1)} m/s`);
+    this.vyText.setText(`Vy: ${data.vy.toFixed(1)} m/s`);
     this.throttleText.setText(`THR: ${(data.throttle * 100).toFixed(0)}%`);
     this.twrText.setText(`TWR: ${data.twr.toFixed(2)}`);
     this.angleText.setText(`ANG: ${(data.angle * 180 / Math.PI).toFixed(1)} deg`);
