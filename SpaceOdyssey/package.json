@@ -1,0 +1,13 @@
+{
+  "name": "space-odyssey",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A 2D space game inspired by Kerbal Space Program, built with Phaser.js 3",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}
