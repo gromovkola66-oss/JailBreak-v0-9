@@ -313,11 +313,11 @@ export default class BuilderScene extends Phaser.Scene {
 
     const rocketConfig = {
       modules: [...this.rocketModules],
-      totalMass,
+      totalMass: totalMass + totalFuel,  // Launch mass includes fuel weight
       totalFuel,
       totalThrust,
       totalConsumption,
-      dryMass: totalMass - totalFuel // subtract fuel mass from total
+      dryMass: totalMass  // Hardware mass only
     };
 
     this.scene.start('FlightScene', { rocketConfig });

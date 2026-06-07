@@ -261,8 +261,8 @@ export default class FlightScene extends Phaser.Scene {
       PLANET.radius
     );
 
-    const gravAccelX = gravity.fx;
-    const gravAccelY = gravity.fy;
+    const gravAccelX = -gravity.fx;
+    const gravAccelY = -gravity.fy;
 
     // Drag (acceleration)
     const drag = calculateDrag(
@@ -320,9 +320,8 @@ export default class FlightScene extends Phaser.Scene {
 
     // Calculate orbital params
     if (this.altitude > 1000) {
-      const posRel = { x: this.state.x, y: distFromCenter };
       this.orbitalParams = calculateOrbitalParams(
-        posRel,
+        posFromCenter,
         { vx: this.state.vx, vy: -this.state.vy },
         PLANET.mass,
         PLANET.radius
