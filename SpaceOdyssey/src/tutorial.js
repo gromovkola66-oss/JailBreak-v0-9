@@ -75,6 +75,7 @@ class TutorialManager {
     const bg = scene.add.rectangle(512, 700, 500, 60, 0x000000, 0.85);
     bg.setStrokeStyle(2, 0x44aaff);
     bg.setDepth(1000);
+    bg.setScrollFactor(0);
 
     // Tip text
     const tipText = scene.add.text(512, 692, text, {
@@ -82,14 +83,14 @@ class TutorialManager {
       color: '#ffffff',
       fontFamily: 'monospace',
       wordWrap: { width: 460 }
-    }).setOrigin(0.5).setDepth(1001);
+    }).setOrigin(0.5).setDepth(1001).setScrollFactor(0);
 
     // Next button text
     const nextText = scene.add.text(512, 718, '[Далее]', {
       fontSize: '12px',
       color: '#44aaff',
       fontFamily: 'monospace'
-    }).setOrigin(0.5).setDepth(1001).setInteractive({ useHandCursor: true });
+    }).setOrigin(0.5).setDepth(1001).setInteractive({ useHandCursor: true }).setScrollFactor(0);
 
     nextText.on('pointerdown', () => {
       this.currentIndex++;

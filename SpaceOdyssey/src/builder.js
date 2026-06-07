@@ -113,6 +113,10 @@ export default class BuilderScene extends Phaser.Scene {
   }
 
   create() {
+    // Reset state on each scene start (constructor only runs once)
+    this.rocketModules = [];
+    this.moduleSprites = [];
+
     this.cameras.main.setBackgroundColor('#1a1a2e');
 
     // Title
@@ -312,7 +316,7 @@ export default class BuilderScene extends Phaser.Scene {
       totalConsumption += mod.consumption;
     });
 
-    const twr = totalMass > 0 ? totalThrust / (totalMass * 9.81) : 0;
+    const twr = (totalMass + totalFuel) > 0 ? totalThrust / ((totalMass + totalFuel) * 9.81) : 0;
 
     this.massText.setText(`Mass: ${totalMass} kg`);
     this.fuelText.setText(`Fuel: ${totalFuel}`);

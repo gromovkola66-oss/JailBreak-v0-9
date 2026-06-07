@@ -38,8 +38,6 @@ export default class FlightScene extends Phaser.Scene {
       angularVel: 0
     };
 
-    this.fuel = this.rocketConfig.totalFuel;
-    this.totalMass = this.rocketConfig.totalMass;
     this.thrust = this.rocketConfig.totalThrust;
     this.consumption = this.rocketConfig.totalConsumption;
     this.throttle = 0;
@@ -51,21 +49,18 @@ export default class FlightScene extends Phaser.Scene {
     // Active modules (copy for staging)
     this.activeModules = [...this.rocketConfig.modules];
 
-    // Booster fuel tracking
+    // Separate fuel pools by type to avoid double-counting
+    this.fuel = 0;
     this.boosterFuel = 0;
-    this.activeModules.forEach(mod => {
-      if (mod.type === 'booster') {
-        this.boosterFuel += mod.fuel;
-      }
-    });
-
-    // RCS fuel tracking
     this.rcsFuel = 0;
     this.activeModules.forEach(mod => {
-      if (mod.type === 'rcs') {
-        this.rcsFuel += mod.fuel;
-      }
+      if (mod.type === 'tank') this.fuel += mod.fuel;
+      else if (mod.type === 'booster') this.boosterFuel += mod.fuel;
+      else if (mod.type === 'rcs') this.rcsFuel += mod.fuel;
     });
+
+    // Total mass = dry mass + all fuel pools
+    this.totalMass = this.rocketConfig.dryMass + this.fuel + this.boosterFuel + this.rcsFuel;
 
     // Parachute state
     this.hasParachute = this.activeModules.some(m => m.type === 'parachute');
@@ -243,7 +238,7 @@ export default class FlightScene extends Phaser.Scene {
     });
 
     // Add new particles if thrusting
-    if (this.throttle > 0 && this.fuel > 0) {
+    if (this.throttle > 0 && (this.fuel + this.boosterFuel) > 0) {
       const screenX = this.state.x / this.metersPerPixel;
       const screenY = -(this.altitude / this.metersPerPixel);
       const exhaustX = screenX - Math.sin(this.state.angle) * (this.rocketHeight * 0.5);
@@ -312,7 +307,7 @@ export default class FlightScene extends Phaser.Scene {
     this.updateDetachedStages(delta / 1000 * warpMultiplier);
 
     // Update audio
-    if (this.throttle > 0 && this.fuel > 0) {
+    if (this.throttle > 0 && (this.fuel + this.boosterFuel) > 0) {
       if (!this.audio.engineNodes) {
         this.audio.startEngine();
       }
@@ -420,7 +415,7 @@ export default class FlightScene extends Phaser.Scene {
     this.fuel = Math.min(this.fuel, totalFuel);
     this.boosterFuel = Math.min(this.boosterFuel, boosterFuel);
     this.rcsFuel = Math.min(this.rcsFuel, rcsFuel);
-    this.totalMass = totalMass + this.fuel + this.boosterFuel;
+    this.totalMass = totalMass + this.fuel + this.boosterFuel + this.rcsFuel;
     this.thrust = totalThrust;
     this.consumption = totalConsumption;
 
