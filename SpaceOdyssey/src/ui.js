@@ -42,6 +42,28 @@ export default class UIScene extends Phaser.Scene {
     this.fuelBarBg = this.add.rectangle(120, 192, 180, 14, 0x333333).setStrokeStyle(1, 0x666666);
     this.fuelBar = this.add.rectangle(31, 186, 180, 10, 0x44cc44).setOrigin(0, 0);
 
+    // Time warp display
+    this.warpText = this.add.text(512, 20, 'WARP: x1', {
+      fontSize: '16px',
+      color: '#ffffff',
+      fontFamily: 'monospace',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    // Stage indicator
+    this.stageText = this.add.text(512, 45, 'STAGE: 1', {
+      fontSize: '13px',
+      color: '#cccccc',
+      fontFamily: 'monospace'
+    }).setOrigin(0.5);
+
+    // Parachute status
+    this.parachuteText = this.add.text(512, 65, '', {
+      fontSize: '13px',
+      color: '#ffdd00',
+      fontFamily: 'monospace'
+    }).setOrigin(0.5);
+
     // Game over text (hidden initially)
     this.gameOverText = this.add.text(512, 350, '', {
       fontSize: '36px',
@@ -82,6 +104,31 @@ export default class UIScene extends Phaser.Scene {
       this.fuelBar.setFillStyle(0xffaa44);
     } else {
       this.fuelBar.setFillStyle(0x44cc44);
+    }
+
+    // Update time warp display
+    const warp = data.warpMultiplier || 1;
+    this.warpText.setText(`WARP: x${warp}`);
+    if (warp > 1) {
+      this.warpText.setColor('#ffff44');
+    } else {
+      this.warpText.setColor('#ffffff');
+    }
+
+    // Update stage indicator
+    this.stageText.setText(`STAGE: ${data.currentStage || 1}`);
+
+    // Update parachute status
+    if (data.hasParachute) {
+      if (data.parachuteDeployed) {
+        this.parachuteText.setText('CHUTE: DEPLOYED');
+        this.parachuteText.setColor('#44ff44');
+      } else {
+        this.parachuteText.setText('CHUTE: READY [P]');
+        this.parachuteText.setColor('#ffdd00');
+      }
+    } else {
+      this.parachuteText.setText('');
     }
 
     // Update orbital data

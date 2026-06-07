@@ -1,6 +1,7 @@
 /**
  * Builder Scene - Rocket construction with drag-and-drop modules
  */
+import TutorialManager from './tutorial.js';
 
 const MODULE_DEFS = {
   capsule: {
@@ -57,6 +58,50 @@ const MODULE_DEFS = {
     width: 40,
     height: 45,
     type: 'engine'
+  },
+  booster: {
+    name: 'Booster',
+    mass: 250,
+    fuel: 500,
+    thrust: 50000,
+    consumption: 40,
+    color: 0xff8800,
+    width: 20,
+    height: 60,
+    type: 'booster'
+  },
+  parachute: {
+    name: 'Parachute',
+    mass: 50,
+    fuel: 0,
+    thrust: 0,
+    consumption: 0,
+    color: 0xffdd00,
+    width: 40,
+    height: 20,
+    type: 'parachute'
+  },
+  rcs: {
+    name: 'RCS Thruster',
+    mass: 30,
+    fuel: 50,
+    thrust: 500,
+    consumption: 1,
+    color: 0xaaaaff,
+    width: 40,
+    height: 15,
+    type: 'rcs'
+  },
+  decoupler: {
+    name: 'Decoupler',
+    mass: 20,
+    fuel: 0,
+    thrust: 0,
+    consumption: 0,
+    color: 0xffff00,
+    width: 40,
+    height: 10,
+    type: 'decoupler'
   }
 };
 
@@ -93,12 +138,12 @@ export default class BuilderScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Create module buttons in palette
-    let paletteY = 160;
+    let paletteY = 150;
     const keys = Object.keys(MODULE_DEFS);
     keys.forEach((key) => {
       const def = MODULE_DEFS[key];
       this.createPaletteItem(120, paletteY, key, def);
-      paletteY += 90;
+      paletteY += 65;
     });
 
     // Rocket assembly area
@@ -171,19 +216,23 @@ export default class BuilderScene extends Phaser.Scene {
     clearBtn.on('pointerdown', () => this.clearRocket());
 
     this.updateStats();
+
+    // Show tutorial tips for first-time players
+    this.tutorial = new TutorialManager();
+    this.tutorial.showBuilderTips(this);
   }
 
   createPaletteItem(x, y, key, def) {
-    const bg = this.add.rectangle(x, y, 180, 75, 0x333355, 0.8).setStrokeStyle(1, 0x5555aa);
+    const bg = this.add.rectangle(x, y, 180, 55, 0x333355, 0.8).setStrokeStyle(1, 0x5555aa);
     bg.setInteractive({ useHandCursor: true });
 
     // Module visual
-    const moduleRect = this.add.rectangle(x - 55, y, def.width * 0.6, def.height * 0.6, def.color);
+    const moduleRect = this.add.rectangle(x - 55, y, def.width * 0.5, def.height * 0.5, def.color);
     moduleRect.setStrokeStyle(1, 0xffffff);
 
     // Module info
-    this.add.text(x - 25, y - 20, def.name, {
-      fontSize: '12px',
+    this.add.text(x - 25, y - 14, def.name, {
+      fontSize: '11px',
       color: '#ffffff',
       fontFamily: 'monospace'
     });
@@ -192,8 +241,8 @@ export default class BuilderScene extends Phaser.Scene {
     if (def.fuel > 0) info += ` F:${def.fuel}`;
     if (def.thrust > 0) info += ` T:${(def.thrust / 1000).toFixed(0)}kN`;
 
-    this.add.text(x - 25, y + 5, info, {
-      fontSize: '10px',
+    this.add.text(x - 25, y + 4, info, {
+      fontSize: '9px',
       color: '#aaaaaa',
       fontFamily: 'monospace'
     });
@@ -284,9 +333,9 @@ export default class BuilderScene extends Phaser.Scene {
   launchRocket() {
     if (this.rocketModules.length === 0) return;
 
-    // Verify rocket has at least a capsule and an engine
+    // Verify rocket has at least a capsule and an engine (or booster)
     const hasCapsule = this.rocketModules.some(m => m.type === 'capsule');
-    const hasEngine = this.rocketModules.some(m => m.type === 'engine');
+    const hasEngine = this.rocketModules.some(m => m.type === 'engine' || m.type === 'booster');
 
     if (!hasCapsule || !hasEngine) {
       const warnText = this.add.text(512, 750, 'Need at least a Capsule and an Engine!', {
