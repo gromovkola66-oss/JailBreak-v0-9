@@ -254,18 +254,15 @@ export default class FlightScene extends Phaser.Scene {
     const distFromCenter = Math.sqrt(posFromCenter.x * posFromCenter.x + posFromCenter.y * posFromCenter.y);
     this.altitude = distFromCenter - PLANET.radius;
 
-    // Gravity (acceleration)
+    // Gravity (acceleration) - use full Newtonian vector from calculateGravity
     const gravity = calculateGravity(
       { x: this.state.x, y: -this.altitude },
       PLANET.mass,
       PLANET.radius
     );
 
-    // Scale gravity for gameplay (use surface gravity as baseline)
-    const surfaceGravity = 9.81;
-    const gravityRatio = (PLANET.radius * PLANET.radius) / (distFromCenter * distFromCenter);
-    const gravAccelX = 0;
-    const gravAccelY = surfaceGravity * gravityRatio;
+    const gravAccelX = gravity.fx;
+    const gravAccelY = gravity.fy;
 
     // Drag (acceleration)
     const drag = calculateDrag(
@@ -283,8 +280,14 @@ export default class FlightScene extends Phaser.Scene {
         this.throttle,
         this.totalMass
       );
-      this.fuel -= this.consumption * this.throttle * dt;
-      if (this.fuel < 0) this.fuel = 0;
+      const fuelConsumed = this.consumption * this.throttle * dt;
+      this.fuel -= fuelConsumed;
+      if (this.fuel < 0) {
+        this.totalMass -= (fuelConsumed + this.fuel); // Only subtract what was actually consumed
+        this.fuel = 0;
+      } else {
+        this.totalMass -= fuelConsumed;
+      }
     }
 
     // Total acceleration
@@ -344,11 +347,21 @@ export default class FlightScene extends Phaser.Scene {
 
   checkConditions() {
     if (this.orbitalParams && this.orbitalParams.isBound) {
-      if (this.orbitalParams.periapsisAlt > 0 && this.orbitalParams.eccentricity < 1) {
-        // Stable orbit achieved!
-        this.gameWon = true;
-        this.gameOver = true;
+      if (this.orbitalParams.periapsisAlt > PLANET.atmosphereHeight && this.orbitalParams.eccentricity < 1) {
+        // Periapsis is above atmosphere - start or continue dwell timer
+        if (!this.orbitDwellStart) {
+          this.orbitDwellStart = this.time.now;
+        } else if (this.time.now - this.orbitDwellStart > 2000) {
+          // Stable orbit achieved after 2+ seconds of dwell!
+          this.gameWon = true;
+          this.gameOver = true;
+        }
+      } else {
+        // Conditions not met, reset dwell timer
+        this.orbitDwellStart = null;
       }
+    } else {
+      this.orbitDwellStart = null;
     }
 
     // Fuel depleted on suborbital trajectory

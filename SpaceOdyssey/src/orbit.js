@@ -2,6 +2,7 @@
  * Orbit Scene - Mini orbital map overlay
  * Shows planet, rocket position, and trajectory
  */
+import { PLANET } from './main.js';
 
 export default class OrbitScene extends Phaser.Scene {
   constructor() {
@@ -71,7 +72,7 @@ export default class OrbitScene extends Phaser.Scene {
 
     // Scale: map planet radius (35px) = real planet radius
     // So scale factor = 35 / PLANET.radius
-    const { PLANET } = this.flightScene.scene.systems.game.config;
+    // PLANET is imported directly from main.js
 
     // Use a dynamic scale based on orbit size
     const altitude = data.altitude || 0;
@@ -111,7 +112,7 @@ export default class OrbitScene extends Phaser.Scene {
         for (let i = 0; i <= steps; i++) {
           const theta = (i / steps) * Math.PI * 2;
           const r = (params.semiMajorAxis * (1 - e * e)) / (1 + e * Math.cos(theta));
-          const orbitDist = this.planetRadius + (r - this.flightScene.constructor.PLANET_RADIUS || r) * scale;
+          const orbitDist = this.planetRadius + (r - PLANET.radius) * scale;
 
           // Clamp to map bounds
           const clampedDist = Math.min(orbitDist, this.mapRadius);

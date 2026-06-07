@@ -317,7 +317,7 @@ export default class BuilderScene extends Phaser.Scene {
       totalFuel,
       totalThrust,
       totalConsumption,
-      dryMass: totalMass - 0 // fuel mass is separate
+      dryMass: totalMass - totalFuel // subtract fuel mass from total
     };
 
     this.scene.start('FlightScene', { rocketConfig });
