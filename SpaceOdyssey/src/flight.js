@@ -129,6 +129,9 @@ export default class FlightScene extends Phaser.Scene {
     this.accumulator = 0;
     this.fixedDt = 1 / 60;
 
+    // RCS active flag (fuel consumed in physicsStep)
+    this.rcsActive = false;
+
     // Track space key to detect single press
     this.spaceWasDown = false;
   }
@@ -306,7 +309,7 @@ export default class FlightScene extends Phaser.Scene {
     this.updateRocketVisual();
     this.updateExhaust();
     this.updateCamera();
-    this.updateDetachedStages(delta / 1000);
+    this.updateDetachedStages(delta / 1000 * warpMultiplier);
 
     // Update audio
     if (this.throttle > 0 && this.fuel > 0) {
@@ -339,16 +342,15 @@ export default class FlightScene extends Phaser.Scene {
     } else if (this.dKey.isDown || this.cursors.right.isDown) {
       this.state.angularVel = rotSpeed;
     } else if (this.qKey.isDown && this.rcsFuel > 0) {
-      // RCS fine rotation left
+      // RCS fine rotation left (fuel consumed in physicsStep)
       this.state.angularVel = -0.5;
-      this.rcsFuel -= 0.1;
-      if (this.rcsFuel < 0) this.rcsFuel = 0;
+      this.rcsActive = true;
     } else if (this.eKey.isDown && this.rcsFuel > 0) {
-      // RCS fine rotation right
+      // RCS fine rotation right (fuel consumed in physicsStep)
       this.state.angularVel = 0.5;
-      this.rcsFuel -= 0.1;
-      if (this.rcsFuel < 0) this.rcsFuel = 0;
+      this.rcsActive = true;
     } else {
+      this.rcsActive = false;
       this.state.angularVel *= 0.9;
     }
 
@@ -457,16 +459,16 @@ export default class FlightScene extends Phaser.Scene {
     this.detachedStages.push({
       container,
       vy: 2, // starts drifting down in screen coords (positive = down)
-      life: 120 // frames to live
+      life: 2 // seconds to live
     });
   }
 
   updateDetachedStages(dt) {
     this.detachedStages = this.detachedStages.filter(stage => {
-      stage.vy += 0.3; // gravity in screen coords
-      stage.container.y += stage.vy;
-      stage.container.alpha -= 0.005;
-      stage.life--;
+      stage.vy += 18 * dt; // gravity in screen coords (scaled by dt)
+      stage.container.y += stage.vy * dt * 60; // normalize drift to ~60fps equivalent
+      stage.container.alpha -= 0.3 * dt; // fade over time
+      stage.life -= dt;
       if (stage.life <= 0) {
         stage.container.destroy();
         return false;
@@ -485,6 +487,12 @@ export default class FlightScene extends Phaser.Scene {
 
   physicsStep(dt) {
     this.altitude = this.state.y;
+
+    // RCS fuel consumption (frame-rate independent, scaled by dt)
+    if (this.rcsActive && this.rcsFuel > 0) {
+      const rcsDrain = 6.0 * dt; // 6 units/sec (consistent with original 0.1/frame at 60fps)
+      this.rcsFuel = Math.max(0, this.rcsFuel - rcsDrain);
+    }
 
     // Gravity acceleration (points downward = negative ay)
     const grav = calculateGravity(
@@ -668,11 +676,17 @@ export default class FlightScene extends Phaser.Scene {
 
   getFlightData() {
     const speed = Math.sqrt(this.state.vx * this.state.vx + this.state.vy * this.state.vy);
+    // Compute maxFuel from currently active modules (updates after staging)
+    let maxFuel = 0;
+    this.activeModules.forEach(mod => {
+      if (mod.type === 'tank') maxFuel += mod.fuel;
+      if (mod.type === 'booster') maxFuel += mod.fuel;
+    });
     return {
       altitude: this.altitude || 0,
       speed: speed,
       fuel: this.fuel + this.boosterFuel,
-      maxFuel: this.rocketConfig.totalFuel,
+      maxFuel: maxFuel,
       throttle: this.throttle,
       angle: this.state.angle,
       twr: this.totalMass > 0 ? this.thrust / (this.totalMass * 9.81) : 0,

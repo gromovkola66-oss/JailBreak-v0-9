@@ -145,6 +145,13 @@ class AudioManager {
     gain.connect(ctx.destination);
     source.start();
     source.stop(ctx.currentTime + 1.5);
+
+    // Cleanup nodes after sound completes
+    source.onended = () => {
+      source.disconnect();
+      filter.disconnect();
+      gain.disconnect();
+    };
   }
 
   playVictory() {
@@ -170,6 +177,12 @@ class AudioManager {
       gain.connect(ctx.destination);
       osc.start(ctx.currentTime + i * duration);
       osc.stop(ctx.currentTime + i * duration + duration);
+
+      // Cleanup nodes after sound completes
+      osc.onended = () => {
+        osc.disconnect();
+        gain.disconnect();
+      };
     });
   }
 }
