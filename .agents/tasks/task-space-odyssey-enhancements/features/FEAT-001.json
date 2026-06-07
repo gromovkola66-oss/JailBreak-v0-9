@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Add programmatic sound effects via Web Audio API, time warp system, new rocket modules (Booster, Parachute, RCS, Decoupler), staging system with decoupler separation, and a mini-tutorial system using localStorage.",
+  "status": "completed",
+  "steps": [
+    "Step 1: Create src/audio.js - a new module that generates sounds programmatically using Web Audio API (no external files). Implement: (a) engineSound(throttle) - looping engine roar with volume proportional to throttle (0-1), using oscillator + noise; (b) explosionSound() - one-shot explosion on crash; (c) victorySound() - short melodic jingle on orbit achievement. Export a singleton AudioManager class with methods: startEngine(), updateEngine(throttle), stopEngine(), playExplosion(), playVictory(). Use AudioContext, OscillatorNode, GainNode, and BiquadFilterNode. The engine sound should use detuned sawtooth oscillators mixed with filtered noise for realism.",
+
+    "Step 2: Create src/timewarp.js - export a TimeWarp manager. State: currentMultiplier (default 1), available multipliers: {1:1, 2:2, 3:5, 4:10}. Methods: setWarp(level), getMultiplier(), reset(). When thrust is active (throttle > 0), auto-reset to x1. The HUD should display the current warp factor.",
+
+    "Step 3: Update src/builder.js MODULE_DEFS - add four new module definitions: (a) 'booster': {name:'Booster', mass:250, fuel:500, thrust:50000, consumption:40, color:0xff8800, width:20, height:60, type:'booster'} - high thrust, low fuel, narrow (side-mounted visually); (b) 'parachute': {name:'Parachute', mass:50, fuel:0, thrust:0, consumption:0, color:0xffdd00, width:40, height:20, type:'parachute'} - reduces speed in atmosphere when activated by P key; (c) 'rcs': {name:'RCS Thruster', mass:30, fuel:50, thrust:500, consumption:1, color:0xaaaaff, width:40, height:15, type:'rcs'} - small thrust for precise orbital maneuvering, Q/E keys for RCS rotation; (d) 'decoupler': {name:'Decoupler', mass:20, fuel:0, thrust:0, consumption:0, color:0xffff00, width:40, height:10, type:'decoupler'} - marks stage separation point.",
+
+    "Step 4: Update src/flight.js - Integrate all new systems: (a) Import AudioManager from audio.js, initialize in create(), call updateEngine(throttle) every frame, playExplosion() on crash(), playVictory() on orbit win; (b) Import TimeWarp from timewarp.js, add key bindings for 1/2/3/4, multiply fixedDt by warp multiplier in the physics loop (run multiple physics steps per frame when warped), auto-reset warp to x1 if throttle > 0; (c) Add staging: on create(), analyze rocketConfig.modules to find decoupler positions and build a 'stages' array. On Space key press, detach the lowest stage (all modules below the lowest remaining decoupler). Update totalMass, fuel, thrust, consumption to reflect only remaining modules. Create a visual effect of the detached stage falling away (a container that drifts downward with gravity); (d) Add parachute activation: on P key, if rocket has parachute module and altitude < atmosphereHeight, apply strong drag multiplier (e.g., 10x) to slow descent. Show visual indicator; (e) Add RCS control: if rocket has RCS module, Q/E keys provide precise angular velocity control (much smaller rotation than A/D). Consume RCS fuel separately; (f) Add booster logic: boosters contribute thrust and fuel like engines/tanks but are the first to be consumed (drain booster fuel before main tank fuel). When booster fuel is depleted, they can be staged off.",
+
+    "Step 5: Update src/ui.js - Add time warp display to HUD (show 'WARP: x1/x2/x5/x10' in a visible location, highlight when warp > 1). Add parachute status indicator. Add stage count indicator showing current stage number.",
+
+    "Step 6: Create src/tutorial.js - Implement a tutorial overlay system. On first launch (check localStorage key 'spaceOdyssey_tutorialSeen'), show sequential tooltip popups: In BuilderScene: (1) 'Собери ракету из модулей слева', (2) 'Тебе нужна как минимум Капсула и Двигатель', (3) 'Нажми LAUNCH когда готов'. In FlightScene: (4) 'W - тяга, A/D - поворот, Space - отделить ступень'. Each tooltip appears as a styled box with text and a 'Далее' (Next) button or auto-advances after a few seconds. After all tips shown, set localStorage flag. Export a TutorialManager class that scenes can call: showBuilderTips(scene), showFlightTips(scene).",
+
+    "Step 7: Integrate tutorial - In src/builder.js create() method, after all UI is set up, call TutorialManager.showBuilderTips(this) if tutorial not yet seen. In src/flight.js create() method, call TutorialManager.showFlightTips(this) if tutorial not yet seen.",
+
+    "Step 8: Update src/main.js if needed - ensure any new scenes or imports are registered. The current architecture does not require new scenes for these features (tutorial and audio are utility modules, not Phaser scenes).",
+
+    "Step 9: Verify the build passes - run 'npx vite build' in the SpaceOdyssey directory to confirm no import errors or syntax issues."
+  ],
+  "acceptance_criteria": [
+    "src/audio.js exists and exports AudioManager with startEngine/updateEngine/stopEngine/playExplosion/playVictory methods using Web Audio API oscillators and gain nodes",
+    "src/timewarp.js exists and exports TimeWarp with setWarp/getMultiplier/reset methods, keys 1-4 mapped in flight.js",
+    "MODULE_DEFS in builder.js contains booster, parachute, rcs, and decoupler entries with correct properties",
+    "FlightScene handles Space key for stage separation, P key for parachute, Q/E for RCS rotation",
+    "UIScene displays time warp multiplier on the HUD",
+    "src/tutorial.js exists with localStorage check and sequential Russian-language tooltips for builder and flight scenes",
+    "npx vite build completes without errors"
+  ],
+  "verification": [
+    "cd /projects/sandbox/JailBreak-v0-9/SpaceOdyssey && npm install && npx vite build"
+  ],
+  "blocked_reason": null,
+  "findings": "Build passes cleanly with npx vite build (12 modules transformed, 0 errors). All new modules integrate correctly via ES module imports. Palette spacing reduced to 65px to fit 9 modules in the panel."
+}
