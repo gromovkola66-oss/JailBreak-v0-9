@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix all 4 gameplay bugs: rental door false interaction, garage door direction, door frame collisions, and terrain size reset",
+  "status": "completed",
+  "steps": [
+    "Step 1 - Fix Issue 1 (Regular bars showing rental menu): In /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/game/RentalDoorSystem.ts, modify the `findNearest` method to check Y-axis distance separately. Add a vertical threshold check (e.g., 2.5m max Y difference) before considering a door as nearby. The problem is `position.distanceTo(door.closedPosition)` uses full 3D distance, so a rental door on a different floor (Y+4m) can still be within 3m 3D range. Fix: compute horizontal distance (XZ only) and add a Y distance check (abs(position.y - door.closedPosition.y) < 2.5). Alternative: increase Y threshold awareness by computing the distance in XZ plane only for the range check, or add an explicit Y check.",
+    "Step 2 - Fix Issue 2 (Garage doors should open upward): In /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/game/GarageDoorSystem.ts, in the `registerDoor` method, change openPos.y from `closedPos.y - doorHeight` to `closedPos.y + doorHeight`. Currently the door sinks below ground when opening. It should move upward.",
+    "Step 3 - Fix Issue 3 (Door frame blocking passage): The problem is in how addColliders works in PlaytestMode.ts combined with how mergeGroup works. After mergeGroup, meshes that share the same material get merged into single geometries. For door_frame and wall_with_door, the posts on both sides of the opening get merged into one mesh, whose bounding box covers the entire opening. Fix approach: In /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/editor/EditorObjects.ts, add an invisible collision mesh to `door_frame` (similar to how `bars_door` does it with visible:false meshes) that has separate left and right collision boxes marking only the pillars, NOT the opening. Then in addColliders (PlaytestMode.ts), these invisible meshes will generate proper separate bounding boxes that leave the center open. Specifically: for `door_frame`, add two invisible box meshes at x=-0.6 (size 0.12 x 3.5 x 0.3) and x=0.6 (size 0.12 x 3.5 x 0.3), plus one for the top crossbar at y=3.55 (size 1.32 x 0.12 x 0.3). Also add a userData flag like `userData.hasCustomColliders = true`. Then for `wall_with_door`, add similar invisible collision meshes for the left wall section (center at x=-1.4, size 1.2 x 4 x 0.3), right wall section (center at x=1.4, size 1.2 x 4 x 0.3), and the top crossbar (center at y=3.75, size 1.5 x 0.5 x 0.3). Mark with `userData.hasCustomColliders = true`. Then modify `addColliders` in PlaytestMode.ts to skip visible merged meshes when `group.userData.hasCustomColliders === true` and only process invisible (visible===false) meshes in that case.",
+    "Step 4 - Fix Issue 4 (Terrain size resetting to 200 on playtest): In /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/game/TerrainSystem.ts, modify the `importData` method to also resize the geometry if the imported data size differs from current size. Before importing height data, check if `data.size !== this.size || data.resolution !== this.resolution`, and if so, call `this.resize(data.size, data.resolution)` first (which reinitializes geometry), then apply the imported heights/materials. Also in /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/editor/MapEditor.ts, in the `importMap` method, after `this.terrainSystem.importData(data.terrain)`, emit the terrain size change callback: `this.onTerrainResized?.(this.terrainSystem.getSize())` so the UI reflects the correct size.",
+    "Step 5 - Verify build passes: Run `npx tsc --noEmit` and `npm run build` in /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/ to confirm no TypeScript errors.",
+    "Step 6 - Repackage zip: Create new JailBreak-v0-9-fix.zip at /projects/sandbox/JailBreak-v0-9/JailBreak-v0-9-fix.zip containing only JailBreak-1.2/ folder (exclude node_modules, dist, .agents). Command: cd /projects/sandbox/JailBreak-v0-9/work && zip -r /projects/sandbox/JailBreak-v0-9/JailBreak-v0-9-fix.zip JailBreak-1.2/ -x 'JailBreak-1.2/node_modules/*' 'JailBreak-1.2/dist/*' 'JailBreak-1.2/.agents/*'"
+  ],
+  "acceptance_criteria": [
+    "RentalDoorSystem.findNearest filters out doors with Y-distance > 2.5m so that a rental door on a different floor does not trigger interaction for players below/above it",
+    "GarageDoorSystem.registerDoor sets openPos.y = closedPos.y + doorHeight (door moves UP when opening)",
+    "door_frame and wall_with_door objects have invisible collision meshes that only cover the solid parts (pillars, lintel), leaving the doorway open for passage",
+    "addColliders in PlaytestMode.ts respects hasCustomColliders flag and only uses invisible meshes for collision when set",
+    "TerrainSystem.importData resizes geometry to match imported data size before applying height/material data",
+    "MapEditor.importMap emits onTerrainResized callback after importing terrain data",
+    "TypeScript compilation passes with no errors",
+    "JailBreak-v0-9-fix.zip is updated at the repo root"
+  ],
+  "verification": [
+    "Run `cd /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2 && npx tsc --noEmit` - should pass with no errors",
+    "Run `cd /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2 && npm run build` - should succeed",
+    "Verify the zip file exists and contains JailBreak-1.2/ structure without node_modules"
+  ],
+  "blocked_reason": null,
+  "findings": "Pre-existing tsc error at PlaytestMode.ts line 1797 (WeaponType argument mismatch) - not introduced by this change. Vite build passes successfully."
+}

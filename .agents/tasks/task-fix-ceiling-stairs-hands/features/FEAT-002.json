@@ -1,0 +1,21 @@
+{
+  "id": "FEAT-002",
+  "type": "chore",
+  "description": "Create JailBreak-v0-9-fix.zip archive containing only the JailBreak-1.2 game folder, placed at the repository root.",
+  "status": "completed",
+  "steps": [
+    "STEP 1 - Remove any existing JailBreak-v0-9-fix.zip at /projects/sandbox/JailBreak-v0-9/JailBreak-v0-9-fix.zip if it exists",
+    "STEP 2 - Create a zip archive at /projects/sandbox/JailBreak-v0-9/JailBreak-v0-9-fix.zip. The archive should contain a single top-level folder 'JailBreak-1.2' with the full game contents from /projects/sandbox/JailBreak-v0-9/JailBreak-v0-9-fix-extracted/JailBreak-v0-9-fix-weapon-bugs-v11.2/JailBreak-11.2/JailBreak-v0-9-jailbreak-1.2-expand-map-inventory/JailBreak-1.2/. Exclude node_modules and dist directories from the archive.",
+    "STEP 3 - Verify the archive was created and list its top-level contents to confirm it has only JailBreak-1.2/ folder"
+  ],
+  "acceptance_criteria": [
+    "JailBreak-v0-9-fix.zip exists at /projects/sandbox/JailBreak-v0-9/JailBreak-v0-9-fix.zip",
+    "The zip contains exactly one top-level folder named JailBreak-1.2",
+    "node_modules and dist are excluded from the archive"
+  ],
+  "verification": [
+    "Run: ls -la /projects/sandbox/JailBreak-v0-9/JailBreak-v0-9-fix.zip && unzip -l /projects/sandbox/JailBreak-v0-9/JailBreak-v0-9-fix.zip | head -20"
+  ],
+  "blocked_reason": null,
+  "findings": "Zip created successfully at /projects/sandbox/JailBreak-v0-9/JailBreak-v0-9-fix.zip (207214 bytes). Contains only JailBreak-1.2/ as top-level folder. node_modules and dist excluded (verified with grep showing 0 matches)."
+}

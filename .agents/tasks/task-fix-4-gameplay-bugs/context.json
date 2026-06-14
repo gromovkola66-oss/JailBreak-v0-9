@@ -1,0 +1,24 @@
+{
+  "project_type": "Three.js first-person game (TypeScript + React + Vite)",
+  "language": "TypeScript",
+  "build_system": "Vite with npm",
+  "test_framework": "None (no test files found)",
+  "build_command": "cd /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2 && npm run build",
+  "test_command": "cd /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2 && npx tsc --noEmit",
+  "verification_instructions": "1. Run npx tsc --noEmit to verify TypeScript compiles. 2. Run npm run build to verify Vite build succeeds. 3. After fixes, re-package into JailBreak-v0-9-fix.zip containing only JailBreak-1.2/ folder (no node_modules, no dist, no .agents).",
+  "snapshot_or_generated_files": "JailBreak-v0-9-fix.zip at repo root must be re-created after fixes",
+  "setup_instructions": "cd /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2 && npm install",
+  "environment_constraints": "Source lives in /projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/ (extracted from zip). Final deliverable is re-packaged zip.",
+  "contribution_requirements": "Build must pass without TypeScript errors. Final zip should contain only JailBreak-1.2/ folder without node_modules or dist.",
+  "key_patterns": "Objects are defined in EditorObjects.ts using mergeGroup(). Collision is generated per-mesh in addColliders() in PlaytestMode.ts. Door systems use 3D distanceTo for proximity checks. Terrain system uses fixed geometry with importData only updating vertex data.",
+  "relevant_files": [
+    "/projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/game/RentalDoorSystem.ts",
+    "/projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/game/GarageDoorSystem.ts",
+    "/projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/editor/PlaytestMode.ts",
+    "/projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/editor/EditorObjects.ts",
+    "/projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/editor/MapEditor.ts",
+    "/projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/game/TerrainSystem.ts",
+    "/projects/sandbox/JailBreak-v0-9/work/JailBreak-1.2/src/EditorApp.tsx"
+  ],
+  "directory_structure": "JailBreak-1.2/src/editor/ - editor code (MapEditor, PlaytestMode, EditorObjects). JailBreak-1.2/src/game/ - game systems (DoorSystem, GarageDoorSystem, RentalDoorSystem, TerrainSystem). JailBreak-1.2/src/components/ - React UI components. JailBreak-1.2/src/utils/ - utilities (mergeGroup)."
+}
