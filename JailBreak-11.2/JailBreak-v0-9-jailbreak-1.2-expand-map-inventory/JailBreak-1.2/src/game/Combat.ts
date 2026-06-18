@@ -204,6 +204,17 @@ export class Combat {
     this.notifyStateChange();
   }
 
+  // Store a weapon for pickup (creates Weapon in storedWeapon, ready for takeOutWeapon to activate)
+  storeWeaponForPickup(weaponType: WeaponType = 'ak47') {
+    if (this.weapon || this.storedWeapon) return;
+    this.storedWeapon = new Weapon(this.team, weaponType);
+  }
+
+  // Public getter for storedWeapon
+  getStoredWeapon(): Weapon | null {
+    return this.storedWeapon;
+  }
+
   private setupInput() {
     document.addEventListener('mousedown', this.boundMouseDown);
     document.addEventListener('mouseup', this.boundMouseUp);
@@ -246,9 +257,6 @@ export class Combat {
     if (document.pointerLockElement === null) return;
     
     switch (event.code) {
-      case 'KeyE':
-        this.tryPickupWeapon();
-        break;
       case 'KeyG':
         if (this.weapon || this.storedWeapon) {
           this.dropWeapon();
@@ -663,55 +671,6 @@ export class Combat {
     
     this.scene.add(weaponGroup);
     this.droppedWeapons.push(weaponGroup);
-  }
-
-  private tryPickupWeapon() {
-    if (this.isDead) return;
-    
-    const playerPos = this.camera.position;
-    const pickupRange = 2;
-    
-    for (let i = 0; i < this.droppedWeapons.length; i++) {
-      const droppedWeapon = this.droppedWeapons[i];
-      const dx = playerPos.x - droppedWeapon.position.x;
-      const dz = playerPos.z - droppedWeapon.position.z;
-      const distance = Math.sqrt(dx * dx + dz * dz);
-      
-      if (distance < pickupRange) {
-        // Drop current weapon first if holding one
-        if (this.weapon || this.storedWeapon) {
-          this.dropWeapon();
-        }
-
-        // Dispose geometries and non-shared materials before removing from scene
-        droppedWeapon.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.geometry.dispose();
-            const mat = child.material;
-            if (mat && mat !== DROPPED_WEAPON_METAL_MAT && mat !== DROPPED_WEAPON_WOOD_MAT) {
-              if (Array.isArray(mat)) {
-                for (const m of mat) m.dispose();
-              } else {
-                (mat as THREE.Material).dispose();
-              }
-            }
-          }
-        });
-        this.scene.remove(droppedWeapon);
-        this.droppedWeapons.splice(i, 1);
-
-        const storedType: WeaponType = droppedWeapon.userData.weaponType || 'ak47';
-        this.weapon = new Weapon(this.team, storedType);
-        this.camera.add(this.weapon.group);
-        
-        this.hands.setVisible(false);
-        soundSystem.playPickup();
-        
-        this.notifyStateChange();
-        this.onWeaponPickedUp?.(this.weapon.stats.name);
-        return;
-      }
-    }
   }
 
   private dropWeapon() {
